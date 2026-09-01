@@ -1,0 +1,19 @@
+{
+  "name": "fable-harness",
+  "owner": {
+    "name": "Michael Kissinger",
+    "email": "mckissinger@gmail.com"
+  },
+  "metadata": {
+    "description": "Spec-anchored workflow for autonomous coding runs on Claude Fable 5.1."
+  },
+  "plugins": [
+    {
+      "name": "fable-harness",
+      "source": "./",
+      "description": "Brief, run, verify, checkpoint. One durable spec per project; effort chosen at launch; fresh-context verification. Built from Anthropic's Fable 5.1 docs.",
+      "category": "development",
+      "tags": ["workflow", "fable", "verification", "spec-driven"]
+    }
+  ]
+}

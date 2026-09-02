@@ -51,6 +51,7 @@ Checkpoints are written to `~/.claude/fable/checkpoints/<project-slug>.md`.
 - undecided items, as questions
 - out-of-scope items
 - the current slice
+- lessons: what a fresh session needs to know about this codebase that the repo does not already record
 
 The model chooses the layout per project, keeps it reviewable by a person in one sitting, and reorganizes or splits it when it stops being that. Status is updated as work lands, so a crash mid-run loses little. The test of the spec: with the checkpoint deleted, can a fresh session continue from spec, branch, and git log? If not, the spec is incomplete.
 
@@ -81,6 +82,8 @@ Sources: [Overview](https://platform.claude.com/docs/en/models/fable-5-1/overvie
 **Safeguard false positives.** The guide names three triggers: compile-check phrasing, lesser-known languages without context, base64 in tool output. The core rules carry the phrasing and a recovery step: rephrase once, then record the blocked step in the spec and move on.
 
 **Verification.** `/fable-verify` runs a fresh-context, read-only verifier at `high`, the documented starting point, so the judgment is independent of the session that did the work. Two FAILs on the same finding stop the loop and go to the user.
+
+**Lessons.** The prompting guide says Fable 5.1 performs notably better when it can write learnings somewhere for future reference, even a plain markdown file, and gives the format: one lesson per entry with a one-line summary, corrections and confirmed approaches alike with why they mattered, update rather than duplicate, delete what turns out wrong, and skip what the repo or history already records. The harness keeps them as a section of the spec, because every point where the harness already forces a spec read (session start, compaction, the brief) then covers them for free. The section splits into its own file only when it stops being readable in one sitting, by the same rule as the rest of the spec.
 
 **Continuity.** The guide's compaction instruction lists six things a summary must preserve. Claude Code does not expose custom compaction instructions, so the harness keeps expectations in the spec, fires a "re-read the spec" reminder from the SessionStart hook when compaction happens, and uses the checkpoint only for transient mid-slice state.
 

@@ -63,16 +63,16 @@ Default is `--approve-for-me` (which selects the workspace-write sandbox), cwd s
 
 Status values: `todo`, `in progress`, `done`, `verified <evidence>`, `human-check`.
 
-1. `done` `rules/fable.md` has a "Provider mode" section stating the two modes, where the mode line lives in the spec, the routing table above, the `ultra` ban, and that verification always runs on Fable.
-2. `done` `skills/fable-brief/SKILL.md` reads the mode from the spec and, in codex mode, adds `Task class:` and `Route:` lines to the brief template and replaces step 6 (Execute) with the worker flow above (prompt file, background script run, wait for exit, read diff and last message, update statuses). Fable mode behavior is unchanged word for word except where the mode branch is inserted.
-3. `done` A new skill `skills/fable-mode/SKILL.md` (`/fable-mode <fable|codex>`) sets or reports the mode line in the spec, prints the routing table, and in codex mode runs the preflight and reports the result. With no argument it reports the current mode.
-4. `done` `scripts/codex-worker.sh` exists, is executable, passes `bash -n`, and: takes `--model`, `--effort`, `--cwd`, `--prompt-file`, `--out-dir`, optional `--network`; rejects effort `ultra` and any model other than the two slugs with a non-zero exit and a message; supports `--dry-run` which prints the exact `codex exec` argv and exits 0 without spawning; on a real run writes `events.jsonl`, `last-message.md`, and `usage.json` into `--out-dir`.
-5. `done` `scripts/codex-worker.sh --dry-run` for each of the four routing rows prints an argv containing the right `-m`, `model_reasoning_effort`, `--approve-for-me`, `--json`, `-o`, `--skip-git-repo-check`, `--ephemeral`, and no `--dangerously-*` flag.
-6. `done` `skills/fable-verify/SKILL.md` gains one sentence: in codex mode the verifier prompt names the worker model and effort, and FAIL findings are returned to the worker through the same script rather than fixed by Fable.
-7. `done` `README.md` documents the mode, the routing table, `/fable-mode`, the worker script, the no-fallback preflight rule, and the sandbox default; the "What is in the plugin" table gains the new rows.
-8. `done` `scripts/session-start.sh` prints the provider mode next to the spec path when the spec has a mode line.
-9. `done` `.claude-plugin/plugin.json` and the marketplace manifest bump to `0.2.0` and stay valid JSON.
-10. `done` The spec template guidance in `fable-brief` ("No spec yet") includes an optional `Provider mode:` line so new specs can start in codex mode.
+1. `verified 2026-09-02 fable-verifier, rules/fable.md:21-34` `rules/fable.md` has a "Provider mode" section stating the two modes, where the mode line lives in the spec, the routing table above, the `ultra` ban, and that verification always runs on Fable.
+2. `verified 2026-09-02 fable-verifier, skills/fable-brief/SKILL.md:15-17,56-75` `skills/fable-brief/SKILL.md` reads the mode from the spec and, in codex mode, adds `Task class:` and `Route:` lines to the brief template and replaces step 6 (Execute) with the worker flow above (prompt file, background script run, wait for exit, read diff and last message, update statuses). Fable mode behavior is unchanged word for word except where the mode branch is inserted.
+3. `verified 2026-09-02 fable-verifier, skills/fable-mode/SKILL.md` A new skill `skills/fable-mode/SKILL.md` (`/fable-mode <fable|codex>`) sets or reports the mode line in the spec, prints the routing table, and in codex mode runs the preflight and reports the result. With no argument it reports the current mode.
+4. `verified 2026-09-02 fable-verifier, scripts/codex-worker.sh; real luna/low run exit 0 with all three files` `scripts/codex-worker.sh` exists, is executable, passes `bash -n`, and: takes `--model`, `--effort`, `--cwd`, `--prompt-file`, `--out-dir`, optional `--network`; rejects effort `ultra` and any model other than the two slugs with a non-zero exit and a message; supports `--dry-run` which prints the exact `codex exec` argv and exits 0 without spawning; on a real run writes `events.jsonl`, `last-message.md`, and `usage.json` into `--out-dir`.
+5. `verified 2026-09-02 fable-verifier, four dry-runs plus --network, no --dangerously flag` `scripts/codex-worker.sh --dry-run` for each of the four routing rows prints an argv containing the right `-m`, `model_reasoning_effort`, `--approve-for-me`, `--json`, `-o`, `--skip-git-repo-check`, `--ephemeral`, and no `--dangerously-*` flag.
+6. `verified 2026-09-02 fable-verifier, skills/fable-verify/SKILL.md:19` `skills/fable-verify/SKILL.md` gains one sentence: in codex mode the verifier prompt names the worker model and effort, and FAIL findings are returned to the worker through the same script rather than fixed by Fable.
+7. `verified 2026-09-02 fable-verifier, README.md:68-87` `README.md` documents the mode, the routing table, `/fable-mode`, the worker script, the no-fallback preflight rule, and the sandbox default; the "What is in the plugin" table gains the new rows.
+8. `verified 2026-09-02 fable-verifier, scripts/session-start.sh:35-40, temp-spec run` `scripts/session-start.sh` prints the provider mode next to the spec path when the spec has a mode line.
+9. `verified 2026-09-02 fable-verifier, plugin.json:4, marketplace.json:22` `.claude-plugin/plugin.json` and the marketplace manifest bump to `0.2.0` and stay valid JSON.
+10. `verified 2026-09-02 fable-verifier, skills/fable-brief/SKILL.md:22` The spec template guidance in `fable-brief` ("No spec yet") includes an optional `Provider mode:` line so new specs can start in codex mode.
 11. `human-check` One real slice on a throwaway project runs end to end in codex mode: brief, background worker, verify, report with usage numbers. The user judges output quality against a Fable-mode slice of similar size.
 
 ## Undecided
@@ -90,6 +90,8 @@ Status values: `todo`, `in progress`, `done`, `verified <evidence>`, `human-chec
 
 ## Current slice
 
+Status: verified PASS WITH FOLLOW-UPS 2026-09-02; follow-ups listed in the PR. Next: done-condition 11 (human-check) on a throwaway project after reinstalling the plugin.
+
 Outcome: the plugin gains a `codex` provider mode that routes a slice's implementation to Sol or Luna through `scripts/codex-worker.sh`, with Fable briefing and verifying.
 Done-conditions: 1 through 10 above (11 is human-check and follows on a throwaway project).
 Out of scope: see the section above; in particular no change to fable-mode wording beyond the inserted branch, no hooks, no scout routing.
@@ -100,7 +102,9 @@ Branch: `provider-modes`
 
 ## Slice log
 
-(empty; each codex-mode slice appends: date, slice name, task class, route, first-verify verdict, usage)
+(each codex-mode slice appends: date, slice name, task class, route, first-verify verdict, usage)
+
+- 2026-09-02, provider-modes, fable mode (this slice was implemented by Fable), first verify PASS WITH FOLLOW-UPS. Smoke run of the worker script only: gpt-5.6-luna / low, 4 s, 16,824 input (8,960 cached), 5 output tokens.
 
 ## Lessons
 

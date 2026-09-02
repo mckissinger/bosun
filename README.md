@@ -95,4 +95,4 @@ Sources: [Overview](https://platform.claude.com/docs/en/models/fable-5-1/overvie
 
 ## Status
 
-Version 0.1.1. Designed from the docs and walked through scenarios on paper; not yet exercised on a real multi-session project. Expect the first real runs to change it.
+Version 0.1.2. Designed from the docs and walked through scenarios on paper; not yet exercised on a real multi-session project. Expect the first real runs to change it.

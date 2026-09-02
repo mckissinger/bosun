@@ -1,6 +1,6 @@
 # Fable Harness
 
-A Claude Code plugin for autonomous coding runs on Claude Fable 5.1. One durable spec per project, effort chosen at launch, fresh-context verification, and a checkpoint for stopping mid-slice. Built only from Anthropic's Fable 5.1 documentation.
+A Claude Code plugin for autonomous coding runs on Claude Fable 5.1. One durable spec per project, effort chosen at launch, fresh-context verification, and a checkpoint for stopping mid-slice. Built only from Anthropic's Fable 5.1 documentation. An optional `codex` provider mode hands each slice's implementation to an OpenAI Codex model (gpt-5.6-sol or gpt-5.6-luna) through your own `codex` CLI while Fable keeps briefing and verifying; see "Provider modes".
 
 ## Install
 
@@ -35,9 +35,11 @@ launch session at the right effort
 | `/fable-brief` | `skills/fable-brief/SKILL.md` | Creates the spec on first run and stops for review; afterwards briefs a slice and runs it to completion |
 | `/fable-verify` | `skills/fable-verify/SKILL.md` | Fresh-context verification against the spec, records verified status |
 | `/fable-checkpoint` | `skills/fable-checkpoint/SKILL.md` | Transient mid-slice state the spec does not hold |
+| `/fable-mode` | `skills/fable-mode/SKILL.md` | Sets or reports the provider mode line in the spec; preflights codex |
+| Codex worker | `scripts/codex-worker.sh` | Runs one slice on gpt-5.6-sol or gpt-5.6-luna via `codex exec`; owns every flag, refuses `ultra`, writes usage |
 | `fable-scout` agent | `agents/fable-scout.md` | Read-only background investigator, medium effort |
 | `fable-verifier` agent | `agents/fable-verifier.md` | Read-only verifier, high effort |
-| SessionStart hook | `scripts/session-start.sh` | Loads the rules if needed, points at the spec, prints any checkpoint; on compaction, tells the model to re-read the spec |
+| SessionStart hook | `scripts/session-start.sh` | Loads the rules if needed, points at the spec and its provider mode, prints any checkpoint; on compaction, tells the model to re-read the spec |
 
 Checkpoints are written to `~/.claude/fable/checkpoints/<project-slug>.md`.
 
@@ -62,6 +64,27 @@ The model chooses the layout per project, keeps it reviewable by a person in one
 3. Existing spec: `/fable-brief` (optionally naming the slice). It runs to completion, verifies, and reports.
 4. Read the report: done-conditions with evidence, follow-ups, anything left out. Human-check conditions are yours.
 5. Stopping mid-slice: `/fable-checkpoint`. The next session in that directory loads it.
+
+## Provider modes
+
+The mode is a line in the project's spec: `Provider mode: fable` (the default; no line means the same) or `Provider mode: codex`. `/fable-mode codex` sets it after preflighting `codex --version` and `codex login status`; `/fable-mode` alone reports it.
+
+In `codex` mode Fable 5.1 still writes the brief, keeps the spec, commits, and runs `/fable-verify`. The implementation step of each slice goes to a Codex model through `scripts/codex-worker.sh`, routed by the task class the brief assigns:
+
+| Task class | When | Model | Effort |
+| --- | --- | --- | --- |
+| `small` | Fully specified change, one or two files, existing tests cover it | `gpt-5.6-luna` | `high` |
+| `routine` | Behavior specified, repo has tests for this kind of change, design settled | `gpt-5.6-sol` | `medium` |
+| `feature` | Multi-file feature, refactor, or debugging with a clear goal | `gpt-5.6-sol` | `high` |
+| `hard` | Migrations, hard bugs, slices expected to run over thirty minutes | `gpt-5.6-sol` | `xhigh` |
+
+A slice overrides the table with `Route: <model> / <effort>` in the spec's current-slice section. `ultra` is never used (it auto-delegates); the script refuses it.
+
+How a codex-mode slice runs: the brief gains `Task class:`, `Route:`, and `Worker network:` lines; Fable writes a self-contained prompt file under `~/.claude/fable/workers/<slug>/<slice>/`; the worker script runs in the background (Claude Code's foreground Bash caps at ten minutes) and the session continues when it exits; Fable reads the diff and the worker's last message, updates the spec, verifies on Fable, sends FAIL findings back to the worker, and commits once verified. The report and the spec's slice log record the route and the token usage from `usage.json`, so the two modes can be compared after a few slices.
+
+Rules that do not bend: the worker never commits; verification never moves off Fable; if the codex preflight fails the slice stops and says so rather than falling back to Fable. The sandbox default is `--approve-for-me` (which selects the workspace-write sandbox) and no network; a brief that says `Worker network: yes` adds `sandbox_workspace_write.network_access=true` for installs. Recommended: launch the Fable session at `medium` effort in codex mode, since Fable's own work per slice is briefing and review.
+
+Requires the `codex` CLI (tested with codex-cli 0.149.0) logged in with your own account. The harness spawns your unmodified binary; it never handles provider credentials.
 
 ## Why each piece exists
 
@@ -95,4 +118,4 @@ Sources: [Overview](https://platform.claude.com/docs/en/models/fable-5-1/overvie
 
 ## Status
 
-Version 0.1.2. Designed from the docs and walked through scenarios on paper; not yet exercised on a real multi-session project. Expect the first real runs to change it.
+Version 0.2.0. Designed from the docs and walked through scenarios on paper; not yet exercised on a real multi-session project. The codex provider mode has not yet run a real slice; its sandbox and network defaults are the part most likely to change after the first one. Expect the first real runs to change it.

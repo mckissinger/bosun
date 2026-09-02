@@ -1,8 +1,8 @@
 {
   "name": "fable-harness",
   "displayName": "Fable Harness",
-  "version": "0.1.2",
-  "description": "Spec-anchored workflow for autonomous coding runs on Claude Fable 5.1: brief, run, verify, checkpoint. Built from Anthropic's Fable 5.1 docs.",
+  "version": "0.2.0",
+  "description": "Spec-anchored workflow for autonomous coding runs on Claude Fable 5.1: brief, run, verify, checkpoint, with an optional codex provider mode that routes implementation to gpt-5.6-sol or gpt-5.6-luna. Built from Anthropic's Fable 5.1 docs.",
   "author": {
     "name": "Michael Kissinger",
     "email": "mckissinger@gmail.com"

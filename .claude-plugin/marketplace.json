@@ -13,7 +13,13 @@
       "source": "./",
       "description": "Brief, run, verify, checkpoint. One durable spec per project; effort chosen at launch; fresh-context verification. Built from Anthropic's Fable 5.1 docs.",
       "category": "development",
-      "tags": ["workflow", "fable", "verification", "spec-driven"]
+      "tags": [
+        "workflow",
+        "fable",
+        "verification",
+        "spec-driven"
+      ],
+      "version": "0.2.0"
     }
   ]
 }

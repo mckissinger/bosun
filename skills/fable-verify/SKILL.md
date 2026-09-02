@@ -16,6 +16,7 @@ The session that wrote the code is the wrong judge of it. This skill hands the j
    - The base to diff against (branch or commit).
    - The exact check commands and any setup they need.
    - Anything the verifier would otherwise misjudge: intentional deviations and their reasons, environment quirks, known pre-existing failures with evidence that they predate the change.
+   - In codex mode: the worker model and effort that produced the diff. FAIL findings then go back to the worker through `scripts/codex-worker.sh` (see `/fable-brief`, "Codex mode"), not to Fable.
 2. Launch the `fable-verifier` agent with that prompt. While it runs, do not idle: draft the report or continue unrelated remaining work. Do not edit files the verifier is reading.
 3. Relay the verdict faithfully. Do not soften a FAIL.
    - FAIL: fix each in-scope finding, then run this skill again. After two FAILs on the same finding, stop and report both positions to the user. Out-of-scope findings go in the report as follow-ups.

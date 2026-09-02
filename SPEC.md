@@ -19,7 +19,7 @@ A user can put the harness into a named provider mode. In `fable` mode (the defa
 
 - `codex` is codex-cli 0.149.0 at `~/.local/bin/codex`, logged in via ChatGPT. `~/.codex/config.toml` defaults to `gpt-5.6-sol` at `high`.
 - Codex model slugs: `gpt-5.6-sol` (efforts low, medium, high, xhigh, max, ultra) and `gpt-5.6-luna` (low, medium, high, xhigh, max).
-- `codex exec` flags used: `-m <model>`, `-c model_reasoning_effort="<level>"`, `-C <dir>`, `-s workspace-write`, `--json` (JSONL events to stdout, including token usage), `-o <file>` (final agent message), `--skip-git-repo-check`, `--ephemeral`. `--approve-for-me` exists for approval prompts under workspace-write. `--dangerously-bypass-approvals-and-sandbox` exists and is not used by default.
+- `codex exec` flags used: `-m <model>`, `-c model_reasoning_effort="<level>"`, `-C <dir>`, `--json` (JSONL events to stdout, including token usage), `-o <file>` (final agent message), `--skip-git-repo-check`, `--ephemeral`. `--approve-for-me` routes approval prompts through automatic review and itself selects the workspace-write sandbox; codex 0.149.0 rejects an explicit `-s` alongside it (found by the smoke run in this slice). `--dangerously-bypass-approvals-and-sandbox` exists and is not used by default.
 - Claude Code's Bash tool caps a foreground command at 10 minutes. A background command re-invokes the session when it exits, so long codex runs go to the background and the session waits for that notification rather than polling.
 - Public benchmark shape (for routing only): Luna is close to Sol on short agentic coding but far behind on long-context recall, so Luna is for small, fully specified slices; Sol for everything else.
 
@@ -57,22 +57,22 @@ Before spawning, the script checks `codex --version` and `codex login status`. O
 
 ### Sandbox and approvals
 
-Default is `-s workspace-write` with `--approve-for-me`, cwd set to the worktree, plus `--skip-git-repo-check` and `--ephemeral`. Network access inside the sandbox is off by default; a slice that needs `npm install` or similar sets `Worker network: yes` in its brief and the script passes `-c sandbox_workspace_write.network_access=true`. This is the assumption most likely to change after the first real run; see lessons.
+Default is `--approve-for-me` (which selects the workspace-write sandbox), cwd set to the worktree, plus `--skip-git-repo-check` and `--ephemeral`. Network access inside the sandbox is off by default; a slice that needs `npm install` or similar sets `Worker network: yes` in its brief and the script passes `-c sandbox_workspace_write.network_access=true`. This is the assumption most likely to change after the first real run; see lessons.
 
 ## Done-conditions
 
 Status values: `todo`, `in progress`, `done`, `verified <evidence>`, `human-check`.
 
-1. `todo` `rules/fable.md` has a "Provider mode" section stating the two modes, where the mode line lives in the spec, the routing table above, the `ultra` ban, and that verification always runs on Fable.
-2. `todo` `skills/fable-brief/SKILL.md` reads the mode from the spec and, in codex mode, adds `Task class:` and `Route:` lines to the brief template and replaces step 6 (Execute) with the worker flow above (prompt file, background script run, wait for exit, read diff and last message, update statuses). Fable mode behavior is unchanged word for word except where the mode branch is inserted.
-3. `todo` A new skill `skills/fable-mode/SKILL.md` (`/fable-mode <fable|codex>`) sets or reports the mode line in the spec, prints the routing table, and in codex mode runs the preflight and reports the result. With no argument it reports the current mode.
-4. `todo` `scripts/codex-worker.sh` exists, is executable, passes `bash -n`, and: takes `--model`, `--effort`, `--cwd`, `--prompt-file`, `--out-dir`, optional `--network`; rejects effort `ultra` and any model other than the two slugs with a non-zero exit and a message; supports `--dry-run` which prints the exact `codex exec` argv and exits 0 without spawning; on a real run writes `events.jsonl`, `last-message.md`, and `usage.json` into `--out-dir`.
-5. `todo` `scripts/codex-worker.sh --dry-run` for each of the four routing rows prints an argv containing the right `-m`, `model_reasoning_effort`, `-s workspace-write`, `--approve-for-me`, `--json`, `-o`, `--skip-git-repo-check`, `--ephemeral`, and no `--dangerously-*` flag.
-6. `todo` `skills/fable-verify/SKILL.md` gains one sentence: in codex mode the verifier prompt names the worker model and effort, and FAIL findings are returned to the worker through the same script rather than fixed by Fable.
-7. `todo` `README.md` documents the mode, the routing table, `/fable-mode`, the worker script, the no-fallback preflight rule, and the sandbox default; the "What is in the plugin" table gains the new rows.
-8. `todo` `scripts/session-start.sh` prints the provider mode next to the spec path when the spec has a mode line.
-9. `todo` `.claude-plugin/plugin.json` and the marketplace manifest bump to `0.2.0` and stay valid JSON.
-10. `todo` The spec template guidance in `fable-brief` ("No spec yet") includes an optional `Provider mode:` line so new specs can start in codex mode.
+1. `done` `rules/fable.md` has a "Provider mode" section stating the two modes, where the mode line lives in the spec, the routing table above, the `ultra` ban, and that verification always runs on Fable.
+2. `done` `skills/fable-brief/SKILL.md` reads the mode from the spec and, in codex mode, adds `Task class:` and `Route:` lines to the brief template and replaces step 6 (Execute) with the worker flow above (prompt file, background script run, wait for exit, read diff and last message, update statuses). Fable mode behavior is unchanged word for word except where the mode branch is inserted.
+3. `done` A new skill `skills/fable-mode/SKILL.md` (`/fable-mode <fable|codex>`) sets or reports the mode line in the spec, prints the routing table, and in codex mode runs the preflight and reports the result. With no argument it reports the current mode.
+4. `done` `scripts/codex-worker.sh` exists, is executable, passes `bash -n`, and: takes `--model`, `--effort`, `--cwd`, `--prompt-file`, `--out-dir`, optional `--network`; rejects effort `ultra` and any model other than the two slugs with a non-zero exit and a message; supports `--dry-run` which prints the exact `codex exec` argv and exits 0 without spawning; on a real run writes `events.jsonl`, `last-message.md`, and `usage.json` into `--out-dir`.
+5. `done` `scripts/codex-worker.sh --dry-run` for each of the four routing rows prints an argv containing the right `-m`, `model_reasoning_effort`, `--approve-for-me`, `--json`, `-o`, `--skip-git-repo-check`, `--ephemeral`, and no `--dangerously-*` flag.
+6. `done` `skills/fable-verify/SKILL.md` gains one sentence: in codex mode the verifier prompt names the worker model and effort, and FAIL findings are returned to the worker through the same script rather than fixed by Fable.
+7. `done` `README.md` documents the mode, the routing table, `/fable-mode`, the worker script, the no-fallback preflight rule, and the sandbox default; the "What is in the plugin" table gains the new rows.
+8. `done` `scripts/session-start.sh` prints the provider mode next to the spec path when the spec has a mode line.
+9. `done` `.claude-plugin/plugin.json` and the marketplace manifest bump to `0.2.0` and stay valid JSON.
+10. `done` The spec template guidance in `fable-brief` ("No spec yet") includes an optional `Provider mode:` line so new specs can start in codex mode.
 11. `human-check` One real slice on a throwaway project runs end to end in codex mode: brief, background worker, verify, report with usage numbers. The user judges output quality against a Fable-mode slice of similar size.
 
 ## Undecided
@@ -104,4 +104,4 @@ Branch: `provider-modes`
 
 ## Lessons
 
-(empty)
+- `codex exec` rejects `-s <sandbox>` together with `--approve-for-me`; the latter already selects the workspace-write sandbox. Found by a real smoke run of `scripts/codex-worker.sh` (2026-09-02, codex-cli 0.149.0) after the dry-run looked fine, so a dry-run of the argv is not proof the argv is accepted. Any flag change to the script needs one real no-op run (Luna, low, "reply OK") before it ships.

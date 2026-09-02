@@ -32,7 +32,12 @@ fi
 slug="$(printf '%s' "$dir" | sed 's#^/##; s#[/ ]#-#g')"
 file="$HOME/.claude/fable/checkpoints/$slug.md"
 if [ -n "$spec" ]; then
-  echo "Fable spec for this project: $spec. Read it before starting substantial work."
+  mode="$(grep -m1 '^Provider mode:' "$spec" 2>/dev/null | sed 's/^Provider mode:[[:space:]]*//')"
+  if [ -n "$mode" ]; then
+    echo "Fable spec for this project: $spec (provider mode: $mode). Read it before starting substantial work."
+  else
+    echo "Fable spec for this project: $spec. Read it before starting substantial work."
+  fi
 fi
 if [ -f "$file" ]; then
   echo "A Fable checkpoint exists for this project ($file, written $(date -r "$file" '+%Y-%m-%d %H:%M')). Read the spec, then this checkpoint, then continue from where it stops. Overwrite it with /fable-checkpoint when you stop; delete it when the slice is finished."

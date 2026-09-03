@@ -110,15 +110,15 @@ Status values: `todo`, `in progress`, `done`, `verified <evidence>`, `human-chec
 
 Slice 3, run policy (2026-09-03):
 
-12. `done` `rules/fable.md` gains a "Run policy" section stating the line and its two values, the default and the default cap, what happens under `until blocked` (commit, push, PR per slice, next slice in the same turn, PRs never merged), the stop conditions, the runnable definition, the exhausted-roadmap behavior including that Fable never promotes a proposal, and the follow-ups section; the spec-contents list in "The spec" names the follow-ups section.
-13. `done` `skills/fable-brief/SKILL.md` gains a "Find the run policy" section; step 1 of "Spec exists" checks for a runnable done-condition and, on none, follows the exhausted-roadmap behavior; step 9 appends follow-ups to the spec's follow-ups section and, under `until blocked`, continues with commit, push, PR, report, and the next slice subject to the stop conditions and the count; the "No spec yet" template names the follow-ups section and the optional `Run policy:` line. Existing single-slice wording is unchanged except where these branches are inserted.
-14. `done` `skills/fable-brief/SKILL.md` "Codex mode" step 2 describes staging: the condition (until blocked, cap not reached, next slice independent of the running one), what is written where (`brief.md` with `Based on: <sha>`, or `notes.md` only when dependent), and that the worktree is never written while the worker runs.
-15. `done` `skills/fable-brief/SKILL.md` describes re-validating a staged brief before it runs: sha comparison, diff read, references and assumptions checked, previous verify follow-ups folded in, brief then written into the spec and the worker prompt generated from it; waits on FAIL; stays on disk and is named in the report if the run stopped.
-16. `done` `skills/fable-verify/SKILL.md` step 2 names staging the next brief (per `/fable-brief`) as one thing to do while the verifier runs under `until blocked`.
-17. `done` `skills/fable-checkpoint/SKILL.md` "Next actions" names the path of any staged brief.
-18. `done` `scripts/session-start.sh` prints the run policy next to the provider mode when the spec has a `Run policy:` line, passes `bash -n`, and a temp-spec run shows mode and policy together, mode alone, and policy alone.
-19. `done` `README.md` documents the run policy line, the stop conditions, the exhausted-roadmap report, staging and re-validation, and the follow-ups section; "The spec" list gains follow-ups; "Daily use" mentions the line.
-20. `done` `.claude-plugin/plugin.json` and the marketplace manifest bump to `0.3.0` and stay valid JSON.
+12. `verified 2026-09-03 fable-verifier, rules/fable.md:36-44,17` `rules/fable.md` gains a "Run policy" section stating the line and its two values, the default and the default cap, what happens under `until blocked` (commit, push, PR per slice, next slice in the same turn, PRs never merged), the stop conditions, the runnable definition, the exhausted-roadmap behavior including that Fable never promotes a proposal, and the follow-ups section; the spec-contents list in "The spec" names the follow-ups section.
+13. `verified 2026-09-03 fable-verifier, skills/fable-brief/SKILL.md:19-31,52-64,26` `skills/fable-brief/SKILL.md` gains a "Find the run policy" section; step 1 of "Spec exists" checks for a runnable done-condition and, on none, follows the exhausted-roadmap behavior; step 9 appends follow-ups to the spec's follow-ups section and, under `until blocked`, continues with commit, push, PR, report, and the next slice subject to the stop conditions and the count; the "No spec yet" template names the follow-ups section and the optional `Run policy:` line. Existing single-slice wording is unchanged except where these branches are inserted.
+14. `verified 2026-09-03 fable-verifier, skills/fable-brief/SKILL.md:91,72` `skills/fable-brief/SKILL.md` "Codex mode" step 2 describes staging: the condition (until blocked, cap not reached, next slice independent of the running one), what is written where (`brief.md` with `Based on: <sha>`, or `notes.md` only when dependent), and that the worktree is never written while the worker runs.
+15. `verified 2026-09-03 fable-verifier, skills/fable-brief/SKILL.md:74` `skills/fable-brief/SKILL.md` describes re-validating a staged brief before it runs: sha comparison, diff read, references and assumptions checked, previous verify follow-ups folded in, brief then written into the spec and the worker prompt generated from it; waits on FAIL; stays on disk and is named in the report if the run stopped.
+16. `verified 2026-09-03 fable-verifier, skills/fable-verify/SKILL.md:20` `skills/fable-verify/SKILL.md` step 2 names staging the next brief (per `/fable-brief`) as one thing to do while the verifier runs under `until blocked`.
+17. `verified 2026-09-03 fable-verifier, skills/fable-checkpoint/SKILL.md:19` `skills/fable-checkpoint/SKILL.md` "Next actions" names the path of any staged brief.
+18. `verified 2026-09-03 fable-verifier, scripts/session-start.sh:35-47, four temp-spec runs` `scripts/session-start.sh` prints the run policy next to the provider mode when the spec has a `Run policy:` line, passes `bash -n`, and a temp-spec run shows mode and policy together, mode alone, and policy alone.
+19. `verified 2026-09-03 fable-verifier, README.md:57,66,95-101` `README.md` documents the run policy line, the stop conditions, the exhausted-roadmap report, staging and re-validation, and the follow-ups section; "The spec" list gains follow-ups; "Daily use" mentions the line.
+20. `verified 2026-09-03 fable-verifier, plugin.json:4, marketplace.json:22` `.claude-plugin/plugin.json` and the marketplace manifest bump to `0.3.0` and stay valid JSON.
 21. `human-check` On a throwaway project with `Run policy: until blocked, max 2 slices` and three runnable done-conditions, one `/fable-brief` runs two slices, opens two PRs, and stops citing the cap. On a spec whose done-conditions are all verified or human-check, `/fable-brief` reports the exhausted roadmap with proposals and asks what next.
 
 ## Undecided
@@ -140,7 +140,7 @@ Slice 3, run policy (2026-09-03):
 
 ## Current slice
 
-Status: in progress 2026-09-03.
+Status: verified PASS WITH FOLLOW-UPS 2026-09-03; follow-ups in the section below and in the PR. Next: done-condition 21 (human-check) on a throwaway project after reinstalling the plugin.
 
 Outcome: `/fable-brief` can run slice after slice under a `Run policy:` line, stage the next brief while a codex worker runs, re-validate it against what landed, and report an exhausted roadmap with proposals instead of stopping silently.
 Done-conditions: 12 through 20 above (21 is human-check).
@@ -160,11 +160,16 @@ Branch: `run-policy`
 - provider-modes, 2026-09-02: this spec's assumption text says `usage.json` comes from the "last token_count-style event"; the script sums every `turn.completed` usage event, which matches what codex emits.
 - provider-modes, 2026-09-02: a relative `--out-dir` could split outputs between codex's `-C` cwd and the shell cwd; the documented flow passes absolute paths.
 - provider-modes, 2026-09-02: `marketplace.json` `tags` array was reflowed one-per-line by the JSON rewrite; cosmetic.
+- run-policy, 2026-09-03: `skills/fable-brief/SKILL.md` step 9 reports before "Until blocked" commits and opens the PR, while the rules, README, and design say commit, push, PR, then report; the per-slice report cannot name its PR. Pick one order.
+- run-policy, 2026-09-03: `skills/fable-verify/SKILL.md:20` invites staging under `until blocked` without saying codex mode only, while the brief skill and design scope staging to codex mode. Say which applies.
+- run-policy, 2026-09-03: `README.md` "Version" line says 0.2.0; manifests are at 0.3.0 (already stale on main at 0.2.1).
+- run-policy, 2026-09-03: the stop condition "next runnable done-condition depends on an undecided item" can never fire, since the runnable definition already excludes those. Drop it or reword.
 
 ## Slice log
 
 (each codex-mode slice appends: date, slice name, task class, route, first-verify verdict, usage)
 
+- 2026-09-03, run-policy, fable mode (implemented by Fable), first verify PASS WITH FOLLOW-UPS.
 - 2026-09-02, provider-modes, fable mode (this slice was implemented by Fable), first verify PASS WITH FOLLOW-UPS. Smoke run of the worker script only: gpt-5.6-luna / low, 4 s, 16,824 input (8,960 cached), 5 output tokens.
 
 ## Lessons

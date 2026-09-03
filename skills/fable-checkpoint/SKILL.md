@@ -16,7 +16,7 @@ Preserve, under these headings:
 3. **Problems and resolutions** — difficulties that came up and how they were handled or resolved.
 4. **Options considered** — approaches raised, tried, or set aside, and why.
 5. **Anything said this session that is not yet in the spec** — asks, decisions, constraints, preferences, in the user's words. Move these into the spec if you can; list them here if you cannot.
-6. **Next actions** — in the order to do them.
+6. **Next actions** — in the order to do them. If a staged brief exists under `~/.claude/fable/workers/<slug>/`, name its path and whether it has been re-validated.
 7. **Hard-to-reconstruct details** — names, numbers, paths, commands, exact wording, links, kept exactly.
 
 Be complete on these even at the cost of length; keep everything else concise. Condense your own reasoning to what it concluded or produced.

@@ -18,6 +18,21 @@ Every project with substantial work has a spec file: `SPEC.md` at the repo root,
 
 Lessons are what this codebase needs a fresh session to know that the repo and git history do not already record: corrections, confirmed approaches, environment quirks, and why each mattered. One entry per lesson with a one-line summary first. Read them before starting a slice. Update an existing entry rather than adding a duplicate, delete entries that turn out to be wrong, and do not record what the code, the checks, or the spec already say. If the section grows past what a person reads in one sitting, split it into its own file next to the spec and say so in your report.
 
+## Provider mode
+
+The harness has two provider modes. The mode is a line in the project's spec, `Provider mode: fable` or `Provider mode: codex`; a spec without the line is in `fable` mode. `/fable-mode` sets or reports it.
+
+In `fable` mode, Fable 5.1 briefs, implements, verifies, and keeps the spec. In `codex` mode, Fable 5.1 still briefs, keeps the spec, commits, and verifies, but each slice's implementation is handed to an OpenAI Codex model through the user's own `codex exec` CLI via `scripts/codex-worker.sh`, routed by task class:
+
+| Task class | When | Model | Effort |
+| --- | --- | --- | --- |
+| `small` | Fully specified change, one or two files, existing tests cover it | `gpt-5.6-luna` | `high` |
+| `routine` | Behavior specified, repo has tests for this kind of change, design settled | `gpt-5.6-sol` | `medium` |
+| `feature` | Multi-file feature, refactor, or debugging with a clear goal | `gpt-5.6-sol` | `high` |
+| `hard` | Migrations, hard bugs, slices expected to run over thirty minutes | `gpt-5.6-sol` | `xhigh` |
+
+A slice overrides the table with a `Route: <model> / <effort>` line in the spec's current-slice section. `ultra` is never passed: it auto-delegates, which fights the single-context slice design. The worker never commits; Fable reviews the diff and commits. Verification always runs on Fable through `/fable-verify`. If the codex preflight fails, the slice stops and reports; Fable never silently implements it instead.
+
 ## Starting substantial work
 
 Anything beyond a few tool calls starts with `/fable-brief`. With no spec, it creates one from what the user supplied and stops for review; that is the one planned stop. With a spec, it takes the next slice and runs to completion. Small tasks get a three-line brief, not a ceremony. If context was compacted, or a checkpoint was printed at session start, re-read the spec before doing anything else.

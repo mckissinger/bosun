@@ -1,7 +1,7 @@
 #!/bin/bash
 # SessionStart hook for the Fable harness.
 #   startup/resume/clear: load the core rules if they are not already in ~/.claude/CLAUDE.md,
-#                         point at the project's spec, and print any checkpoint.
+#                         point at the project's spec (with its provider mode and run policy), and print any checkpoint.
 #   compact: tell the model to re-read the spec before continuing.
 dir="${CLAUDE_PROJECT_DIR:-$PWD}"
 plugin_root="$(cd "$(dirname "$0")/.." && pwd)"
@@ -33,8 +33,15 @@ slug="$(printf '%s' "$dir" | sed 's#^/##; s#[/ ]#-#g')"
 file="$HOME/.claude/fable/checkpoints/$slug.md"
 if [ -n "$spec" ]; then
   mode="$(grep -m1 '^Provider mode:' "$spec" 2>/dev/null | sed 's/^Provider mode:[[:space:]]*//')"
-  if [ -n "$mode" ]; then
-    echo "Fable spec for this project: $spec (provider mode: $mode). Read it before starting substantial work."
+  policy="$(grep -m1 '^Run policy:' "$spec" 2>/dev/null | sed 's/^Run policy:[[:space:]]*//')"
+  detail=""
+  [ -n "$mode" ] && detail="provider mode: $mode"
+  if [ -n "$policy" ]; then
+    [ -n "$detail" ] && detail="$detail, "
+    detail="${detail}run policy: $policy"
+  fi
+  if [ -n "$detail" ]; then
+    echo "Fable spec for this project: $spec ($detail). Read it before starting substantial work."
   else
     echo "Fable spec for this project: $spec. Read it before starting substantial work."
   fi

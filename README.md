@@ -25,6 +25,7 @@ launch session at the right effort
   -> work, updating spec status as done-conditions land
   -> /fable-verify  (fresh read-only verifier; marks verified in spec)
   -> report; /fable-checkpoint only if stopping mid-slice
+  -> under "Run policy: until blocked": commit, push, PR, next slice, until something stops it
 ```
 
 ## What is in the plugin
@@ -39,7 +40,7 @@ launch session at the right effort
 | Codex worker | `scripts/codex-worker.sh` | Runs one slice on gpt-5.6-sol or gpt-5.6-luna via `codex exec`; owns every flag, refuses `ultra`, writes usage |
 | `fable-scout` agent | `agents/fable-scout.md` | Read-only background investigator, medium effort |
 | `fable-verifier` agent | `agents/fable-verifier.md` | Read-only verifier, high effort |
-| SessionStart hook | `scripts/session-start.sh` | Loads the rules if needed, points at the spec and its provider mode, prints any checkpoint; on compaction, tells the model to re-read the spec |
+| SessionStart hook | `scripts/session-start.sh` | Loads the rules if needed, points at the spec with its provider mode and run policy, prints any checkpoint; on compaction, tells the model to re-read the spec |
 
 Checkpoints are written to `~/.claude/fable/checkpoints/<project-slug>.md`.
 
@@ -53,6 +54,7 @@ Checkpoints are written to `~/.claude/fable/checkpoints/<project-slug>.md`.
 - undecided items, as questions
 - out-of-scope items
 - the current slice
+- follow-ups: things noticed and not done, one line each with the slice and date; the exhausted-roadmap report draws its proposals from here
 - lessons: what a fresh session needs to know about this codebase that the repo does not already record
 
 The model chooses the layout per project, keeps it reviewable by a person in one sitting, and reorganizes or splits it when it stops being that. Status is updated as work lands, so a crash mid-run loses little. The test of the spec: with the checkpoint deleted, can a fresh session continue from spec, branch, and git log? If not, the spec is incomplete.
@@ -61,7 +63,7 @@ The model chooses the layout per project, keeps it reviewable by a person in one
 
 1. Launch at the effort the work needs: `claude --effort high` for most slices, `xhigh` for long runs, migrations, hard bugs. Effort is held for the session; the model cannot change it.
 2. New project: `/fable-brief <task>` with your structures pasted or pointed at. Review the spec it writes, fill in what you can, say go. That is the one planned stop.
-3. Existing spec: `/fable-brief` (optionally naming the slice). It runs to completion, verifies, and reports.
+3. Existing spec: `/fable-brief` (optionally naming the slice). It runs to completion, verifies, and reports. With `Run policy: until blocked, max N slices` in the spec it keeps going, one branch and one PR per slice, until something stops it; see "Run policy".
 4. Read the report: done-conditions with evidence, follow-ups, anything left out. Human-check conditions are yours.
 5. Stopping mid-slice: `/fable-checkpoint`. The next session in that directory loads it.
 
@@ -85,6 +87,18 @@ How a codex-mode slice runs: the brief gains `Task class:`, `Route:`, and `Worke
 Rules that do not bend: the worker never commits; verification never moves off Fable; if the codex preflight fails the slice stops and says so rather than falling back to Fable. The sandbox default is `--approve-for-me` (which selects the workspace-write sandbox) and no network; a brief that says `Worker network: yes` adds `sandbox_workspace_write.network_access=true` for installs. Recommended: launch the Fable session at `medium` effort in codex mode, since Fable's own work per slice is briefing and review.
 
 Requires the `codex` CLI (tested with codex-cli 0.149.0) logged in with your own account. The harness spawns your unmodified binary; it never handles provider credentials.
+
+## Run policy
+
+A Claude Code session is turn-based: when the model ends its turn, nothing happens until something wakes it. The default harness ends the turn after every slice, so the user waits between slices, and in codex mode the session idles while the worker runs. The run policy removes most of that idle time without changing what gets built.
+
+The policy is a line in the spec next to the provider mode: `Run policy: one slice` (the default; no line means the same) or `Run policy: until blocked, max N slices` (`until blocked` alone means `max 3 slices`). Under `until blocked`, after a slice verifies, Fable commits, pushes, opens a PR for that slice's branch, reports, and briefs the next slice in the same turn. Every slice keeps its own branch and PR; Fable never merges. The run stops, and the report says why, at the first of: no runnable done-condition left; the next one depends on an undecided item; two FAILs on one verify finding; a failed codex preflight; the slice cap. A done-condition is runnable when it is `todo` or `in progress`, not `human-check`, and needs nothing on the undecided list.
+
+**Exhausted roadmap.** When no runnable done-condition remains, under either policy, Fable does not invent work. It reports that the roadmap is exhausted, lists the open human-checks and the undecided questions, proposes next slices drawn from the spec's follow-ups section as clearly marked drafts, and asks what next. A proposal becomes a done-condition only when you say so.
+
+**Staging (codex mode).** While the worker runs, under `until blocked` with the cap not reached, Fable scouts the next slice and, if it does not depend on the running one, writes a staged brief to `~/.claude/fable/workers/<slug>/<next-slice>/brief.md` with a `Based on: <sha>` line. It never writes to the worktree while the worker owns it. If the next slice does depend on the running one, it scouts only.
+
+**Re-validation.** Before a staged brief runs, Fable compares its `Based on:` sha with HEAD. If the previous slice moved it, Fable re-reads the spec and the landed diff, checks every file reference and assumption in the brief, folds in the previous verify's follow-ups that belong to this slice, and only then writes the brief into the spec and generates the worker prompt from it. A staged brief waits on a FAIL, and stays on disk (named in the report) if the run stopped.
 
 ## Why each piece exists
 

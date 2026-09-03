@@ -11,6 +11,7 @@ A user can put the harness into a named provider mode. In `fable` mode (the defa
 - "so far the slices I have been implementing are pretty reasonably chunked, not long horizon at all. I think sol and potentially Luna could do it."
 - "with different model and effort routing depending on the task."
 - "might be worth setting up a mode selection for it and then we can test it out."
+- "no Luna should be on max. it is so cheap so I dont care" (2026-09-03; the `small` row moved from Luna/high to Luna/max.)
 - "ignore my old cc harness data entirely." (No routing or effort choice here is justified by cc-harness metrics.)
 - From the research the user accepted without objection: Fable keeps briefing, spec upkeep, and verification; only implementation moves. Sol's `ultra` effort is never used because it auto-delegates, which fights the single-context slice design.
 - Settled 2026-09-02 on the assistant's recommendations, user said "good": the scout stays a Fable agent; the worker never commits and Fable commits after review; the routing table is global with only the per-slice `Route:` override; the README recommends launching the Fable session at `medium` in codex mode but nothing enforces it.
@@ -35,12 +36,12 @@ Task class is chosen by the brief, using the same criteria the effort policy in 
 
 | Task class | When | Model | Effort |
 | --- | --- | --- | --- |
-| `small` | Fully specified change, one or two files, existing tests cover it | `gpt-5.6-luna` | `high` |
+| `small` | Fully specified change, one or two files, existing tests cover it | `gpt-5.6-luna` | `max` |
 | `routine` | Behavior specified, repo has tests for this kind of change, design settled | `gpt-5.6-sol` | `medium` |
 | `feature` | Multi-file feature, refactor, or debugging with a clear goal | `gpt-5.6-sol` | `high` |
 | `hard` | Migrations, hard bugs, slices expected to run over thirty minutes | `gpt-5.6-sol` | `xhigh` |
 
-`ultra` is never passed. `max` is not in the table; the user can override per slice by writing `Route: <model> / <effort>` in the current-slice section before saying go.
+`ultra` is never passed. Luna runs at `max` because its cost is low enough that the user does not care to save on it; Sol never routes to `max` by default. The user can override per slice by writing `Route: <model> / <effort>` in the current-slice section before saying go.
 
 ### Slice flow in codex mode
 

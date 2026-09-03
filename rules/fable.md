@@ -26,7 +26,7 @@ In `fable` mode, Fable 5.1 briefs, implements, verifies, and keeps the spec. In 
 
 | Task class | When | Model | Effort |
 | --- | --- | --- | --- |
-| `small` | Fully specified change, one or two files, existing tests cover it | `gpt-5.6-luna` | `high` |
+| `small` | Fully specified change, one or two files, existing tests cover it | `gpt-5.6-luna` | `max` |
 | `routine` | Behavior specified, repo has tests for this kind of change, design settled | `gpt-5.6-sol` | `medium` |
 | `feature` | Multi-file feature, refactor, or debugging with a clear goal | `gpt-5.6-sol` | `high` |
 | `hard` | Migrations, hard bugs, slices expected to run over thirty minutes | `gpt-5.6-sol` | `xhigh` |

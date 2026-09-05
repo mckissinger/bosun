@@ -1,0 +1,24 @@
+{
+  "name": "fable-harness",
+  "version": "0.4.0",
+  "description": "Spec-anchored workflow for autonomous coding runs on GPT-6 Astra in Codex: brief, run, verify, checkpoint. astra mode has Astra implement each slice; astra-crew routes implementation to gpt-5.6-sol or gpt-5.6-luna subagents by task class. Same spec contract as the Claude Code plugin in this repo.",
+  "author": { "name": "Michael Kissinger" },
+  "repository": "https://github.com/mckissinger/fable-harness",
+  "license": "MIT",
+  "keywords": ["harness", "spec", "verification", "subagents"],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "Fable Harness",
+    "shortDescription": "Brief, run, verify, checkpoint on GPT-6 Astra",
+    "longDescription": "One durable spec per project, effort chosen at session start, fresh-context verification by a read-only subagent, and a checkpoint for stopping mid-slice. In astra-crew mode Astra leads and Sol or Luna implement by task class.",
+    "developerName": "Michael Kissinger",
+    "category": "Developer Tools",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": [
+      "$fable-brief the next slice",
+      "$fable-verify this slice",
+      "$fable-mode astra-crew"
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 # Fable Harness
 
-A Claude Code plugin for autonomous coding runs on Claude Fable 5.1. One durable spec per project, effort chosen at launch, fresh-context verification, and a checkpoint for stopping mid-slice. Built only from Anthropic's Fable 5.1 documentation. An optional `codex` provider mode hands each slice's implementation to an OpenAI Codex model (gpt-5.6-sol or gpt-5.6-luna) through your own `codex` CLI while Fable keeps briefing and verifying; see "Provider modes".
+A harness for autonomous coding runs: one durable spec per project, effort chosen at launch, fresh-context verification, and a checkpoint for stopping mid-slice. It ships as two plugins that share the spec contract. The Claude Code plugin (repo root) runs on Claude Fable 5.1, alone (`fable`) or leading gpt-5.6-sol and gpt-5.6-luna workers through your own `codex` CLI (`fable-crew`). The Codex plugin (`codex/`) runs the same workflow in the ChatGPT desktop app on GPT-6 Astra, alone (`astra`) or leading Sol and Luna as Codex subagents (`astra-crew`). See "Provider modes" and "Codex install".
 
 ## Install
 
@@ -16,6 +16,17 @@ Optional, per the effort doc's "set effort explicitly": add to `~/.claude/settin
 ```json
 { "modelSettings": { "claude-fable-5-1": { "effortLevel": "high" } } }
 ```
+
+## Codex install
+
+The Codex plugin lives in `codex/` and installs from this repo's marketplace file:
+
+```bash
+codex plugin marketplace add mckissinger/fable-harness
+codex plugin add fable-harness@fable-harness
+```
+
+Then, in the ChatGPT desktop app: trust the plugin's SessionStart hook when Codex asks (plugin hooks are skipped until reviewed once), open a project, and run `$fable-mode astra-crew` or `$fable-mode astra`. That sets the spec line and copies the harness's agent files (`codex/agents/*.toml`) into `~/.codex/agents/`, since Codex plugins cannot bundle agents. GPT-6 Astra needs a Codex build with codex-cli 0.153.1 or later; the app updates itself.
 
 ## The shape
 
@@ -41,6 +52,11 @@ launch session at the right effort
 | `fable-scout` agent | `agents/fable-scout.md` | Read-only background investigator, medium effort |
 | `fable-verifier` agent | `agents/fable-verifier.md` | Read-only verifier, high effort |
 | SessionStart hook | `scripts/session-start.sh` | Loads the rules if needed, points at the spec with its provider mode and run policy, prints any checkpoint; on compaction, tells the model to re-read the spec |
+| Codex plugin manifest | `codex/.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json` | The sibling plugin for the ChatGPT desktop app |
+| Codex core rules | `codex/rules/astra.md` | The same contract for an Astra lead: effort ladder, spec, modes, run policy, finishing |
+| Codex skills | `codex/skills/*/SKILL.md` | `$fable-brief`, `$fable-verify`, `$fable-checkpoint`, `$fable-mode`, ported for Astra and Codex subagents |
+| Codex agents | `codex/agents/*.toml` | `fable_scout`, `fable_verifier`, and one worker per routing row; installed by `$fable-mode` |
+| Codex hook | `codex/hooks/hooks.json`, `codex/scripts/session-start.sh` | Rules, spec pointer, and checkpoint as session context |
 
 Checkpoints are written to `~/.claude/fable/checkpoints/<project-slug>.md`.
 
@@ -69,9 +85,18 @@ The model chooses the layout per project, keeps it reviewable by a person in one
 
 ## Provider modes
 
-The mode is a line in the project's spec: `Provider mode: fable` (the default; no line means the same) or `Provider mode: codex`. `/fable-mode codex` sets it after preflighting `codex --version` and `codex login status`; `/fable-mode` alone reports it.
+The mode is a line in the project's spec, `Provider mode: <mode>`. No line means `fable`; the old value `codex` means `fable-crew`. `/fable-mode <mode>` sets it (preflighting `codex --version` and `codex login status` for `fable-crew`); `/fable-mode` alone reports it.
 
-In `codex` mode Fable 5.1 still writes the brief, keeps the spec, commits, and runs `/fable-verify`. The implementation step of each slice goes to a Codex model through `scripts/codex-worker.sh`, routed by the task class the brief assigns:
+| Mode | Lead | Implementation | Harness |
+| --- | --- | --- | --- |
+| `fable` | Fable 5.1 | Fable 5.1 | Claude Code plugin |
+| `fable-crew` | Fable 5.1 | Sol / Luna by task class via `scripts/codex-worker.sh` | Claude Code plugin |
+| `astra-crew` | GPT-6 Astra | Sol / Luna by task class as Codex subagents | Codex plugin (`codex/` in this repo) |
+| `astra` | GPT-6 Astra | GPT-6 Astra | Codex plugin |
+
+The spec, its sections, the run policy, and the routing table are the same in every mode, so moving a project between harnesses is one line. Each plugin refuses the other's modes: `/fable-brief` in Claude Code stops if the spec names an `astra*` mode, and `$fable-brief` in Codex stops on a `fable*` mode.
+
+In `fable-crew` mode Fable 5.1 still writes the brief, keeps the spec, commits, and runs `/fable-verify`. The implementation step of each slice goes to a Codex model through `scripts/codex-worker.sh`, routed by the task class the brief assigns:
 
 | Task class | When | Model | Effort |
 | --- | --- | --- | --- |
@@ -82,21 +107,23 @@ In `codex` mode Fable 5.1 still writes the brief, keeps the spec, commits, and r
 
 A slice overrides the table with `Route: <model> / <effort>` in the spec's current-slice section. `ultra` is never used (it auto-delegates); the script refuses it.
 
-How a codex-mode slice runs: the brief gains `Task class:`, `Route:`, and `Worker network:` lines; Fable writes a self-contained prompt file under `~/.claude/fable/workers/<slug>/<slice>/`; the worker script runs in the background (Claude Code's foreground Bash caps at ten minutes) and the session continues when it exits; Fable reads the diff and the worker's last message, updates the spec, verifies on Fable, sends FAIL findings back to the worker, and commits once verified. The report and the spec's slice log record the route and the token usage from `usage.json`, so the two modes can be compared after a few slices.
+How a fable-crew slice runs: the brief gains `Task class:`, `Route:`, and `Worker network:` lines; Fable writes a self-contained prompt file under `~/.claude/fable/workers/<slug>/<slice>/`; the worker script runs in the background (Claude Code's foreground Bash caps at ten minutes) and the session continues when it exits; Fable reads the diff and the worker's last message, updates the spec, verifies on Fable, sends FAIL findings back to the worker, and commits once verified. The report and the spec's slice log record the route and the token usage from `usage.json`, so the two modes can be compared after a few slices.
 
-Rules that do not bend: the worker never commits; verification never moves off Fable; if the codex preflight fails the slice stops and says so rather than falling back to Fable. The sandbox default is `--approve-for-me` (which selects the workspace-write sandbox) and no network; a brief that says `Worker network: yes` adds `sandbox_workspace_write.network_access=true` for installs. Recommended: launch the Fable session at `medium` effort in codex mode, since Fable's own work per slice is briefing and review.
+Rules that do not bend: the worker never commits; verification never moves off Fable; if the codex preflight fails the slice stops and says so rather than falling back to Fable. The sandbox default is `--approve-for-me` (which selects the workspace-write sandbox) and no network; a brief that says `Worker network: yes` adds `sandbox_workspace_write.network_access=true` for installs. Recommended: launch the Fable session at `medium` effort in fable-crew mode, since Fable's own work per slice is briefing and review.
 
 Requires the `codex` CLI (tested with codex-cli 0.149.0) logged in with your own account. The harness spawns your unmodified binary; it never handles provider credentials.
 
+**The astra modes.** `astra-crew` and `astra` run in the ChatGPT desktop app through the Codex plugin, with GPT-6 Astra as the lead. Astra briefs, keeps the spec, commits, and verifies through `$fable-verify`, which spawns the read-only `fable_verifier` agent (Astra at high). In `astra-crew`, the Execute step asks Astra to delegate the slice to the worker agent named by the task class (`fable_worker_small` is Luna at max, `fable_worker_routine` Sol at medium, `fable_worker_feature` Sol at high, `fable_worker_hard` Sol at xhigh) and wait for it; in `astra`, Astra implements the slice itself. Three things differ from fable-crew: workers are native Codex subagents rather than a `codex exec` process, so there is no `usage.json` and the slice log records the route and first-verify verdict only (the app's usage view is the cost record); the scout is `fable_scout`, Luna at medium, read-only; and checkpoints go to `~/.codex/fable/checkpoints/`. The same rules that do not bend apply: workers never commit, verification is a fresh read-only context, `ultra` is never used.
+
 ## Run policy
 
-A Claude Code session is turn-based: when the model ends its turn, nothing happens until something wakes it. The default harness ends the turn after every slice, so the user waits between slices, and in codex mode the session idles while the worker runs. The run policy removes most of that idle time without changing what gets built.
+A Claude Code session is turn-based: when the model ends its turn, nothing happens until something wakes it. The default harness ends the turn after every slice, so the user waits between slices, and in fable-crew mode the session idles while the worker runs. The run policy removes most of that idle time without changing what gets built.
 
 The policy is a line in the spec next to the provider mode: `Run policy: one slice` (the default; no line means the same) or `Run policy: until blocked, max N slices` (`until blocked` alone means `max 3 slices`). Under `until blocked`, after a slice verifies, Fable commits, pushes, opens a PR for that slice's branch, reports, and briefs the next slice in the same turn. Every slice keeps its own branch and PR; Fable never merges. The run stops, and the report says why, at the first of: no runnable done-condition left; the next one depends on an undecided item; two FAILs on one verify finding; a failed codex preflight; the slice cap. A done-condition is runnable when it is `todo` or `in progress`, not `human-check`, and needs nothing on the undecided list.
 
 **Exhausted roadmap.** When no runnable done-condition remains, under either policy, Fable does not invent work. It reports that the roadmap is exhausted, lists the open human-checks and the undecided questions, proposes next slices drawn from the spec's follow-ups section as clearly marked drafts, and asks what next. A proposal becomes a done-condition only when you say so.
 
-**Staging (codex mode).** While the worker runs, under `until blocked` with the cap not reached, Fable scouts the next slice and, if it does not depend on the running one, writes a staged brief to `~/.claude/fable/workers/<slug>/<next-slice>/brief.md` with a `Based on: <sha>` line. It never writes to the worktree while the worker owns it. If the next slice does depend on the running one, it scouts only.
+**Staging (fable-crew mode).** While the worker runs, under `until blocked` with the cap not reached, Fable scouts the next slice and, if it does not depend on the running one, writes a staged brief to `~/.claude/fable/workers/<slug>/<next-slice>/brief.md` with a `Based on: <sha>` line. It never writes to the worktree while the worker owns it. If the next slice does depend on the running one, it scouts only.
 
 **Re-validation.** Before a staged brief runs, Fable compares its `Based on:` sha with HEAD. If the previous slice moved it, Fable re-reads the spec and the landed diff, checks every file reference and assumption in the brief, folds in the previous verify's follow-ups that belong to this slice, and only then writes the brief into the spec and generates the worker prompt from it. A staged brief waits on a FAIL, and stays on disk (named in the report) if the run stopped.
 

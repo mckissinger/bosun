@@ -1,0 +1,12 @@
+{
+  "name": "fable-harness",
+  "interface": { "displayName": "Fable Harness" },
+  "plugins": [
+    {
+      "name": "fable-harness",
+      "source": { "source": "local", "path": "./codex" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Developer Tools"
+    }
+  ]
+}

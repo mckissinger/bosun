@@ -46,10 +46,10 @@ Branch: <name>
 
 4. Branch. Start from the default branch. If the previous slice's branch is unmerged, stack on it and record that in the spec. Never work on the default branch.
 5. Decide whether to stop. End the turn only if a decision that only the user can make blocks the slice and any assumption would make the work useless or unsafe. Otherwise state the assumptions and continue in the same turn.
-6. Execute. Work through the done-conditions and update each one's status in the spec as it lands. Follow the scope and edit rules in the global CLAUDE.md. Do not end the turn to announce a next step; do the step. In fable-crew mode, replace this step with "Fable-crew mode" below.
+6. Execute. Work through the done-conditions and update each one's status in the spec as it lands. Follow the scope and edit rules in the global CLAUDE.md. If a done-condition names a route or screen, run the app and check it with the browser tool this session has (the desktop browser pane, or Playwright MCP) before marking it done, and record an evidence line: the route, what was checked, and a screenshot path if one was taken. Do not end the turn to announce a next step; do the step. In fable-crew mode, replace this step with "Fable-crew mode" below.
 7. Verify. Run `/bosun-verify` and act on its verdict. After two FAILs on the same finding, stop and report both positions.
 8. Record lessons. Before reporting, add to the spec's lessons section anything this slice taught that a fresh session would need and the repo does not record, following the lessons rules in the core rules. Correct or delete entries this slice proved wrong. Often there is nothing to add.
-9. Report. Outcome first, then each done-condition with its evidence, then follow-ups you noticed but did not do, then anything left out and why. Append each follow-up to the spec's follow-ups section, one line with the slice name and date. If undecided items remain, you may add draft done-conditions for the next one to the spec, clearly marked as drafts for the user. If you are stopping mid-slice, run `/bosun-checkpoint`. Under `until blocked`, do not end the turn here; continue with "Until blocked".
+9. Report. Outcome first, then each done-condition with its evidence, then an `Evidence:` list of the route-or-screen checks (route, what was checked, screenshot path), then follow-ups you noticed but did not do, then anything left out and why. Append a line to the spec's slice log: date, slice name, mode, first-verify verdict, and how many done-conditions named a route or screen against how many the verifier confirmed in its browser. Append each follow-up to the spec's follow-ups section, one line with the slice name and date. If undecided items remain, you may add draft done-conditions for the next one to the spec, clearly marked as drafts for the user. If you are stopping mid-slice, run `/bosun-checkpoint`. Under `until blocked`, do not end the turn here; continue with "Until blocked".
 
 ## Until blocked
 
@@ -83,22 +83,23 @@ Brief (step 3): add to the brief template
 Task class: <small | routine | feature | hard, with the one-line reason>
 Route: <model> / <effort>   (from the table, or the spec's own Route: override if the current-slice section has one)
 Worker network: <yes | no>  (yes only if the slice needs installs or other network access)
+Worker browser: <yes | no>  (yes when any done-condition names a route or screen)
 ```
 
 Execute (step 6):
 
-1. Write the worker prompt to `~/.claude/bosun/workers/<slug>/<slice>/prompt.md`, where `<slug>` is the checkpoint slug (cwd with the leading slash removed and every `/` or space replaced by `-`) and `<slice>` is a short name for this slice. The worker has no memory of this session, so the file must contain: the slice brief verbatim; the spec's decisions and out-of-scope lists; the "While working" rules from the core rules (scope, tests, targeted edits); the exact check commands and any setup they need; and these instructions: do not commit, do not edit the spec, run the checks before finishing, and end with a short report naming every file changed and every check run with its result.
+1. Write the worker prompt to `~/.claude/bosun/workers/<slug>/<slice>/prompt.md`, where `<slug>` is the checkpoint slug (cwd with the leading slash removed and every `/` or space replaced by `-`) and `<slice>` is a short name for this slice. The worker has no memory of this session, so the file must contain: the slice brief verbatim; the spec's decisions and out-of-scope lists; the "While working" rules from the core rules (scope, tests, targeted edits, and the route-or-screen browser check with its evidence line when `Worker browser: yes`); the exact check commands, the app's launch command when the browser is needed, and any setup they need; and these instructions: do not commit, do not edit the spec, run the checks before finishing, and end with a short report naming every file changed and every check run with its result.
 2. Run the worker in the background and keep working on anything that does not touch the worktree (drafting the report, reading the spec) until the exit notification arrives. Do not poll. Under `until blocked` with the count below `max N`, use this time to stage the next slice's brief as "Staged briefs" describes: `brief.md` with `Based on: <sha>` when the next slice is independent of this one, `notes.md` only when it is not.
 
    ```bash
-   "<plugin root>/scripts/codex-worker.sh" --model <model> --effort <effort> --cwd "<worktree>" --prompt-file "<prompt.md>" --out-dir "<same dir as prompt.md>" [--network]
+   "<plugin root>/scripts/codex-worker.sh" --model <model> --effort <effort> --cwd "<worktree>" --prompt-file "<prompt.md>" --out-dir "<same dir as prompt.md>" [--network] [--browser]
    ```
 
-   `<plugin root>` is the base directory this skill was loaded from, two levels up from this file. The script refuses `ultra` and unknown models, preflights `codex --version` and `codex login status`, and writes `events.jsonl`, `last-message.md`, and `usage.json` into the out dir. A non-zero exit before the worker started (exit 2 or 3) is a stop: report the message; never implement the slice yourself instead.
+   `<plugin root>` is the base directory this skill was loaded from, two levels up from this file. Pass `--browser` when the brief says `Worker browser: yes`; it binds the Playwright MCP server to the worker. The script refuses `ultra` and unknown models, preflights `codex --version` and `codex login status`, and writes `events.jsonl`, `last-message.md`, and `usage.json` into the out dir. A non-zero exit before the worker started (exit 2 or 3) is a stop: report the message; never implement the slice yourself instead.
 3. When it exits, read `last-message.md`, `usage.json`, and `git diff` in the worktree. Update each done-condition's status in the spec from what the diff and the worker's report show, not from the report alone. If the worker committed anything, note it as a finding for the report and continue.
 4. Verify as in step 7. On FAIL, do not fix the findings yourself: write a follow-up prompt file (the findings verbatim, the original brief, the same instructions) and run the script again with the same route. Two FAILs on the same finding stop the loop as usual.
 5. Commit the worker's changes yourself, once verified, with the usual message and trailer.
-6. In the report and in the spec's slice log, record: slice name, task class, route, first-verify verdict, and the `usage.json` numbers (wall seconds and token counts).
+6. In the report and in the spec's slice log, record: slice name, task class, route, first-verify verdict, the `usage.json` numbers (wall seconds and token counts), and how many done-conditions named a route or screen against how many the verifier confirmed in its browser.
 
 ## Long deliverables at xhigh or max
 

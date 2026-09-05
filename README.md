@@ -1,6 +1,6 @@
 # Bosun
 
-A harness for autonomous coding runs: one durable spec per project, effort chosen at launch, fresh-context verification, and a checkpoint for stopping mid-slice. It ships as two plugins that share the spec contract. The Claude Code plugin (repo root) runs on Claude Fable 5.1, alone (`fable`) or leading gpt-5.6-sol and gpt-5.6-luna workers through your own `codex` CLI (`fable-crew`). The Codex plugin (`codex/`) runs the same workflow in the ChatGPT desktop app on GPT-6 Astra, alone (`astra`) or leading Sol and Luna as Codex subagents (`astra-crew`). See "Provider modes" and "Codex install".
+A harness for autonomous coding runs: one durable spec per project, effort chosen at launch, fresh-context verification, and a checkpoint for stopping mid-slice. Built from Anthropic's Fable 5.1 documentation and Anthropic's guidance for running it in Claude Code, with the source of each rule in "Why each piece exists". It ships as two plugins that share the spec contract. The Claude Code plugin (repo root) runs on Claude Fable 5.1, alone (`fable`) or leading gpt-5.6-sol and gpt-5.6-luna workers through your own `codex` CLI (`fable-crew`). The Codex plugin (`codex/`) runs the same workflow in the ChatGPT desktop app on GPT-6 Astra, alone (`astra`) or leading Sol and Luna as Codex subagents (`astra-crew`). See "Provider modes" and "Codex install".
 
 ## Install
 
@@ -50,12 +50,12 @@ launch session at the right effort
 | `/bosun-mode` | `skills/bosun-mode/SKILL.md` | Sets or reports the provider mode line in the spec; preflights codex |
 | Codex worker | `scripts/codex-worker.sh` | Runs one slice on gpt-5.6-sol or gpt-5.6-luna via `codex exec`; owns every flag, refuses `ultra`, writes usage |
 | `bosun-scout` agent | `agents/bosun-scout.md` | Read-only background investigator, medium effort |
-| `bosun-verifier` agent | `agents/bosun-verifier.md` | Read-only verifier, high effort |
+| `bosun-verifier` agent | `agents/bosun-verifier.md` | Read-only verifier, high effort, with Playwright for done-conditions that name a route or screen |
 | SessionStart hook | `scripts/session-start.sh` | Loads the rules if needed, points at the spec with its provider mode and run policy, prints any checkpoint; on compaction, tells the model to re-read the spec |
 | Codex plugin manifest | `codex/.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json` | The sibling plugin for the ChatGPT desktop app |
 | Codex core rules | `codex/rules/astra.md` | The same contract for an Astra lead: effort ladder, spec, modes, run policy, finishing |
 | Codex skills | `codex/skills/*/SKILL.md` | `$bosun-brief`, `$bosun-verify`, `$bosun-checkpoint`, `$bosun-mode`, ported for Astra and Codex subagents |
-| Codex agents | `codex/agents/*.toml` | `bosun_scout`, `bosun_verifier`, and one worker per routing row; installed by `$bosun-mode` |
+| Codex agents | `codex/agents/*.toml` | `bosun_scout`, `bosun_verifier`, and one worker per routing row, the verifier and workers with Playwright; installed by `$bosun-mode` |
 | Codex hook | `codex/hooks/hooks.json`, `codex/scripts/session-start.sh` | Rules, spec pointer, and checkpoint as session context |
 
 Checkpoints are written to `~/.claude/bosun/checkpoints/<project-slug>.md`.
@@ -115,6 +115,16 @@ Requires the `codex` CLI (tested with codex-cli 0.149.0) logged in with your own
 
 **The astra modes.** `astra-crew` and `astra` run in the ChatGPT desktop app through the Codex plugin, with GPT-6 Astra as the lead. Astra briefs, keeps the spec, commits, and verifies through `$bosun-verify`, which spawns the read-only `bosun_verifier` agent (Astra at high). In `astra-crew`, the Execute step asks Astra to delegate the slice to the worker agent named by the task class (`bosun_worker_small` is Luna at max, `bosun_worker_routine` Sol at medium, `bosun_worker_feature` Sol at high, `bosun_worker_hard` Sol at xhigh) and wait for it; in `astra`, Astra implements the slice itself. Three things differ from fable-crew: workers are native Codex subagents rather than a `codex exec` process, so there is no `usage.json` and the slice log records the route and first-verify verdict only (the app's usage view is the cost record); the scout is `bosun_scout`, Luna at medium, read-only; and checkpoints go to `~/.codex/bosun/checkpoints/`. The same rules that do not bend apply: workers never commit, verification is a fresh read-only context, `ultra` is never used.
 
+## Runtime verification
+
+A done-condition may name a route or screen ("`/settings` shows the new toggle") and still count as checkable, because both the implementer and the verifier have a browser.
+
+The implementer runs the app and looks before marking such a done-condition done, and records one evidence line per done-condition: the route, what was checked, and a screenshot path if one was taken. The Fable lead uses the desktop browser pane or Playwright MCP; the Astra lead uses the built-in browser. Sol and Luna workers get Playwright MCP: in fable-crew the brief says `Worker browser: yes` and the worker script passes `--browser`, which binds the server for that run only; in astra-crew the worker agent files carry it always. Screenshots are evidence when appearance matters; the accessibility snapshot is the cheaper check for text and structure. Nobody walks the whole app.
+
+The verifier gets Playwright too (an inline `mcpServers` entry on `bosun-verifier`; an `mcp_servers` block on `bosun_verifier`, which therefore runs `workspace-write` with a never-edit rule, because Codex's read-only sandbox breaks the MCP process). It uses the browser only to re-check the route-or-screen done-conditions, following the implementer's evidence lines, may start the app with the launch command the brief names, stops it afterward, and reports screenshot paths as evidence. Each slice-log line records how many done-conditions named a route or screen and how many the verifier confirmed, so runtime verification can be compared across modes and projects.
+
+Requires `npx` able to fetch or find `@playwright/mcp` and a Chromium; the first run downloads them.
+
 ## Run policy
 
 A Claude Code session is turn-based: when the model ends its turn, nothing happens until something wakes it. The default harness ends the turn after every slice, so the user waits between slices, and in fable-crew mode the session idles while the worker runs. The run policy removes most of that idle time without changing what gets built.
@@ -146,6 +156,8 @@ Sources: [Overview](https://platform.claude.com/docs/en/models/fable-5-1/overvie
 **Safeguard false positives.** The guide names three triggers: compile-check phrasing, lesser-known languages without context, base64 in tool output. The core rules carry the phrasing and a recovery step: rephrase once, then record the blocked step in the spec and move on.
 
 **Verification.** `/bosun-verify` runs a fresh-context, read-only verifier at `high`, the documented starting point, so the judgment is independent of the session that did the work. Two FAILs on the same finding stop the loop and go to the user.
+
+**Runtime verification.** This is the one rule that does not come from the Fable 5.1 model guide, which says nothing about browsers. It comes from Anthropic's guidance for running Fable in Claude Code and from OpenAI's equivalent for Codex: the [Claude Code best practices](https://code.claude.com/docs/en/best-practices) ("Give Claude a check it can run: tests, a build, a screenshot to compare"; "Always provide verification (tests, scripts, screenshots). If you can't verify it, don't ship it"; verification by a second-opinion subagent; show evidence, including screenshots, rather than asserting success), Anthropic's [long-running agents article](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) (the coding agent "needed explicit prompting to use browser automation tools and do all testing as a human would", and a browser "dramatically improved performance"), OpenAI's [harness engineering](https://openai.com/index/harness-engineering/) (the Chrome DevTools Protocol wired into the agent runtime so Codex could screenshot, snapshot the DOM, and validate fixes) and the [Codex subagent docs](https://learn.chatgpt.com/docs/agent-configuration/subagents) (a browser-debugging custom agent bound to an MCP server). The model guides on both sides say finish the task and keep tests to what the change warrants; the product guidance says a check for visible behavior is a browser. Both roles get one because the implementer's check is the loop that makes the work correct and the verifier's is the independent gate; self-review measurably favors its own output, so the overlap is the point, and it stays cheap because the verifier re-checks named done-conditions only.
 
 **Lessons.** The prompting guide says Fable 5.1 performs notably better when it can write learnings somewhere for future reference, even a plain markdown file, and gives the format: one lesson per entry with a one-line summary, corrections and confirmed approaches alike with why they mattered, update rather than duplicate, delete what turns out wrong, and skip what the repo or history already records. The harness keeps them as a section of the spec, because every point where the harness already forces a spec read (session start, compaction, the brief) then covers them for free. The section splits into its own file only when it stops being readable in one sitting, by the same rule as the rest of the spec.
 

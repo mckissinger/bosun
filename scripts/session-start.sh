@@ -1,5 +1,5 @@
 #!/bin/bash
-# SessionStart hook for the Fable harness.
+# SessionStart hook for Bosun.
 #   startup/resume/clear: load the core rules if they are not already in ~/.claude/CLAUDE.md,
 #                         point at the project's spec (with its provider mode and run policy), and print any checkpoint.
 #   compact: tell the model to re-read the spec before continuing.
@@ -30,7 +30,7 @@ if ! grep -qs '^# Fable 5.1 agentic development' "$HOME/.claude/CLAUDE.md"; then
 fi
 
 slug="$(printf '%s' "$dir" | sed 's#^/##; s#[/ ]#-#g')"
-file="$HOME/.claude/fable/checkpoints/$slug.md"
+file="$HOME/.claude/bosun/checkpoints/$slug.md"
 if [ -n "$spec" ]; then
   mode="$(grep -m1 '^Provider mode:' "$spec" 2>/dev/null | sed 's/^Provider mode:[[:space:]]*//')"
   policy="$(grep -m1 '^Run policy:' "$spec" 2>/dev/null | sed 's/^Run policy:[[:space:]]*//')"
@@ -41,13 +41,13 @@ if [ -n "$spec" ]; then
     detail="${detail}run policy: $policy"
   fi
   if [ -n "$detail" ]; then
-    echo "Fable spec for this project: $spec ($detail). Read it before starting substantial work."
+    echo "Bosun spec for this project: $spec ($detail). Read it before starting substantial work."
   else
-    echo "Fable spec for this project: $spec. Read it before starting substantial work."
+    echo "Bosun spec for this project: $spec. Read it before starting substantial work."
   fi
 fi
 if [ -f "$file" ]; then
-  echo "A Fable checkpoint exists for this project ($file, written $(date -r "$file" '+%Y-%m-%d %H:%M')). Read the spec, then this checkpoint, then continue from where it stops. Overwrite it with /fable-checkpoint when you stop; delete it when the slice is finished."
+  echo "A Bosun checkpoint exists for this project ($file, written $(date -r "$file" '+%Y-%m-%d %H:%M')). Read the spec, then this checkpoint, then continue from where it stops. Overwrite it with /bosun-checkpoint when you stop; delete it when the slice is finished."
   echo
   cat "$file"
 fi

@@ -1,9 +1,9 @@
 {
-  "name": "fable-harness",
-  "interface": { "displayName": "Fable Harness" },
+  "name": "bosun",
+  "interface": { "displayName": "Bosun" },
   "plugins": [
     {
-      "name": "fable-harness",
+      "name": "bosun",
       "source": { "source": "local", "path": "./codex" },
       "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
       "category": "Developer Tools"

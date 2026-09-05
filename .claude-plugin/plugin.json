@@ -1,7 +1,7 @@
 {
-  "name": "fable-harness",
-  "displayName": "Fable Harness",
-  "version": "0.4.0",
+  "name": "bosun",
+  "displayName": "Bosun",
+  "version": "0.5.0",
   "description": "Spec-anchored workflow for autonomous coding runs on Claude Fable 5.1: brief, run, verify, checkpoint, with a fable-crew provider mode that routes implementation to gpt-5.6-sol or gpt-5.6-luna. A sibling Codex plugin in codex/ runs the same spec on GPT-6 Astra. Built from Anthropic's Fable 5.1 docs.",
   "author": {
     "name": "Michael Kissinger",

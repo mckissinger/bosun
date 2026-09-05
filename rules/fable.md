@@ -1,6 +1,6 @@
 # Fable 5.1 agentic development
 
-Rules for autonomous coding runs. Rationale and doc citations: the bosun README.
+Rules for autonomous coding runs. Rationale and doc citations: the Bosun README.
 
 ## Effort
 

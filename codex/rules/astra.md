@@ -1,6 +1,6 @@
 # Astra agentic development
 
-Rules for autonomous coding runs led by GPT-6 Astra in Codex. This is the Codex half of the Bosun; the Claude Code half carries the same contract for Fable 5.1. Rationale: the bosun README.
+Rules for autonomous coding runs led by GPT-6 Astra in Codex. This is the Codex half of Bosun; the Claude Code half carries the same contract for Fable 5.1. Rationale: the Bosun README.
 
 ## Effort
 

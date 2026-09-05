@@ -66,7 +66,7 @@ Checkpoints are written to `~/.claude/bosun/checkpoints/<project-slug>.md`.
 
 - the outcome
 - decisions, in the user's own words
-- done-conditions with a status, each checkable by the verifier's tools (git diff, file reads, the repo's checks) or marked human-check
+- done-conditions with a status, each checkable by the verifier's tools (git diff, file reads, the repo's checks, and a browser for a done-condition that names a route or screen) or marked human-check
 - undecided items, as questions
 - out-of-scope items
 - the current slice
@@ -166,7 +166,6 @@ Sources: [Overview](https://platform.claude.com/docs/en/models/fable-5-1/overvie
 ## Not covered on purpose
 
 - Parallel builder agents. The docs credit the model's gains to long single-context runs; splitting work buys wall-clock at the cost of context and merge work, and there is no evidence yet that wall-clock is the constraint.
-- Browser or UI tools for the verifier. UI-only done-conditions are marked human-check instead.
 - API-side migration concerns (beta headers, append-only message arrays, `tool_choice`, `input_transformations`, fallback middleware). Claude Code manages the conversation prefix itself. If you call the Messages API directly, read the migration guide's "Preserved thinking" section first.
 
 ## Status

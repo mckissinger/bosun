@@ -192,14 +192,14 @@ Slice 5, rename to bosun (2026-09-04):
 
 Slice 6, runtime verification (2026-09-05):
 
-38. `done` `rules/fable.md` and `codex/rules/astra.md`: the spec contract says a done-condition may name a route or screen and is then checked in a browser; "While working" says the implementer runs the app and checks such done-conditions, recording route, what was checked, and screenshot path; "Finishing" says the verifier re-checks them. Effort, scope, and test rules unchanged.
-39. `done` `agents/bosun-verifier.md`: `tools` gains `mcp__playwright`; an `mcpServers` inline Playwright entry (`npx -y @playwright/mcp@latest --headless --isolated`); rules gain the browser-only-for-route-or-screen rule, following the implementer's evidence, screenshot paths as evidence, may start and must stop the app; still never edits.
-40. `done` `codex/agents/bosun-verifier.toml`: `sandbox_mode = "workspace-write"`, a `[mcp_servers.playwright]` block, and the same rules including an explicit never-edit sentence; parses with `tomllib`. `codex/agents/bosun-worker-*.toml`: each gains the same `[mcp_servers.playwright]` block and the implementer's runtime-check instruction with the evidence line.
-41. `done` `scripts/codex-worker.sh` gains `--browser`, which adds `-c mcp_servers.playwright.command="npx"` and `-c 'mcp_servers.playwright.args=[...]'` to the argv; `--dry-run --browser` shows them and without the flag they are absent; `bash -n` passes; one real no-op run with `--browser` (Luna, low, "reply OK") exits 0 with the three output files.
-42. `done` `skills/bosun-brief/SKILL.md` and `codex/skills/bosun-brief/SKILL.md`: step 6 tells the lead to run the app and check route-or-screen done-conditions with the session's browser tool, recording evidence; the report (step 9) carries an `Evidence:` list; the worker prompt carries the same instruction; the fable-crew template gains `Worker browser: <yes | no>` and step 2 passes `--browser` when yes; the slice log line records route-or-screen done-condition counts.
-43. `done` `skills/bosun-verify/SKILL.md` and `codex/skills/bosun-verify/SKILL.md`: the verifier prompt includes the implementer's evidence list and the app launch command when a done-condition names a route or screen; the relay step says screenshot paths are reported as evidence.
-44. `done` `README.md`: a "Runtime verification" section describing the above for both harnesses, the `Worker browser` line, and the `--browser` flag; "Why each piece exists" gains a paragraph that cites the sources in this spec's facts and states that this rule comes from Anthropic's Claude Code guidance and OpenAI's harness guidance rather than the model guides; the intro sentence "Built only from Anthropic's Fable 5.1 documentation" is amended accordingly; the plugin table rows for the verifiers mention the browser.
-45. `done` `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `codex/.codex-plugin/plugin.json` bump to `0.6.0`, valid JSON.
+38. `verified 2026-09-05 bosun-verifier, rules/fable.md:17,63,71, codex/rules/astra.md:18,64,70` `rules/fable.md` and `codex/rules/astra.md`: the spec contract says a done-condition may name a route or screen and is then checked in a browser; "While working" says the implementer runs the app and checks such done-conditions, recording route, what was checked, and screenshot path; "Finishing" says the verifier re-checks them. Effort, scope, and test rules unchanged.
+39. `verified 2026-09-05 bosun-verifier, agents/bosun-verifier.md:4-10,16,18` `agents/bosun-verifier.md`: `tools` gains `mcp__playwright`; an `mcpServers` inline Playwright entry (`npx -y @playwright/mcp@latest --headless --isolated`); rules gain the browser-only-for-route-or-screen rule, following the implementer's evidence, screenshot paths as evidence, may start and must stop the app; still never edits.
+40. `verified 2026-09-05 bosun-verifier, codex/agents/bosun-verifier.toml:5,10,12,32-34, worker TOMLs:16,19,22-24, tomllib` `codex/agents/bosun-verifier.toml`: `sandbox_mode = "workspace-write"`, a `[mcp_servers.playwright]` block, and the same rules including an explicit never-edit sentence; parses with `tomllib`. `codex/agents/bosun-worker-*.toml`: each gains the same `[mcp_servers.playwright]` block and the implementer's runtime-check instruction with the evidence line.
+41. `verified 2026-09-05 bosun-verifier, scripts/codex-worker.sh:28,58-61, dry-runs, implementer real run` `scripts/codex-worker.sh` gains `--browser`, which adds `-c mcp_servers.playwright.command="npx"` and `-c 'mcp_servers.playwright.args=[...]'` to the argv; `--dry-run --browser` shows them and without the flag they are absent; `bash -n` passes; one real no-op run with `--browser` (Luna, low, "reply OK") exits 0 with the three output files.
+42. `verified 2026-09-05 bosun-verifier, skills/bosun-brief/SKILL.md:49,52,86,91,95,98,102, codex/skills/bosun-brief/SKILL.md:48,51,87,92` `skills/bosun-brief/SKILL.md` and `codex/skills/bosun-brief/SKILL.md`: step 6 tells the lead to run the app and check route-or-screen done-conditions with the session's browser tool, recording evidence; the report (step 9) carries an `Evidence:` list; the worker prompt carries the same instruction; the fable-crew template gains `Worker browser: <yes | no>` and step 2 passes `--browser` when yes; the slice log line records route-or-screen done-condition counts.
+43. `verified 2026-09-05 bosun-verifier, skills/bosun-verify/SKILL.md:19,25, codex/skills/bosun-verify/SKILL.md:18,24` `skills/bosun-verify/SKILL.md` and `codex/skills/bosun-verify/SKILL.md`: the verifier prompt includes the implementer's evidence list and the app launch command when a done-condition names a route or screen; the relay step says screenshot paths are reported as evidence.
+44. `verified 2026-09-05 bosun-verifier, README.md:3,53,58,118-126,160` `README.md`: a "Runtime verification" section describing the above for both harnesses, the `Worker browser` line, and the `--browser` flag; "Why each piece exists" gains a paragraph that cites the sources in this spec's facts and states that this rule comes from Anthropic's Claude Code guidance and OpenAI's harness guidance rather than the model guides; the intro sentence "Built only from Anthropic's Fable 5.1 documentation" is amended accordingly; the plugin table rows for the verifiers mention the browser.
+45. `verified 2026-09-05 bosun-verifier, three manifests at 0.6.0` `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `codex/.codex-plugin/plugin.json` bump to `0.6.0`, valid JSON.
 46. `human-check` On a throwaway web project with one done-condition naming a route: a fable-mode slice where Fable checks the route in a browser and the verifier re-checks it with Playwright, reporting screenshot paths; then the same in fable-crew with `Worker browser: yes`; then in astra-crew in the desktop app.
 
 21. `human-check` On a throwaway project with `Run policy: until blocked, max 2 slices` and three runnable done-conditions, one `/bosun-brief` runs two slices, opens two PRs, and stops citing the cap. On a spec whose done-conditions are all verified or human-check, `/bosun-brief` reports the exhausted roadmap with proposals and asks what next.
@@ -232,7 +232,7 @@ Slice 6, runtime verification (2026-09-05):
 
 ## Current slice
 
-Status: in progress 2026-09-05.
+Status: verified PASS WITH FOLLOW-UPS 2026-09-05; the README contradiction the verifier found was fixed before the PR, the rest are follow-ups below. Next: done-condition 46 (human-check) on a throwaway web project, first in fable mode.
 
 Outcome: done-conditions that name a route or screen are checked in a browser by the implementer and re-checked by the verifier, on both harnesses, with evidence in the report.
 Done-conditions: 38 through 45 above (46 is human-check).
@@ -246,7 +246,7 @@ Branch: `runtime-verify`
 
 (noticed and not done; one line each with the slice and date; removed when promoted to a done-condition or dropped by the user)
 
-- provider-modes, 2026-09-02: `scripts/codex-worker.sh:28` help text prints one line too many (`2,16p` should be `2,15p`).
+- provider-modes, 2026-09-02: `scripts/codex-worker.sh` help text prints one line too many (now `2,17p`, should be `2,16p`; the range was bumped with the header in slice 6 and kept the off-by-one).
 - provider-modes, 2026-09-02: a value flag given last to `scripts/codex-worker.sh` (`--model` with no value) dies with bash's unbound-variable error instead of the script's own message; still non-zero.
 - provider-modes, 2026-09-02: `skills/bosun-brief/SKILL.md` "Find the provider mode" line understates which steps change (the "two lines" wording was fixed by the codex-port rename).
 - provider-modes, 2026-09-02: this spec's assumption text says `usage.json` comes from the "last token_count-style event"; the script sums every `turn.completed` usage event, which matches what codex emits.
@@ -260,11 +260,15 @@ Branch: `runtime-verify`
 - codex-port, 2026-09-04: `README.md` "Why each piece exists" tail still says "The codex provider mode has not yet run a real slice" and "Version 0.2.0"; manifests are 0.4.0 and the mode is now `fable-crew`.
 - codex-port, 2026-09-04: `rules/fable.md` run-policy section and this spec's design still say "applies in both provider modes"; there are four.
 - codex-port, 2026-09-04: `README.md` documents appending `rules/fable.md` to `~/.claude/CLAUDE.md` but not the Codex equivalent (append `codex/rules/astra.md` to `~/.codex/AGENTS.md`, which the Codex hook checks for). The checkpoints line under the plugin table names only the Claude path.
+- runtime-verify, 2026-09-05: `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` descriptions still say "Built from Anthropic's Fable 5.1 docs" while the README intro now also credits Claude Code guidance.
+- runtime-verify, 2026-09-05: `codex/rules/astra.md`, `codex/skills/bosun-mode/SKILL.md`, `codex/skills/bosun-verify/SKILL.md`, and the verifier TOML description call `bosun_verifier` read-only without saying its sandbox is `workspace-write` with read-only behavior; only the README and the TOML's own rule explain it.
+- runtime-verify, 2026-09-05: whether Claude Code honors the `mcpServers` list-of-maps frontmatter in `agents/bosun-verifier.md` has not been probed; done-condition 46's fable-mode run shows it.
 
 ## Slice log
 
 (each codex-mode slice appends: date, slice name, task class, route, first-verify verdict, usage)
 
+- 2026-09-05, runtime-verify, fable mode (implemented by Fable), first verify PASS WITH FOLLOW-UPS; route-or-screen done-conditions: 0 of 0.
 - 2026-09-04, bosun-rename, fable mode (implemented by Fable), first verify PASS WITH FOLLOW-UPS.
 - 2026-09-04, codex-port, fable mode (implemented by Fable), first verify PASS WITH FOLLOW-UPS.
 - 2026-09-03, run-policy, fable mode (implemented by Fable), first verify PASS WITH FOLLOW-UPS.

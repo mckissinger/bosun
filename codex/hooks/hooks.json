@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${PLUGIN_ROOT}\"/scripts/session-start.sh",
+            "statusMessage": "Loading Fable harness context"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -20,9 +20,16 @@ Lessons are what this codebase needs a fresh session to know that the repo and g
 
 ## Provider mode
 
-The harness has two provider modes. The mode is a line in the project's spec, `Provider mode: fable` or `Provider mode: codex`; a spec without the line is in `fable` mode. `/fable-mode` sets or reports it.
+The harness has four provider modes. The mode is a line in the project's spec, `Provider mode: <mode>`; a spec without the line is in `fable` mode, and the old value `codex` is read as `fable-crew`. `/fable-mode` sets or reports it.
 
-In `fable` mode, Fable 5.1 briefs, implements, verifies, and keeps the spec. In `codex` mode, Fable 5.1 still briefs, keeps the spec, commits, and verifies, but each slice's implementation is handed to an OpenAI Codex model through the user's own `codex exec` CLI via `scripts/codex-worker.sh`, routed by task class:
+| Mode | Lead | Implementation | Harness |
+| --- | --- | --- | --- |
+| `fable` | Fable 5.1 | Fable 5.1 | Claude Code plugin |
+| `fable-crew` | Fable 5.1 | Sol / Luna by task class via `scripts/codex-worker.sh` | Claude Code plugin |
+| `astra-crew` | GPT-6 Astra | Sol / Luna by task class as Codex subagents | Codex plugin (`codex/` in this repo) |
+| `astra` | GPT-6 Astra | GPT-6 Astra | Codex plugin |
+
+The two `fable*` modes run here, in Claude Code. The two `astra*` modes run in Codex through the sibling plugin; if the spec names one, `/fable-brief` stops and says to open the project in Codex rather than running the slice on Fable. In `fable` mode, Fable 5.1 briefs, implements, verifies, and keeps the spec. In `fable-crew` mode, Fable 5.1 still briefs, keeps the spec, commits, and verifies, but each slice's implementation is handed to an OpenAI Codex model through the user's own `codex exec` CLI via `scripts/codex-worker.sh`, routed by task class:
 
 | Task class | When | Model | Effort |
 | --- | --- | --- | --- |
@@ -41,7 +48,7 @@ Under `one slice`, `/fable-brief` runs one slice, verifies, reports, and stops. 
 
 A done-condition is runnable when its status is `todo` or `in progress`, it is not `human-check`, and nothing it needs is on the undecided list. When no runnable done-condition remains, under either policy, Fable does not invent work: it reports that the roadmap is exhausted, lists every open human-check condition and every undecided item as the question the spec records, proposes candidate next slices drawn from the spec's follow-ups section as draft done-conditions marked as proposals, and ends the turn asking what next. A proposal becomes a done-condition only when the user says so.
 
-In codex mode under `until blocked`, Fable uses the worker's run time to stage the next slice's brief when that slice does not depend on the running one, and re-validates the staged brief against what actually landed before running it. `/fable-brief` holds the details.
+In fable-crew mode under `until blocked`, Fable uses the worker's run time to stage the next slice's brief when that slice does not depend on the running one, and re-validates the staged brief against what actually landed before running it. `/fable-brief` holds the details.
 
 ## Starting substantial work
 

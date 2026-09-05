@@ -14,7 +14,7 @@ Look for `SPEC.md` at the repo root, then under the repo's docs convention. If n
 
 ## Find the provider mode
 
-A line `Provider mode: codex` anywhere in the spec puts the slice in codex mode; anything else (including no line) is fable mode. In codex mode, steps 3 and 6 of "Spec exists" change as described in "Codex mode" at the end of this skill; everything else is the same.
+A line `Provider mode: <mode>` anywhere in the spec names one of four modes (table in the core rules). `fable` (also no line) is fable mode. `fable-crew` (or the old value `codex`) is fable-crew mode: steps 3 and 6 of "Spec exists" change as described in "Fable-crew mode" at the end of this skill; everything else is the same. `astra-crew` and `astra` run in Codex, not here: report that the spec is in an Astra mode, name the mode, say to open the project in Codex with the harness's Codex plugin, and stop without briefing or running anything.
 
 ## Find the run policy
 
@@ -23,7 +23,7 @@ A line `Run policy: until blocked` or `Run policy: until blocked, max N slices` 
 ## No spec yet: create it and stop
 
 1. Gather. Read the request and everything the user supplied: pasted structures, document paths, existing code. Batch the reads. If the directory has no git repository, initialize one. If the repo has a docs convention, the spec goes there; otherwise `SPEC.md` at the root. Say which path you chose.
-2. Write the spec. It must contain, findably: the outcome; the user's decisions in their own words; every done-condition you can state so that a read-only verifier could check it with git diff, file reads, and the repo's checks (anything only a person can confirm is marked human-check); an undecided list holding everything you could not settle, stated as questions, not guesses; an out-of-scope list; an empty current-slice section; an empty follow-ups section; and an empty lessons section. If the user asked for codex mode, add a `Provider mode: codex` line under the first heading (see the core rules); otherwise leave the line out. If the user asked for continuous runs, add `Run policy: until blocked, max N slices` next to it; otherwise leave that line out too. Choose the layout for this project. Keep it reviewable in one sitting.
+2. Write the spec. It must contain, findably: the outcome; the user's decisions in their own words; every done-condition you can state so that a read-only verifier could check it with git diff, file reads, and the repo's checks (anything only a person can confirm is marked human-check); an undecided list holding everything you could not settle, stated as questions, not guesses; an out-of-scope list; an empty current-slice section; an empty follow-ups section; and an empty lessons section. If the user asked for a mode other than fable, add a `Provider mode: <fable-crew|astra-crew|astra>` line under the first heading (see the core rules); otherwise leave the line out. If the user asked for continuous runs, add `Run policy: until blocked, max N slices` next to it; otherwise leave that line out too. Choose the layout for this project. Keep it reviewable in one sitting.
 3. Stop. End the turn asking the user to review the spec, answer or edit the undecided items they can, and say go. Do not build yet. This is the one planned stop in the workflow.
 
 ## Spec exists: brief a slice and run
@@ -42,11 +42,11 @@ Checks: <exact commands and any setup they need>
 Branch: <name>
 ```
 
-   For a small task, one line each for outcome, done-condition, and check is the whole brief. In codex mode, add the two lines from "Codex mode" below.
+   For a small task, one line each for outcome, done-condition, and check is the whole brief. In fable-crew mode, add the lines from "Fable-crew mode" below.
 
 4. Branch. Start from the default branch. If the previous slice's branch is unmerged, stack on it and record that in the spec. Never work on the default branch.
 5. Decide whether to stop. End the turn only if a decision that only the user can make blocks the slice and any assumption would make the work useless or unsafe. Otherwise state the assumptions and continue in the same turn.
-6. Execute. Work through the done-conditions and update each one's status in the spec as it lands. Follow the scope and edit rules in the global CLAUDE.md. Do not end the turn to announce a next step; do the step. In codex mode, replace this step with "Codex mode" below.
+6. Execute. Work through the done-conditions and update each one's status in the spec as it lands. Follow the scope and edit rules in the global CLAUDE.md. Do not end the turn to announce a next step; do the step. In fable-crew mode, replace this step with "Fable-crew mode" below.
 7. Verify. Run `/fable-verify` and act on its verdict. After two FAILs on the same finding, stop and report both positions.
 8. Record lessons. Before reporting, add to the spec's lessons section anything this slice taught that a fresh session would need and the repo does not record, following the lessons rules in the core rules. Correct or delete entries this slice proved wrong. Often there is nothing to add.
 9. Report. Outcome first, then each done-condition with its evidence, then follow-ups you noticed but did not do, then anything left out and why. Append each follow-up to the spec's follow-ups section, one line with the slice name and date. If undecided items remain, you may add draft done-conditions for the next one to the spec, clearly marked as drafts for the user. If you are stopping mid-slice, run `/fable-checkpoint`. Under `until blocked`, do not end the turn here; continue with "Until blocked".
@@ -60,7 +60,7 @@ Stop, and say in the report which condition stopped the run, at the first of:
 - no runnable done-condition remains ("Exhausted roadmap");
 - the next runnable done-condition depends on an undecided item;
 - a verify produced two FAILs on the same finding (step 7);
-- the codex preflight failed (codex mode);
+- the codex preflight failed (fable-crew mode);
 - the count has reached `max N`.
 
 ## Exhausted roadmap
@@ -69,11 +69,11 @@ When no runnable done-condition remains, at the start or between slices, under e
 
 ## Staged briefs
 
-Staging (codex mode, `until blocked`, count below `max N`): while the worker runs, identify the next slice from the spec. If none of its done-conditions depend on what the running slice creates or changes (files it adds or rewrites, interfaces it defines, behavior that must land first), scout that slice's dependencies, reading only, and write a staged brief in the step 3 template to `~/.claude/fable/workers/<slug>/<next-slice>/brief.md`, with a first line `Based on: <sha>` naming the worktree's HEAD at staging time. If the next slice does depend on the running one, scout only and write what you learned to `notes.md` in that directory. Either way, never write to the worktree while the worker runs, and do not put the staged brief into the spec's current-slice section yet. Only the brief is staged; the worker prompt is written later from the final brief, because it must contain that brief verbatim.
+Staging (fable-crew mode, `until blocked`, count below `max N`): while the worker runs, identify the next slice from the spec. If none of its done-conditions depend on what the running slice creates or changes (files it adds or rewrites, interfaces it defines, behavior that must land first), scout that slice's dependencies, reading only, and write a staged brief in the step 3 template to `~/.claude/fable/workers/<slug>/<next-slice>/brief.md`, with a first line `Based on: <sha>` naming the worktree's HEAD at staging time. If the next slice does depend on the running one, scout only and write what you learned to `notes.md` in that directory. Either way, never write to the worktree while the worker runs, and do not put the staged brief into the spec's current-slice section yet. Only the brief is staged; the worker prompt is written later from the final brief, because it must contain that brief verbatim.
 
-Re-validating: when a staged brief's slice comes up, compare its `Based on:` sha with the worktree's HEAD. If they differ, re-read the spec and `git diff <sha>..HEAD`, check every file path, line reference, and assumption in the brief against what landed, and fold in any follow-ups from the previous slice's verify that fall inside this slice's done-conditions. Only then write the brief into the spec's current-slice section and continue from step 4; in codex mode the worker prompt is generated from this final brief. If the previous slice's verify FAILed, the staged brief waits for the fix loop. If that loop stopped the run, leave the staged brief on disk and name its path in the report.
+Re-validating: when a staged brief's slice comes up, compare its `Based on:` sha with the worktree's HEAD. If they differ, re-read the spec and `git diff <sha>..HEAD`, check every file path, line reference, and assumption in the brief against what landed, and fold in any follow-ups from the previous slice's verify that fall inside this slice's done-conditions. Only then write the brief into the spec's current-slice section and continue from step 4; in fable-crew mode the worker prompt is generated from this final brief. If the previous slice's verify FAILed, the staged brief waits for the fix loop. If that loop stopped the run, leave the staged brief on disk and name its path in the report.
 
-## Codex mode
+## Fable-crew mode
 
 Fable briefs, keeps the spec, commits, and verifies; a Codex model implements. The routing table and the `ultra` ban are in the core rules.
 

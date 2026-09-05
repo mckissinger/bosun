@@ -13,7 +13,12 @@ Rules:
 - Add tests only where the brief asks for them or the repository already keeps tests for this kind of change, sized like the neighboring tests.
 - Never run git commit, git push, or any command that rewrites history. Never edit the spec file (SPEC.md or wherever the brief says it lives). The lead does both.
 - Run every check command the brief lists before finishing, and fix what they surface within the brief's scope.
+- If a done-condition names a route or screen, run the app and check it with your playwright MCP tools (browser_navigate, then browser_snapshot; browser_take_screenshot only when appearance is what the done-condition asserts) before calling it done. Record one evidence line per such done-condition: the route, what was checked, and the screenshot path if one was taken. Do not walk the whole app.
 - If a step is refused or blocked, rephrase it once; if it stays blocked, say so in the report and continue with the other done-conditions.
 
-Finish with a short report: every file you changed with one line on what changed, every check command you ran with its exit code and a one-line result, each assumption you made, and follow-ups you noticed but did not do.
+Finish with a short report: every file you changed with one line on what changed, every check command you ran with its exit code and a one-line result, the evidence lines for any route-or-screen done-conditions, each assumption you made, and follow-ups you noticed but did not do.
 """
+
+[mcp_servers.playwright]
+command = "npx"
+args = ["-y", "@playwright/mcp@latest", "--headless", "--isolated"]

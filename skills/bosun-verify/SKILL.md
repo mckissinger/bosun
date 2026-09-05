@@ -1,12 +1,12 @@
 ---
-name: fable-verify
+name: bosun-verify
 description: Independently verify a finished slice in a fresh, read-only context before reporting it done — checks the diff against the spec's done-conditions, runs the project's checks, hunts for bugs, and records verified status in the spec. Use after completing a slice, before opening a PR, or when the user asks "is this actually done", "verify", or "double-check".
 argument-hint: "[slice name or done-conditions, if the spec does not identify them]"
 ---
 
-# Fable verify
+# Bosun verify
 
-The session that wrote the code is the wrong judge of it. This skill hands the judgment to `fable-verifier`, a read-only agent at `high` effort with no memory of this session.
+The session that wrote the code is the wrong judge of it. This skill hands the judgment to `bosun-verifier`, a read-only agent at `high` effort with no memory of this session.
 
 ## Steps
 
@@ -16,8 +16,8 @@ The session that wrote the code is the wrong judge of it. This skill hands the j
    - The base to diff against (branch or commit).
    - The exact check commands and any setup they need.
    - Anything the verifier would otherwise misjudge: intentional deviations and their reasons, environment quirks, known pre-existing failures with evidence that they predate the change.
-   - In fable-crew mode: the worker model and effort that produced the diff. FAIL findings then go back to the worker through `scripts/codex-worker.sh` (see `/fable-brief`, "Fable-crew mode"), not to Fable.
-2. Launch the `fable-verifier` agent with that prompt. While it runs, do not idle: draft the report, continue unrelated remaining work, or, under `Run policy: until blocked`, stage the next slice's brief as `/fable-brief` ("Staged briefs") describes. Do not edit files the verifier is reading.
+   - In fable-crew mode: the worker model and effort that produced the diff. FAIL findings then go back to the worker through `scripts/codex-worker.sh` (see `/bosun-brief`, "Fable-crew mode"), not to Fable.
+2. Launch the `bosun-verifier` agent with that prompt. While it runs, do not idle: draft the report, continue unrelated remaining work, or, under `Run policy: until blocked`, stage the next slice's brief as `/bosun-brief` ("Staged briefs") describes. Do not edit files the verifier is reading.
 3. Relay the verdict faithfully. Do not soften a FAIL.
    - FAIL: fix each in-scope finding, then run this skill again. After two FAILs on the same finding, stop and report both positions to the user. Out-of-scope findings go in the report as follow-ups.
    - PASS WITH FOLLOW-UPS: report the follow-ups; do not fix them unless the user asks.

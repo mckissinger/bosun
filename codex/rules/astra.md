@@ -1,6 +1,6 @@
 # Astra agentic development
 
-Rules for autonomous coding runs led by GPT-6 Astra in Codex. This is the Codex half of the Fable harness; the Claude Code half carries the same contract for Fable 5.1. Rationale: the fable-harness README.
+Rules for autonomous coding runs led by GPT-6 Astra in Codex. This is the Codex half of the Bosun; the Claude Code half carries the same contract for Fable 5.1. Rationale: the bosun README.
 
 ## Effort
 
@@ -30,30 +30,30 @@ The mode is a line in the project's spec, `Provider mode: <mode>`. Four values e
 | `astra-crew` | GPT-6 Astra | Sol / Luna by task class as subagents | Codex |
 | `astra` | GPT-6 Astra | GPT-6 Astra | Codex |
 
-A spec with no line, or with `fable`, `fable-crew`, or the old value `codex`, belongs to Claude Code: `$fable-brief` stops and says to open the project there. `$fable-mode` sets the line and installs the agent files. In both astra modes you brief, keep the spec, commit, and verify through `$fable-verify`. In `astra-crew` each slice's implementation is delegated to one worker agent chosen by task class:
+A spec with no line, or with `fable`, `fable-crew`, or the old value `codex`, belongs to Claude Code: `$bosun-brief` stops and says to open the project there. `$bosun-mode` sets the line and installs the agent files. In both astra modes you brief, keep the spec, commit, and verify through `$bosun-verify`. In `astra-crew` each slice's implementation is delegated to one worker agent chosen by task class:
 
 | Task class | When | Agent | Model / effort |
 | --- | --- | --- | --- |
-| `small` | Fully specified change, one or two files, existing tests cover it | `fable_worker_small` | `gpt-5.6-luna` / `max` |
-| `routine` | Behavior specified, repo has tests for this kind of change, design settled | `fable_worker_routine` | `gpt-5.6-sol` / `medium` |
-| `feature` | Multi-file feature, refactor, or debugging with a clear goal | `fable_worker_feature` | `gpt-5.6-sol` / `high` |
-| `hard` | Migrations, hard bugs, slices expected to run over thirty minutes | `fable_worker_hard` | `gpt-5.6-sol` / `xhigh` |
+| `small` | Fully specified change, one or two files, existing tests cover it | `bosun_worker_small` | `gpt-5.6-luna` / `max` |
+| `routine` | Behavior specified, repo has tests for this kind of change, design settled | `bosun_worker_routine` | `gpt-5.6-sol` / `medium` |
+| `feature` | Multi-file feature, refactor, or debugging with a clear goal | `bosun_worker_feature` | `gpt-5.6-sol` / `high` |
+| `hard` | Migrations, hard bugs, slices expected to run over thirty minutes | `bosun_worker_hard` | `gpt-5.6-sol` / `xhigh` |
 
-A slice overrides the table with a `Route: <agent>` line in the spec's current-slice section. Workers never commit and never edit the spec; you review the diff and commit. Verification always runs in a fresh read-only context (`fable_verifier`, Astra at high), never in the session that wrote the code.
+A slice overrides the table with a `Route: <agent>` line in the spec's current-slice section. Workers never commit and never edit the spec; you review the diff and commit. Verification always runs in a fresh read-only context (`bosun_verifier`, Astra at high), never in the session that wrote the code.
 
 ## Run policy
 
 The run policy is a line in the spec next to the provider mode: `Run policy: one slice` or `Run policy: until blocked, max N slices`. No line means `one slice`; `until blocked` without a `max` means `max 3 slices`.
 
-Under `one slice`, `$fable-brief` runs one slice, verifies, reports, and stops. Under `until blocked`, after a slice verifies (PASS or PASS WITH FOLLOW-UPS), you record lessons, commit, push, open a PR for the slice's branch, report the slice, and then brief and run the next slice in the same turn. Every slice has its own branch and its own PR; you never merge. The run stops, with a report saying why, at the first of: no runnable done-condition remains; the next runnable done-condition depends on an undecided item; a verify produced two FAILs on the same finding; N slices have been started in this run, counting the first.
+Under `one slice`, `$bosun-brief` runs one slice, verifies, reports, and stops. Under `until blocked`, after a slice verifies (PASS or PASS WITH FOLLOW-UPS), you record lessons, commit, push, open a PR for the slice's branch, report the slice, and then brief and run the next slice in the same turn. Every slice has its own branch and its own PR; you never merge. The run stops, with a report saying why, at the first of: no runnable done-condition remains; the next runnable done-condition depends on an undecided item; a verify produced two FAILs on the same finding; N slices have been started in this run, counting the first.
 
 A done-condition is runnable when its status is `todo` or `in progress`, it is not `human-check`, and nothing it needs is on the undecided list. When no runnable done-condition remains, do not invent work: report that the roadmap is exhausted, list every open human-check condition and every undecided item as the question the spec records, propose candidate next slices drawn from the spec's follow-ups section as draft done-conditions marked as proposals, and end the turn asking what next. A proposal becomes a done-condition only when the user says so.
 
-In astra-crew under `until blocked`, use the worker's run time to stage the next slice's brief when that slice does not depend on the running one, and re-validate the staged brief against what actually landed before running it. `$fable-brief` holds the details.
+In astra-crew under `until blocked`, use the worker's run time to stage the next slice's brief when that slice does not depend on the running one, and re-validate the staged brief against what actually landed before running it. `$bosun-brief` holds the details.
 
 ## Starting substantial work
 
-Anything beyond a few tool calls starts with `$fable-brief`. With no spec, it creates one from what the user supplied and stops for review; that is the one planned stop. With a spec, it takes the next slice and runs to completion. Small tasks get a three-line brief, not a ceremony. If context was compacted, or a checkpoint was printed at session start, re-read the spec before doing anything else.
+Anything beyond a few tool calls starts with `$bosun-brief`. With no spec, it creates one from what the user supplied and stops for review; that is the one planned stop. With a spec, it takes the next slice and runs to completion. Small tasks get a three-line brief, not a ceremony. If context was compacted, or a checkpoint was printed at session start, re-read the spec before doing anything else.
 
 ## While working
 
@@ -61,8 +61,8 @@ If, while working or testing, you find a pre-existing bug, a performance concern
 
 Edit files surgically rather than rewriting them whole when the result is the same.
 
-Delegate independent investigation to the `fable_scout` agent (read-only, Luna at medium) with a self-contained prompt, and keep working while it runs. It has none of this conversation: give it the question, the paths, and the branch. Collect its result when you need it, not before, and read the lines it cites before acting on them.
+Delegate independent investigation to the `bosun_scout` agent (read-only, Luna at medium) with a self-contained prompt, and keep working while it runs. It has none of this conversation: give it the question, the paths, and the branch. Collect its result when you need it, not before, and read the lines it cites before acting on them.
 
 ## Finishing
 
-Before reporting anything non-trivial as done, run `$fable-verify` and act on its verdict. After two FAILs on the same finding, stop and report both positions to the user instead of looping. Report the outcome first, tie every claim to a tool result from this session, and list follow-ups separately from the delivered work. If stopping mid-slice, run `$fable-checkpoint`.
+Before reporting anything non-trivial as done, run `$bosun-verify` and act on its verdict. After two FAILs on the same finding, stop and report both positions to the user instead of looping. Report the outcome first, tie every claim to a tool result from this session, and list follow-ups separately from the delivered work. If stopping mid-slice, run `$bosun-checkpoint`.

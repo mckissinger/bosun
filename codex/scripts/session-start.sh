@@ -1,5 +1,5 @@
 #!/bin/bash
-# SessionStart hook for the Fable harness Codex plugin.
+# SessionStart hook for the Bosun Codex plugin.
 #   Emits additionalContext JSON: the core rules unless ~/.codex/AGENTS.md already carries them,
 #   the project's spec path with its provider mode and run policy, and any checkpoint.
 #   On compaction, tells the model to re-read the spec.
@@ -39,15 +39,15 @@ else
       detail="${detail}run policy: $policy"
     fi
     if [ -n "$detail" ]; then
-      out="${out}Fable spec for this project: $spec ($detail). Read it before starting substantial work."
+      out="${out}Bosun spec for this project: $spec ($detail). Read it before starting substantial work."
     else
-      out="${out}Fable spec for this project: $spec. Read it before starting substantial work."
+      out="${out}Bosun spec for this project: $spec. Read it before starting substantial work."
     fi
   fi
   slug="$(printf '%s' "$dir" | sed 's#^/##; s#[/ ]#-#g')"
-  file="$HOME/.codex/fable/checkpoints/$slug.md"
+  file="$HOME/.codex/bosun/checkpoints/$slug.md"
   if [ -f "$file" ]; then
-    out="${out}"$'\n'"A Fable checkpoint exists for this project ($file, written $(date -r "$file" '+%Y-%m-%d %H:%M')). Read the spec, then this checkpoint, then continue from where it stops. Overwrite it with \$fable-checkpoint when you stop; delete it when the slice is finished."$'\n\n'"$(cat "$file")"
+    out="${out}"$'\n'"A Bosun checkpoint exists for this project ($file, written $(date -r "$file" '+%Y-%m-%d %H:%M')). Read the spec, then this checkpoint, then continue from where it stops. Overwrite it with \$bosun-checkpoint when you stop; delete it when the slice is finished."$'\n\n'"$(cat "$file")"
   fi
 fi
 

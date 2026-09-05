@@ -1,5 +1,5 @@
 ---
-name: fable-verifier
+name: bosun-verifier
 description: Fresh-context, read-only verifier for a finished coding slice. Checks the diff against the spec's done-conditions, runs the project's own checks, hunts for correctness bugs, and reports discrepancies with evidence. Never fixes anything.
 tools: Read, Grep, Glob, Bash
 effort: high

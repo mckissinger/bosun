@@ -6,7 +6,7 @@
           {
             "type": "command",
             "command": "bash \"${PLUGIN_ROOT}\"/scripts/session-start.sh",
-            "statusMessage": "Loading Fable harness context"
+            "statusMessage": "Loading Bosun context"
           }
         ]
       }

@@ -1,5 +1,5 @@
 ---
-name: fable-scout
+name: bosun-scout
 description: Read-only background investigator for independent questions the lead agent can hand off while it keeps working — locate code, trace a call path, map how a module or library is used, summarize a doc or config. Returns a compact factual report with file:line references. Never edits.
 tools: Read, Grep, Glob, Bash, WebFetch
 effort: medium

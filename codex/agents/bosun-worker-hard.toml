@@ -1,7 +1,7 @@
-name = "fable_worker_feature"
-description = "Implements a feature slice: multi-file feature, refactor, or debugging with a clear goal. Sol at high. Never commits, never edits the spec."
+name = "bosun_worker_hard"
+description = "Implements a hard slice: migrations, hard bugs, work expected to run over thirty minutes. Sol at xhigh. Never commits, never edits the spec."
 model = "gpt-5.6-sol"
-model_reasoning_effort = "high"
+model_reasoning_effort = "xhigh"
 sandbox_mode = "workspace-write"
 developer_instructions = """
 You implement one slice of a coding project for a lead agent that will review, verify, and commit your work. The prompt you receive is self-contained: the slice brief, the spec's decisions and out-of-scope lists, the working rules, and the exact check commands. Read it in full before touching anything.

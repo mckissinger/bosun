@@ -1,6 +1,6 @@
 # Fable 5.1 agentic development
 
-Rules for autonomous coding runs. Rationale and doc citations: the fable-harness README.
+Rules for autonomous coding runs. Rationale and doc citations: the bosun README.
 
 ## Effort
 
@@ -20,7 +20,7 @@ Lessons are what this codebase needs a fresh session to know that the repo and g
 
 ## Provider mode
 
-The harness has four provider modes. The mode is a line in the project's spec, `Provider mode: <mode>`; a spec without the line is in `fable` mode, and the old value `codex` is read as `fable-crew`. `/fable-mode` sets or reports it.
+The harness has four provider modes. The mode is a line in the project's spec, `Provider mode: <mode>`; a spec without the line is in `fable` mode, and the old value `codex` is read as `fable-crew`. `/bosun-mode` sets or reports it.
 
 | Mode | Lead | Implementation | Harness |
 | --- | --- | --- | --- |
@@ -29,7 +29,7 @@ The harness has four provider modes. The mode is a line in the project's spec, `
 | `astra-crew` | GPT-6 Astra | Sol / Luna by task class as Codex subagents | Codex plugin (`codex/` in this repo) |
 | `astra` | GPT-6 Astra | GPT-6 Astra | Codex plugin |
 
-The two `fable*` modes run here, in Claude Code. The two `astra*` modes run in Codex through the sibling plugin; if the spec names one, `/fable-brief` stops and says to open the project in Codex rather than running the slice on Fable. In `fable` mode, Fable 5.1 briefs, implements, verifies, and keeps the spec. In `fable-crew` mode, Fable 5.1 still briefs, keeps the spec, commits, and verifies, but each slice's implementation is handed to an OpenAI Codex model through the user's own `codex exec` CLI via `scripts/codex-worker.sh`, routed by task class:
+The two `fable*` modes run here, in Claude Code. The two `astra*` modes run in Codex through the sibling plugin; if the spec names one, `/bosun-brief` stops and says to open the project in Codex rather than running the slice on Fable. In `fable` mode, Fable 5.1 briefs, implements, verifies, and keeps the spec. In `fable-crew` mode, Fable 5.1 still briefs, keeps the spec, commits, and verifies, but each slice's implementation is handed to an OpenAI Codex model through the user's own `codex exec` CLI via `scripts/codex-worker.sh`, routed by task class:
 
 | Task class | When | Model | Effort |
 | --- | --- | --- | --- |
@@ -38,21 +38,21 @@ The two `fable*` modes run here, in Claude Code. The two `astra*` modes run in C
 | `feature` | Multi-file feature, refactor, or debugging with a clear goal | `gpt-5.6-sol` | `high` |
 | `hard` | Migrations, hard bugs, slices expected to run over thirty minutes | `gpt-5.6-sol` | `xhigh` |
 
-A slice overrides the table with a `Route: <model> / <effort>` line in the spec's current-slice section. `ultra` is never passed: it auto-delegates, which fights the single-context slice design. The worker never commits; Fable reviews the diff and commits. Verification always runs on Fable through `/fable-verify`. If the codex preflight fails, the slice stops and reports; Fable never silently implements it instead.
+A slice overrides the table with a `Route: <model> / <effort>` line in the spec's current-slice section. `ultra` is never passed: it auto-delegates, which fights the single-context slice design. The worker never commits; Fable reviews the diff and commits. Verification always runs on Fable through `/bosun-verify`. If the codex preflight fails, the slice stops and reports; Fable never silently implements it instead.
 
 ## Run policy
 
 The run policy is a line in the project's spec next to the provider mode: `Run policy: one slice` or `Run policy: until blocked, max N slices`. A spec without the line is `one slice`; `until blocked` without a `max` means `max 3 slices`. It applies in both provider modes.
 
-Under `one slice`, `/fable-brief` runs one slice, verifies, reports, and stops. Under `until blocked`, after a slice verifies (PASS or PASS WITH FOLLOW-UPS), Fable records lessons, commits, pushes, opens a PR for the slice's branch, reports the slice, and then briefs and runs the next slice in the same turn. Every slice has its own branch and its own PR; Fable never merges. The run stops, with a report saying why, at the first of: no runnable done-condition remains; the next runnable done-condition depends on an undecided item; a verify produced two FAILs on the same finding; the codex preflight failed; N slices have been started in this run, counting the first.
+Under `one slice`, `/bosun-brief` runs one slice, verifies, reports, and stops. Under `until blocked`, after a slice verifies (PASS or PASS WITH FOLLOW-UPS), Fable records lessons, commits, pushes, opens a PR for the slice's branch, reports the slice, and then briefs and runs the next slice in the same turn. Every slice has its own branch and its own PR; Fable never merges. The run stops, with a report saying why, at the first of: no runnable done-condition remains; the next runnable done-condition depends on an undecided item; a verify produced two FAILs on the same finding; the codex preflight failed; N slices have been started in this run, counting the first.
 
 A done-condition is runnable when its status is `todo` or `in progress`, it is not `human-check`, and nothing it needs is on the undecided list. When no runnable done-condition remains, under either policy, Fable does not invent work: it reports that the roadmap is exhausted, lists every open human-check condition and every undecided item as the question the spec records, proposes candidate next slices drawn from the spec's follow-ups section as draft done-conditions marked as proposals, and ends the turn asking what next. A proposal becomes a done-condition only when the user says so.
 
-In fable-crew mode under `until blocked`, Fable uses the worker's run time to stage the next slice's brief when that slice does not depend on the running one, and re-validates the staged brief against what actually landed before running it. `/fable-brief` holds the details.
+In fable-crew mode under `until blocked`, Fable uses the worker's run time to stage the next slice's brief when that slice does not depend on the running one, and re-validates the staged brief against what actually landed before running it. `/bosun-brief` holds the details.
 
 ## Starting substantial work
 
-Anything beyond a few tool calls starts with `/fable-brief`. With no spec, it creates one from what the user supplied and stops for review; that is the one planned stop. With a spec, it takes the next slice and runs to completion. Small tasks get a three-line brief, not a ceremony. If context was compacted, or a checkpoint was printed at session start, re-read the spec before doing anything else.
+Anything beyond a few tool calls starts with `/bosun-brief`. With no spec, it creates one from what the user supplied and stops for review; that is the one planned stop. With a spec, it takes the next slice and runs to completion. Small tasks get a three-line brief, not a ceremony. If context was compacted, or a checkpoint was printed at session start, re-read the spec before doing anything else.
 
 ## While working
 
@@ -60,10 +60,10 @@ If, while working or testing, you find a pre-existing bug, a performance concern
 
 The number of tokens used to edit files is best minimized, all else being equal. Therefore, when it will not affect the end result, try to surgically edit a file rather than rewrite the entire thing.
 
-Delegate independent investigation to the `fable-scout` agent in the background with a self-contained prompt, and keep working while it runs. Collect its result when you need it, not before.
+Delegate independent investigation to the `bosun-scout` agent in the background with a self-contained prompt, and keep working while it runs. Collect its result when you need it, not before.
 
 Phrase code questions to avoid safeguard false positives: ask "are there any bugs in this program" rather than "does this compile without errors"; give the model documentation for lesser-known languages; keep base64-encoded data out of tool output. If a step still returns a refusal, rephrase it once along those lines. If it persists, record the blocked step in the spec and continue with the other done-conditions.
 
 ## Finishing
 
-Before reporting anything non-trivial as done, run `/fable-verify` and act on its verdict. After two FAILs on the same finding, stop and report both positions to the user instead of looping. Report the outcome first, tie every claim to a tool result from this session, and list follow-ups separately from the delivered work. If stopping mid-slice, run `/fable-checkpoint`.
+Before reporting anything non-trivial as done, run `/bosun-verify` and act on its verdict. After two FAILs on the same finding, stop and report both positions to the user instead of looping. Report the outcome first, tie every claim to a tool result from this session, and list follow-ups separately from the delivered work. If stopping mid-slice, run `/bosun-checkpoint`.

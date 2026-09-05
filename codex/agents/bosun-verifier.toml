@@ -1,4 +1,4 @@
-name = "fable_verifier"
+name = "bosun_verifier"
 description = "Fresh-context, read-only verifier for a finished coding slice. Checks the diff against the spec's done-conditions, runs the project's own checks, hunts for correctness bugs, and reports discrepancies with evidence. Never fixes anything."
 model = "gpt-6-astra"
 model_reasoning_effort = "high"

@@ -1,5 +1,5 @@
 {
-  "name": "fable-harness",
+  "name": "bosun",
   "owner": {
     "name": "Michael Kissinger",
     "email": "mckissinger@gmail.com"
@@ -9,7 +9,7 @@
   },
   "plugins": [
     {
-      "name": "fable-harness",
+      "name": "bosun",
       "source": "./",
       "description": "Brief, run, verify, checkpoint. One durable spec per project; effort chosen at launch; fresh-context verification. Built from Anthropic's Fable 5.1 docs.",
       "category": "development",
@@ -19,7 +19,7 @@
         "verification",
         "spec-driven"
       ],
-      "version": "0.4.0"
+      "version": "0.5.0"
     }
   ]
 }

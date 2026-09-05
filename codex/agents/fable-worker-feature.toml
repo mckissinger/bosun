@@ -1,4 +1,4 @@
-name = "fable-worker-feature"
+name = "fable_worker_feature"
 description = "Implements a feature slice: multi-file feature, refactor, or debugging with a clear goal. Sol at high. Never commits, never edits the spec."
 model = "gpt-5.6-sol"
 model_reasoning_effort = "high"

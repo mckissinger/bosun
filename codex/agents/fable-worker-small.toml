@@ -1,4 +1,4 @@
-name = "fable-worker-small"
+name = "fable_worker_small"
 description = "Implements a small slice: fully specified change, one or two files, existing tests cover it. Luna at max. Never commits, never edits the spec."
 model = "gpt-5.6-luna"
 model_reasoning_effort = "max"

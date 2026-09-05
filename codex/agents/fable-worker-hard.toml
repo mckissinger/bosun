@@ -1,4 +1,4 @@
-name = "fable-worker-hard"
+name = "fable_worker_hard"
 description = "Implements a hard slice: migrations, hard bugs, work expected to run over thirty minutes. Sol at xhigh. Never commits, never edits the spec."
 model = "gpt-5.6-sol"
 model_reasoning_effort = "xhigh"

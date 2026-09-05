@@ -1,4 +1,4 @@
-name = "fable-worker-routine"
+name = "fable_worker_routine"
 description = "Implements a routine slice: behavior specified, repo has tests for this kind of change, design settled. Sol at medium. Never commits, never edits the spec."
 model = "gpt-5.6-sol"
 model_reasoning_effort = "medium"

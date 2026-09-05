@@ -28,7 +28,7 @@ A line `Run policy: until blocked` or `Run policy: until blocked, max N slices` 
 ## Spec exists: brief a slice and run
 
 1. Read the spec, including its lessons. If no runnable done-condition remains (status `todo` or `in progress`, not `human-check`, nothing it needs on the undecided list), follow "Exhausted roadmap" below and stop. Otherwise take the done-conditions the user named, or the next unstarted ones that form a coherent slice. Undecided items are out of scope for this slice. If a staged brief exists for this slice (see "Staged briefs"), re-validate it as described there instead of writing a new one.
-2. Gather what the slice depends on: the files involved, the test setup, the exact check commands and any setup they need, and the branch state. Batch the reads. Hand side questions to the `fable-scout` agent with a self-contained prompt and keep working while it runs.
+2. Gather what the slice depends on: the files involved, the test setup, the exact check commands and any setup they need, and the branch state. Batch the reads. Hand side questions to the `fable_scout` agent with a self-contained prompt and keep working while it runs.
 3. Write the slice brief into the spec's current-slice section and in your reply:
 
 ```
@@ -79,7 +79,7 @@ Brief (step 3): add to the brief template
 
 ```
 Task class: <small | routine | feature | hard, with the one-line reason>
-Route: <fable-worker-small | fable-worker-routine | fable-worker-feature | fable-worker-hard>   (from the table, or the spec's own Route: override if the current-slice section has one)
+Route: <fable_worker_small | fable_worker_routine | fable_worker_feature | fable_worker_hard>   (from the table, or the spec's own Route: override if the current-slice section has one)
 ```
 
 Execute (step 6):

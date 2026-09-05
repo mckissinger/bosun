@@ -29,9 +29,9 @@ The mode is a line in the project's spec, `Provider mode: <mode>`. It lives in t
 
 | Task class | When | Agent | Model / effort |
 | --- | --- | --- | --- |
-| `small` | Fully specified change, one or two files, existing tests cover it | `fable-worker-small` | `gpt-5.6-luna` / `max` |
-| `routine` | Behavior specified, repo has tests for this kind of change, design settled | `fable-worker-routine` | `gpt-5.6-sol` / `medium` |
-| `feature` | Multi-file feature, refactor, or debugging with a clear goal | `fable-worker-feature` | `gpt-5.6-sol` / `high` |
-| `hard` | Migrations, hard bugs, slices expected to run over thirty minutes | `fable-worker-hard` | `gpt-5.6-sol` / `xhigh` |
+| `small` | Fully specified change, one or two files, existing tests cover it | `fable_worker_small` | `gpt-5.6-luna` / `max` |
+| `routine` | Behavior specified, repo has tests for this kind of change, design settled | `fable_worker_routine` | `gpt-5.6-sol` / `medium` |
+| `feature` | Multi-file feature, refactor, or debugging with a clear goal | `fable_worker_feature` | `gpt-5.6-sol` / `high` |
+| `hard` | Migrations, hard bugs, slices expected to run over thirty minutes | `fable_worker_hard` | `gpt-5.6-sol` / `xhigh` |
 
-Verification always runs on Astra through `$fable-verify`, in the read-only `fable-verifier` agent.
+Verification always runs on Astra through `$fable-verify`, in the read-only `fable_verifier` agent.

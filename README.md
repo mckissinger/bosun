@@ -55,7 +55,7 @@ launch session at the right effort
 | Codex plugin manifest | `codex/.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json` | The sibling plugin for the ChatGPT desktop app |
 | Codex core rules | `codex/rules/astra.md` | The same contract for an Astra lead: effort ladder, spec, modes, run policy, finishing |
 | Codex skills | `codex/skills/*/SKILL.md` | `$fable-brief`, `$fable-verify`, `$fable-checkpoint`, `$fable-mode`, ported for Astra and Codex subagents |
-| Codex agents | `codex/agents/*.toml` | `fable-scout`, `fable-verifier`, and one worker per routing row; installed by `$fable-mode` |
+| Codex agents | `codex/agents/*.toml` | `fable_scout`, `fable_verifier`, and one worker per routing row; installed by `$fable-mode` |
 | Codex hook | `codex/hooks/hooks.json`, `codex/scripts/session-start.sh` | Rules, spec pointer, and checkpoint as session context |
 
 Checkpoints are written to `~/.claude/fable/checkpoints/<project-slug>.md`.
@@ -113,7 +113,7 @@ Rules that do not bend: the worker never commits; verification never moves off F
 
 Requires the `codex` CLI (tested with codex-cli 0.149.0) logged in with your own account. The harness spawns your unmodified binary; it never handles provider credentials.
 
-**The astra modes.** `astra-crew` and `astra` run in the ChatGPT desktop app through the Codex plugin, with GPT-6 Astra as the lead. Astra briefs, keeps the spec, commits, and verifies through `$fable-verify`, which spawns the read-only `fable-verifier` agent (Astra at high). In `astra-crew`, the Execute step asks Astra to delegate the slice to the worker agent named by the task class (`fable-worker-small` is Luna at max, `fable-worker-routine` Sol at medium, `fable-worker-feature` Sol at high, `fable-worker-hard` Sol at xhigh) and wait for it; in `astra`, Astra implements the slice itself. Three things differ from fable-crew: workers are native Codex subagents rather than a `codex exec` process, so there is no `usage.json` and the slice log records the route and first-verify verdict only (the app's usage view is the cost record); the scout is `fable-scout`, Luna at medium, read-only; and checkpoints go to `~/.codex/fable/checkpoints/`. The same rules that do not bend apply: workers never commit, verification is a fresh read-only context, `ultra` is never used.
+**The astra modes.** `astra-crew` and `astra` run in the ChatGPT desktop app through the Codex plugin, with GPT-6 Astra as the lead. Astra briefs, keeps the spec, commits, and verifies through `$fable-verify`, which spawns the read-only `fable_verifier` agent (Astra at high). In `astra-crew`, the Execute step asks Astra to delegate the slice to the worker agent named by the task class (`fable_worker_small` is Luna at max, `fable_worker_routine` Sol at medium, `fable_worker_feature` Sol at high, `fable_worker_hard` Sol at xhigh) and wait for it; in `astra`, Astra implements the slice itself. Three things differ from fable-crew: workers are native Codex subagents rather than a `codex exec` process, so there is no `usage.json` and the slice log records the route and first-verify verdict only (the app's usage view is the cost record); the scout is `fable_scout`, Luna at medium, read-only; and checkpoints go to `~/.codex/fable/checkpoints/`. The same rules that do not bend apply: workers never commit, verification is a fresh read-only context, `ultra` is never used.
 
 ## Run policy
 

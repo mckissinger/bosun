@@ -34,12 +34,12 @@ A spec with no line, or with `fable`, `fable-crew`, or the old value `codex`, be
 
 | Task class | When | Agent | Model / effort |
 | --- | --- | --- | --- |
-| `small` | Fully specified change, one or two files, existing tests cover it | `fable-worker-small` | `gpt-5.6-luna` / `max` |
-| `routine` | Behavior specified, repo has tests for this kind of change, design settled | `fable-worker-routine` | `gpt-5.6-sol` / `medium` |
-| `feature` | Multi-file feature, refactor, or debugging with a clear goal | `fable-worker-feature` | `gpt-5.6-sol` / `high` |
-| `hard` | Migrations, hard bugs, slices expected to run over thirty minutes | `fable-worker-hard` | `gpt-5.6-sol` / `xhigh` |
+| `small` | Fully specified change, one or two files, existing tests cover it | `fable_worker_small` | `gpt-5.6-luna` / `max` |
+| `routine` | Behavior specified, repo has tests for this kind of change, design settled | `fable_worker_routine` | `gpt-5.6-sol` / `medium` |
+| `feature` | Multi-file feature, refactor, or debugging with a clear goal | `fable_worker_feature` | `gpt-5.6-sol` / `high` |
+| `hard` | Migrations, hard bugs, slices expected to run over thirty minutes | `fable_worker_hard` | `gpt-5.6-sol` / `xhigh` |
 
-A slice overrides the table with a `Route: <agent>` line in the spec's current-slice section. Workers never commit and never edit the spec; you review the diff and commit. Verification always runs in a fresh read-only context (`fable-verifier`, Astra at high), never in the session that wrote the code.
+A slice overrides the table with a `Route: <agent>` line in the spec's current-slice section. Workers never commit and never edit the spec; you review the diff and commit. Verification always runs in a fresh read-only context (`fable_verifier`, Astra at high), never in the session that wrote the code.
 
 ## Run policy
 
@@ -61,7 +61,7 @@ If, while working or testing, you find a pre-existing bug, a performance concern
 
 Edit files surgically rather than rewriting them whole when the result is the same.
 
-Delegate independent investigation to the `fable-scout` agent (read-only, Luna at medium) with a self-contained prompt, and keep working while it runs. It has none of this conversation: give it the question, the paths, and the branch. Collect its result when you need it, not before, and read the lines it cites before acting on them.
+Delegate independent investigation to the `fable_scout` agent (read-only, Luna at medium) with a self-contained prompt, and keep working while it runs. It has none of this conversation: give it the question, the paths, and the branch. Collect its result when you need it, not before, and read the lines it cites before acting on them.
 
 ## Finishing
 

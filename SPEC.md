@@ -88,7 +88,7 @@ Default is `--approve-for-me` (which selects the workspace-write sandbox), cwd s
 
 ### Codex plugin layout
 
-The Codex plugin is a sibling, not a shared-skills refactor: `codex/.codex-plugin/plugin.json`, `codex/rules/astra.md`, `codex/skills/<bosun-brief|bosun-verify|bosun-checkpoint|bosun-mode>/SKILL.md`, `codex/hooks/hooks.json`, `codex/scripts/session-start.sh`, `codex/agents/*.toml`; the repo-root `.agents/plugins/marketplace.json` points at `./codex`. Duplicated wording is the price of leaving the Claude plugin's bosun-mode text untouched. The Codex skills are the Claude ones with: Astra in place of Fable; `$bosun-brief` style invocation; Codex subagents in place of the Agent tool and the worker script; and no `usage.json` (the app shows usage; the slice log records the route and the first-verify verdict only).
+The Codex plugin is a sibling, not a shared-skills refactor: `codex/.codex-plugin/plugin.json`, `codex/rules/astra.md`, `codex/skills/<bosun-brief|bosun-verify|bosun-checkpoint|bosun-mode>/SKILL.md`, `codex/hooks/hooks.json`, `codex/scripts/session-start.sh`, `codex/agents/*.toml`; the repo-root `.agents/plugins/marketplace.json` points at `./codex`. Duplicated wording is the price of leaving the Claude plugin's fable-mode text untouched. The Codex skills are the Claude ones with: Astra in place of Fable; `$bosun-brief` style invocation; Codex subagents in place of the Agent tool and the worker script; and no `usage.json` (the app shows usage; the slice log records the route and the first-verify verdict only).
 
 Agents shipped (installed into `~/.codex/agents/` by `$bosun-mode astra-crew` or `$bosun-mode astra`, since plugins cannot bundle agents): `bosun_scout` (gpt-5.6-luna, medium, read-only), `bosun_verifier` (gpt-6-astra, high, read-only, the verifier agent text), and one worker per routing row, `bosun_worker_small` (luna/max), `bosun_worker_routine` (sol/medium), `bosun_worker_feature` (sol/high), `bosun_worker_hard` (sol/xhigh), all workspace-write with the worker instructions (no commit, no spec edits, run the checks, report). In `astra-crew` the brief's Execute step asks Astra to delegate the slice to the worker agent named by the task class and wait for it; in `astra` Astra implements itself.
 
@@ -165,12 +165,12 @@ Slice 4, Codex port (2026-09-04):
 
 Slice 5, rename to bosun (2026-09-04):
 
-31. `done` No harness-identity token remains: `grep -rniE 'fable-harness|fable harness|fable-(brief|verify|checkpoint|mode|scout|verifier|worker)\b|fable_(scout|verifier|worker)|/fable/'` over tracked `.md`, `.json`, `.sh`, `.toml` files finds nothing except prose about the `fable` mode. Directories and files are renamed: `skills/bosun-*`, `agents/bosun-*.md`, `codex/skills/bosun-*`, `codex/agents/bosun-*.toml`.
-32. `done` Manifests: `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` name the plugin and marketplace `bosun`; `codex/.codex-plugin/plugin.json` and `.agents/plugins/marketplace.json` likewise; all four at `0.5.0` and valid JSON; under a temp `CODEX_HOME`, `codex plugin marketplace add "$PWD"` then `codex plugin list` shows `bosun@bosun`.
-33. `done` Both session-start scripts pass `bash -n`, print `Bosun spec for this project`, and look for checkpoints under `~/.claude/bosun/checkpoints/` and `~/.codex/bosun/checkpoints/`; temp-spec runs show the spec line and a checkpoint. The rules headings (`# Fable 5.1 agentic development`, `# Astra agentic development`) are unchanged so existing global instruction files keep silencing the hooks.
-34. `done` Skill `name` fields are `bosun-brief`, `bosun-verify`, `bosun-checkpoint`, `bosun-mode` on both sides; Claude agents are `bosun-scout` and `bosun-verifier`; Codex agent `name` fields are `bosun_scout`, `bosun_verifier`, `bosun_worker_small`, `bosun_worker_routine`, `bosun_worker_feature`, `bosun_worker_hard`, all parsing with `tomllib`; one real spawn of `bosun_scout` from an Astra lead in a temp project succeeds.
-35. `done` `README.md` is titled Bosun, installs from `mckissinger/bosun` as `bosun@bosun` on both sides, and its plugin table, mode table, and "Why each piece exists" use the new names; `rules/fable.md` and `codex/rules/astra.md` refer to the Bosun README and the `bosun-*` skills and agents; mode values and model-specific wording are unchanged.
-36. `done` The GitHub repo is renamed to `mckissinger/bosun`, the local `origin` remote points at it, and `gh repo view` reports the new name.
+31. `verified 2026-09-04 bosun-verifier, git ls-files, grep from the done-condition (five spec-only hits)` No harness-identity token remains: `grep -rniE 'fable-harness|fable harness|fable-(brief|verify|checkpoint|mode|scout|verifier|worker)\b|fable_(scout|verifier|worker)|/fable/'` over tracked `.md`, `.json`, `.sh`, `.toml` files finds nothing except prose about the `fable` mode, the pattern itself, and historical mentions of the old name in this spec. Directories and files are renamed: `skills/bosun-*`, `agents/bosun-*.md`, `codex/skills/bosun-*`, `codex/agents/bosun-*.toml`.
+32. `verified 2026-09-04 bosun-verifier, four manifests, codex plugin list under temp CODEX_HOME` Manifests: `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` name the plugin and marketplace `bosun`; `codex/.codex-plugin/plugin.json` and `.agents/plugins/marketplace.json` likewise; the three that carry a version at `0.5.0`, all four valid JSON; under a temp `CODEX_HOME`, `codex plugin marketplace add "$PWD"` then `codex plugin list` shows `bosun@bosun`.
+33. `verified 2026-09-04 bosun-verifier, scripts/session-start.sh:27,33, codex/scripts/session-start.sh:29,48, temp runs` Both session-start scripts pass `bash -n`, print `Bosun spec for this project`, and look for checkpoints under `~/.claude/bosun/checkpoints/` and `~/.codex/bosun/checkpoints/`; temp-spec runs show the spec line and a checkpoint. The rules headings (`# Fable 5.1 agentic development`, `# Astra agentic development`) are unchanged so existing global instruction files keep silencing the hooks.
+34. `verified 2026-09-04 bosun-verifier, name fields on both sides, tomllib, bosun_scout spawned from Astra (verifier run 3 and the implementer run)` Skill `name` fields are `bosun-brief`, `bosun-verify`, `bosun-checkpoint`, `bosun-mode` on both sides; Claude agents are `bosun-scout` and `bosun-verifier`; Codex agent `name` fields are `bosun_scout`, `bosun_verifier`, `bosun_worker_small`, `bosun_worker_routine`, `bosun_worker_feature`, `bosun_worker_hard`, all parsing with `tomllib`; one real spawn of `bosun_scout` from an Astra lead in a temp project succeeds.
+35. `verified 2026-09-04 bosun-verifier, README.md:1,7-8,25-26, rules/fable.md:3, codex/rules/astra.md:3` `README.md` is titled Bosun, installs from `mckissinger/bosun` as `bosun@bosun` on both sides, and its plugin table, mode table, and "Why each piece exists" use the new names; `rules/fable.md` and `codex/rules/astra.md` refer to the Bosun README and the `bosun-*` skills and agents; mode values and model-specific wording are unchanged.
+36. `verified 2026-09-04 bosun-verifier, gh repo view, git remote -v` The GitHub repo is renamed to `mckissinger/bosun`, the local `origin` remote points at it, and `gh repo view` reports the new name.
 37. `human-check` Reinstall both plugins under the new names (`claude plugin marketplace add mckissinger/bosun`, `claude plugin install bosun@bosun`; `codex plugin marketplace add mckissinger/bosun`, `codex plugin add bosun@bosun`) and remove the old `fable-harness` installs and marketplaces.
 
 21. `human-check` On a throwaway project with `Run policy: until blocked, max 2 slices` and three runnable done-conditions, one `/bosun-brief` runs two slices, opens two PRs, and stops citing the cap. On a spec whose done-conditions are all verified or human-check, `/bosun-brief` reports the exhausted roadmap with proposals and asks what next.
@@ -181,7 +181,7 @@ Slice 5, rename to bosun (2026-09-04):
 
 ## Out of scope
 
-- Any change to bosun-mode behavior beyond inserting the mode branch.
+- Any change to fable-mode behavior beyond inserting the mode branch.
 - A cost ledger, dashboard, or budget cap. Usage numbers go in the spec's slice log and the report only.
 - Porting the verifier or the brief to Codex. Both stay on Fable.
 - Codex hooks, guard scripts, or hook-trust flags. The worker is bounded by the sandbox and the prompt only.
@@ -200,7 +200,7 @@ Slice 5, rename to bosun (2026-09-04):
 
 ## Current slice
 
-Status: in progress 2026-09-04.
+Status: verified PASS WITH FOLLOW-UPS 2026-09-04; the verifier's spec-wording findings were fixed before the PR. Next: done-condition 37 (reinstall both plugins under the new names), then 29 and 30 in the desktop app.
 
 Outcome: the harness, its two plugins, skills, agents, working directories, hook messages, and repo are named `bosun`, with model names left only where they mean the model.
 Done-conditions: 31 through 36 above (37 is human-check).
@@ -233,13 +233,14 @@ Branch: `bosun-rename`
 
 (each codex-mode slice appends: date, slice name, task class, route, first-verify verdict, usage)
 
+- 2026-09-04, bosun-rename, fable mode (implemented by Fable), first verify PASS WITH FOLLOW-UPS.
 - 2026-09-04, codex-port, fable mode (implemented by Fable), first verify PASS WITH FOLLOW-UPS.
 - 2026-09-03, run-policy, fable mode (implemented by Fable), first verify PASS WITH FOLLOW-UPS.
 - 2026-09-02, provider-modes, fable mode (this slice was implemented by Fable), first verify PASS WITH FOLLOW-UPS. Smoke run of the worker script only: gpt-5.6-luna / low, 4 s, 16,824 input (8,960 cached), 5 output tokens.
 
 ## Lessons
 
-- Spawn tests for Codex agents should run inside an initialized git repo. One `codex exec --skip-git-repo-check` run in a bare temp directory failed to spawn `bosun_scout` with "no thread with id: ..." while the same prompt in a `git init` directory succeeded, as did every earlier spawn (all in git repos). Cause unconfirmed (2026-09-04, codex-cli 0.153.4); until it is, treat a spawn failure outside a repo as inconclusive and retry inside one.
+- Codex subagent spawns fail intermittently with "collab spawn failed: no thread with id: <the lead's own thread id>"; the lead then reports NOTSPAWNED. Seen 2026-09-04 on codex-cli 0.153.4 in five `codex exec --ephemeral` runs from Astra: three succeeded (all in git repos) and two failed (one bare temp dir, one git repo with a commit), while a run without `--ephemeral` succeeded. Neither the git repo nor `--ephemeral` is a proven cause. Treat one failure as inconclusive and retry once before concluding an agent file is broken; a parse check never proves usability.
 - Codex custom agent names accept only lowercase letters, digits, and underscores; a hyphen makes every spawn fail with "agent_name must use only lowercase letters, digits, and underscores", surfaced only in the lead's output, while the TOML still parses fine. File names may keep hyphens (`bosun-scout.toml` holds `name = "bosun_scout"`). Found 2026-09-04 by spawning from Astra in a temp project; a parse check of the agent files is not proof they are usable, so any new agent needs one real spawn.
 
 - `codex exec` rejects `-s <sandbox>` together with `--approve-for-me`; the latter already selects the workspace-write sandbox. Found by a real smoke run of `scripts/codex-worker.sh` (2026-09-02, codex-cli 0.149.0) after the dry-run looked fine, so a dry-run of the argv is not proof the argv is accepted. Any flag change to the script needs one real no-op run (Luna, low, "reply OK") before it ships.

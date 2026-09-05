@@ -1,5 +1,5 @@
 #!/bin/bash
-# SessionStart hook for the Bosun.
+# SessionStart hook for Bosun.
 #   startup/resume/clear: load the core rules if they are not already in ~/.claude/CLAUDE.md,
 #                         point at the project's spec (with its provider mode and run policy), and print any checkpoint.
 #   compact: tell the model to re-read the spec before continuing.

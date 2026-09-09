@@ -48,7 +48,7 @@ launch session at the right effort
 | `/bosun-verify` | `skills/bosun-verify/SKILL.md` | Fresh-context verification against the spec, records verified status |
 | `/bosun-checkpoint` | `skills/bosun-checkpoint/SKILL.md` | Transient mid-slice state the spec does not hold |
 | `/bosun-mode` | `skills/bosun-mode/SKILL.md` | Sets or reports the provider mode line in the spec; preflights codex |
-| Codex worker | `scripts/codex-worker.sh` | Runs one slice on gpt-5.6-sol or gpt-5.6-luna via `codex exec`; owns every flag, refuses `ultra`, writes usage |
+| Codex worker | `scripts/codex-worker.sh` | Runs one slice on gpt-5.6-sol or gpt-5.6-luna via `codex exec`; owns every flag, refuses `ultra`, runs with `--disable plugins` so the Codex Bosun plugin's lead-mode gate cannot reach a delegated worker, writes usage |
 | `bosun-scout` agent | `agents/bosun-scout.md` | Read-only background investigator, medium effort |
 | `bosun-verifier` agent | `agents/bosun-verifier.md` | Read-only verifier, high effort, with Playwright for done-conditions that name a route or screen |
 | SessionStart hook | `scripts/session-start.sh` | Loads the rules if needed, points at the spec with its provider mode and run policy, prints any checkpoint; on compaction, tells the model to re-read the spec |

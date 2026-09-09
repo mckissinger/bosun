@@ -14,6 +14,8 @@
 # --dry-run prints the exact argv and exits 0 without checking codex or spawning.
 # Real runs preflight `codex --version` and `codex login status` and exit
 # non-zero with the reason on failure; there is no fallback to another provider.
+# Workers run with `--disable plugins`: a worker session must never see the Codex
+# Bosun plugin, whose brief skill tells a Codex *lead* to stop on a fable-mode spec.
 set -euo pipefail
 
 model="" effort="" cwd="" prompt_file="" out_dir="" network=0 browser=0 dry_run=0
@@ -53,6 +55,7 @@ argv=(codex exec --json
   --approve-for-me   # implies the workspace-write sandbox; codex rejects an explicit -s alongside it
   --skip-git-repo-check
   --ephemeral
+  --disable plugins  # workers get no Codex plugins: the Bosun Codex plugin's lead-mode gate must never reach a delegated worker
   -o "$out_dir/last-message.md")
 if [ "$network" = 1 ]; then argv+=(-c "sandbox_workspace_write.network_access=true"); fi
 if [ "$browser" = 1 ]; then

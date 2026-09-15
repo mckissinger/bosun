@@ -1,5 +1,7 @@
 # Bosun spec
 
+Provider mode: astra
+
 Repo: `mckissinger/bosun` (named `fable-harness` until 2026-09-04; evidence pointers and slice names before that date refer to the old paths, which map one to one onto the new ones), plugin version 0.1.2 at the time this spec was written (2026-09-02). The plugin is prompt-only (skills, agents, rules, one hook script); there is no runtime code or test suite. Checks are therefore file reads, `bash -n`, JSON validation, and a dry-run of any script this work adds.
 
 ## Outcome
@@ -204,6 +206,13 @@ Slice 6, runtime verification (2026-09-05):
 
 21. `human-check` On a throwaway project with `Run policy: until blocked, max 2 slices` and three runnable done-conditions, one `/bosun-brief` runs two slices, opens two PRs, and stops citing the cap. On a spec whose done-conditions are all verified or human-check, `/bosun-brief` reports the exhausted roadmap with proposals and asks what next.
 
+Slice 7, CI optimization skill (2026-09-15; user accepted the proposed bosun-ci design with "ok sounds good"):
+
+47. `verified 2026-09-15 bosun_verifier PASS; skill reads, normalized parity, quick_validate.py, JSON/version checks, diff --check` Both plugins ship a discoverable `bosun-ci` skill for GitHub Actions with matching audit and improvement behavior, using the local Bosun skill invocation conventions.
+48. `verified 2026-09-15 bosun_verifier PASS; skill reads, normalized parity, quick_validate.py, JSON/version checks, diff --check` Audits stay read-only; improvement requests use Bosun briefing/verification. Instructions measure elapsed time, runner minutes, and reliability, preserve required-check coverage and failure propagation, and distinguish measured savings from estimates or missing evidence.
+49. `verified 2026-09-15 bosun_verifier PASS; skill reads, normalized parity, quick_validate.py, JSON/version checks, diff --check` README documents both entry points and measurement limits; all three versioned manifests are 0.7.0 and parse as JSON; both new skills pass skill validation.
+50. `human-check` Exercise an audit and an optimization on a real GitHub Actions project with authenticated run history and comparable before/after hosted runs. No hosted speedup is claimed by this skill-authoring slice.
+
 ## Undecided
 
 (none)
@@ -232,15 +241,14 @@ Slice 6, runtime verification (2026-09-05):
 
 ## Current slice
 
-Status: verified PASS WITH FOLLOW-UPS 2026-09-05; the README contradiction the verifier found was fixed before the PR, the rest are follow-ups below. Next: done-condition 46 (human-check) on a throwaway web project, first in fable mode.
-
-Outcome: done-conditions that name a route or screen are checked in a browser by the implementer and re-checked by the verifier, on both harnesses, with evidence in the report.
-Done-conditions: 38 through 45 above (46 is human-check).
-Out of scope: see the section above; in particular no other browser tools, no exploratory walkthroughs, no bundled browsers, no change to effort, scope, or test rules.
-Assumptions: Playwright MCP is invoked as `npx -y @playwright/mcp@latest --headless --isolated` on both sides, matching the user's existing Claude Code configuration; the Codex verifier runs `workspace-write` because probe A showed the read-only sandbox breaks the MCP process, with read-only behavior enforced by instruction; the fable-crew worker gets the browser only when the brief says `Worker browser: yes`, to avoid the npx startup on backend slices, while the astra-crew worker TOMLs carry it always because agent files are static; the verifier may start the app with the brief's launch command, since running the app changes no files.
-Effort assumed: high (session default; not chosen at launch).
-Checks: `bash -n scripts/*.sh codex/scripts/*.sh`; JSON validation of the three versioned manifests; `/opt/homebrew/opt/python@3.12/bin/python3.12` `tomllib` parse of `codex/agents/*.toml`; `scripts/codex-worker.sh --dry-run` with and without `--browser`; one real `--browser` no-op run; a probe that spawns the updated `bosun_verifier` TOML from Astra against a local page and gets the title.
-Branch: `runtime-verify`
+Status: verified PASS, 2026-09-15. Done-conditions 47–49 verified independently; 50 remains human-check.
+Outcome: ship evidence-driven GitHub Actions CI audit/optimization skills for both Bosun plugins.
+Done-conditions: 47–49; 50 is human-check.
+Out of scope: CI-provider migration, live workflow changes, timing helper, installation/publishing, changes to the existing brief/verify contracts.
+Assumptions: the user's acceptance authorizes implementation here in astra mode; v1 uses existing GitHub tooling rather than introducing a data collector before real usage establishes its needs. Historical out-of-scope entries above apply to their original slices.
+Effort assumed: high; app picker value is not available.
+Checks: skill-creator quick_validate.py for both skills; JSON parsing of manifests; normalized Claude/Codex skill parity; git diff --check; independent bosun_verifier review, including audit/no-history and unsafe-optimization scenarios.
+Branch: codex/bosun-ci, based on main at 966bff9.
 
 ## Follow-ups
 
@@ -265,6 +273,8 @@ Branch: `runtime-verify`
 - runtime-verify, 2026-09-05: whether Claude Code honors the `mcpServers` list-of-maps frontmatter in `agents/bosun-verifier.md` has not been probed; done-condition 46's fable-mode run shows it.
 
 ## Slice log
+
+- 2026-09-15, bosun-ci, astra mode (implemented by Astra), first verify PASS; done-conditions 47–49 verified, 50 human-check; route-or-screen done-conditions: 0 of 0.
 
 (each codex-mode slice appends: date, slice name, task class, route, first-verify verdict, usage)
 

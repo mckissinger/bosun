@@ -291,3 +291,15 @@ Branch: codex/bosun-ci, based on main at 966bff9.
 - Codex custom agent names accept only lowercase letters, digits, and underscores; a hyphen makes every spawn fail with "agent_name must use only lowercase letters, digits, and underscores", surfaced only in the lead's output, while the TOML still parses fine. File names may keep hyphens (`bosun-scout.toml` holds `name = "bosun_scout"`). Found 2026-09-04 by spawning from Astra in a temp project; a parse check of the agent files is not proof they are usable, so any new agent needs one real spawn.
 
 - `codex exec` rejects `-s <sandbox>` together with `--approve-for-me`; the latter already selects the workspace-write sandbox. Found by a real smoke run of `scripts/codex-worker.sh` (2026-09-02, codex-cli 0.149.0) after the dry-run looked fine, so a dry-run of the argv is not proof the argv is accepted. Any flag change to the script needs one real no-op run (Luna, low, "reply OK") before it ships.
+
+## Public readiness slice — September 15, 2026
+
+Authority: Michael approved reviewing and cleaning Bosun for public sharing; selected MIT explicitly.
+Outcome: clear public onboarding, accurate validation limits, MIT license, and contribution guidance.
+Done-conditions: P1 README explains intended user, role split, quickstart and prerequisites; P2 stale blanket untested claims replaced with evidence-linked limitations; P3 MIT license and contribution checks present; P4 manifest/shell/parser checks and CLI install-command availability checked with results reported; P5 tracked-file/history pattern scan reports findings without exposing secrets.
+Out of scope: runtime/model routing changes, paid model runs, broad refactoring, production changes, automatic merge.
+Assumptions: public-readiness changes are based on published main, excluding the separate uncommitted CI skill work.
+Mode: astra. Branch: codex/public-readiness. Status: verified, ready for PR review.
+Validation limits: clean installation and full live runs in every supported mode remain unverified. Static checks do not establish those outcomes.
+
+Verification (2026-09-15): independent verifier PASS after correcting quickstart order and shell escaping. Shell syntax, both Claude validators, 12 JSON/TOML parses, worker dry-run, CLI install-command help, and diff whitespace checks all passed. Pattern screening was independently repeated across 27 reachable commits, 140 unique blobs, and 32 working files with no matches; public author email remains in metadata. Screening excludes unreachable objects and external artifacts and is not proof of absence. No runtime, global installation, model execution, or production changes were made. Next action: review and merge this documentation-only PR before sharing the updated onboarding.

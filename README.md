@@ -1,6 +1,20 @@
 # Bosun
 
-A harness for autonomous coding runs: one durable spec per project, effort chosen at launch, fresh-context verification, and a checkpoint for stopping mid-slice. Built from Anthropic's Fable 5.1 documentation and Anthropic's guidance for running it in Claude Code, with the source of each rule in "Why each piece exists". It ships as two plugins that share the spec contract. The Claude Code plugin (repo root) runs on Claude Fable 5.1, alone (`fable`) or leading gpt-5.6-sol and gpt-5.6-luna workers through your own `codex` CLI (`fable-crew`). The Codex plugin (`codex/`) runs the same workflow in the ChatGPT desktop app on GPT-6 Astra, alone (`astra`) or leading Sol and Luna as Codex subagents (`astra-crew`). See "Provider modes" and "Codex install".
+Bosun coordinates coding work through a durable spec, scoped implementation tasks, and verification in a fresh session. It is for developers who want their coding agents to keep track of the requirements and check the result before calling a task done.
+
+The `fable-crew` setup uses Fable 5.1 in Claude Code to plan and coordinate, Sol to implement routine through difficult changes, and Luna for small changes. Fable verifies the result in a fresh context. A sibling Codex plugin supports an Astra lead with the same spec contract.
+
+## Start here
+
+1. Choose **Claude Code** for `fable` or `fable-crew`, or **Codex** for `astra` or `astra-crew`.
+2. Install the matching plugin below. Crew mode requires access to the named worker models; Fable crew also requires a logged-in Codex CLI.
+3. In a new project, invoke `/bosun-brief <your task>` (Claude Code) or `$bosun-brief <your task>` (Codex). Bosun creates a spec and stops for your review.
+4. Review the spec, then select `/bosun-mode fable-crew` in Claude Code or `$bosun-mode astra-crew` in Codex. With an existing spec, select the mode before briefing. Say go to start the slice.
+5. Review the result and verification evidence. A failed or unavailable check is not proof of completion.
+
+For example, ask Bosun to add a CSV export to an existing report, preserving its current filters. The spec defines the expected columns and behavior; the worker implements the scoped change; a separate verifier checks it against those requirements. This is an illustrative workflow, not a benchmark result.
+
+You need the corresponding host installed, authenticated access to the configured models, and Git. Browser checks additionally use Node.js/npx and Playwright. Model availability depends on your host and account. Bosun does not bundle models or bypass usage limits. Start in a disposable project before using continuous runs on important work.
 
 ## Install
 
@@ -26,7 +40,7 @@ codex plugin marketplace add mckissinger/bosun
 codex plugin add bosun@bosun
 ```
 
-Then, in the ChatGPT desktop app: trust the plugin's SessionStart hook when Codex asks (plugin hooks are skipped until reviewed once), open a project, and run `$bosun-mode astra-crew` or `$bosun-mode astra`. That sets the spec line and copies the harness's agent files (`codex/agents/*.toml`) into `~/.codex/agents/`, since Codex plugins cannot bundle agents. GPT-6 Astra needs a Codex build with codex-cli 0.153.1 or later; the app updates itself.
+Then, in the ChatGPT desktop app: trust the plugin's SessionStart hook when Codex asks (plugin hooks are skipped until reviewed once), open a project, create and review its spec with `$bosun-brief` if it has none, and run `$bosun-mode astra-crew` or `$bosun-mode astra`. That sets the spec line and copies the harness's agent files (`codex/agents/*.toml`) into `~/.codex/agents/`, since Codex plugins cannot bundle agents. GPT-6 Astra needs a Codex build with codex-cli 0.153.1 or later; the app updates itself.
 
 ## The shape
 
@@ -58,7 +72,7 @@ launch session at the right effort
 | Codex agents | `codex/agents/*.toml` | `bosun_scout`, `bosun_verifier`, and one worker per routing row, the verifier and workers with Playwright; installed by `$bosun-mode` |
 | Codex hook | `codex/hooks/hooks.json`, `codex/scripts/session-start.sh` | Rules, spec pointer, and checkpoint as session context |
 
-Checkpoints are written to `~/.claude/bosun/checkpoints/<project-slug>.md`.
+Checkpoints are written to `~/.claude/bosun/checkpoints/<project-slug>.md` in Claude Code and `~/.codex/bosun/checkpoints/<project-slug>.md` in Codex.
 
 ## The spec
 
@@ -170,4 +184,16 @@ Sources: [Overview](https://platform.claude.com/docs/en/models/fable-5-1/overvie
 
 ## Status
 
-Version 0.2.0. Designed from the docs and walked through scenarios on paper; not yet exercised on a real multi-session project. The codex provider mode has not yet run a real slice; its sandbox and network defaults are the part most likely to change after the first one. Expect the first real runs to change it.
+Version 0.6.1. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
+
+There is no controlled performance benchmark establishing cost, speed, or quality improvements. Those depend on the project, model access, task routing, and verification workload.
+
+## Safety and local data
+
+Bosun delegates through your installed tools and their permissions. Workers can edit project files. The Codex verifier has a workspace-write sandbox to support its browser tooling, but instructions prohibit it from editing; that is a behavioral rule, not enforced filesystem read-only access. Review the rules and SessionStart hooks before enabling them.
+
+Specs, checkpoints, worker prompts, event logs, and usage files can contain project information. Review them before sharing or committing them. Do not include credentials or customer records in a public example or issue. Continuous runs can commit, push, and open pull requests under the documented run policy; start with one slice.
+
+## Contributing and license
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for checks and issue guidance. Bosun is available under the [MIT License](LICENSE). Provider products and dependencies retain their own terms.

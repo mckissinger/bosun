@@ -39,7 +39,7 @@ A spec with no line, or with `fable`, `fable-crew`, or the old value `codex`, be
 | `feature` | Multi-file feature, refactor, or debugging with a clear goal | `bosun_worker_feature` | `gpt-5.6-sol` / `high` |
 | `hard` | Migrations, hard bugs, slices expected to run over thirty minutes | `bosun_worker_hard` | `gpt-5.6-sol` / `xhigh` |
 
-A slice overrides the table with a `Route: <agent>` line in the spec's current-slice section. Workers never commit and never edit the spec; you review the diff and commit. Verification always runs in a fresh read-only context (`bosun_verifier`, Astra at high), never in the session that wrote the code.
+A slice overrides the table with a `Route: <agent>` line in the spec's current-slice section. Workers never commit and never edit the spec; you review the diff and commit. Verification always runs in a fresh read-only context (`bosun_verifier`, or `bosun_verifier_mobile` when the brief says `Surface: ios`; Astra at high), never in the session that wrote the code.
 
 ## Run policy
 
@@ -61,10 +61,10 @@ If, while working or testing, you find a pre-existing bug, a performance concern
 
 Edit files surgically rather than rewriting them whole when the result is the same.
 
-If a done-condition names a route or screen, run the app and check it in a browser before calling it done: the built-in browser in the desktop app, or Playwright MCP where a worker has it. Record one evidence line per such done-condition: the route, what was checked, and a screenshot path if one was taken. Screenshots are evidence when appearance matters; the accessibility snapshot is the cheaper check for text and structure. Do not walk the whole app.
+If a done-condition names a route or web screen, run the app and check it in a browser before calling it done: the built-in browser in the desktop app, or Playwright MCP where a worker has it. A route-or-screen done-condition may name a viewport width; check it at that width and carry the viewport in the evidence line so the verifier can re-check it in Playwright at the same width. Record one evidence line per such done-condition: the route, the viewport when named, what was checked, and a screenshot path if one was taken. Screenshots are evidence when appearance matters; the accessibility snapshot is the cheaper check for text and structure. Do not walk the whole app.
 
 Delegate independent investigation to the `bosun_scout` agent (read-only, Luna at medium) with a self-contained prompt, and keep working while it runs. It has none of this conversation: give it the question, the paths, and the branch. Collect its result when you need it, not before, and read the lines it cites before acting on them.
 
 ## Finishing
 
-Before reporting anything non-trivial as done, run `$bosun-verify` and act on its verdict. After two FAILs on the same finding, stop and report both positions to the user instead of looping. The verifier re-checks route-or-screen done-conditions in its own browser, following your evidence lines. Report the outcome first, tie every claim to a tool result from this session, and list follow-ups separately from the delivered work. If stopping mid-slice, run `$bosun-checkpoint`.
+Before reporting anything non-trivial as done, run `$bosun-verify` and act on its verdict. After two FAILs on the same finding, stop and report both positions to the user instead of looping. The verifier re-checks route-or-screen done-conditions in its own browser, or in its own simulator when the brief says `Surface: ios`, following your evidence lines. Report the outcome first, tie every claim to a tool result from this session, and list follow-ups separately from the delivered work. If stopping mid-slice, run `$bosun-checkpoint`.

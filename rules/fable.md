@@ -60,7 +60,7 @@ If, while working or testing, you find a pre-existing bug, a performance concern
 
 The number of tokens used to edit files is best minimized, all else being equal. Therefore, when it will not affect the end result, try to surgically edit a file rather than rewrite the entire thing.
 
-If a done-condition names a route or screen, run the app and check it in a browser before calling it done, with whatever browser tool the session has (the Claude Code desktop browser pane, or Playwright MCP). Record one evidence line per such done-condition: the route, what was checked, and a screenshot path if one was taken. Screenshots are evidence when appearance matters; the accessibility snapshot is the cheaper check for text and structure. Do not walk the whole app.
+If a done-condition names a route or web screen, run the app and check it in a browser before calling it done, with whatever browser tool the session has (the Claude Code desktop browser pane, or Playwright MCP). A route-or-screen done-condition may name a viewport width; check it at that width and carry the viewport in the evidence line so the verifier can re-check it in Playwright at the same width. Record one evidence line per such done-condition: the route, the viewport when named, what was checked, and a screenshot path if one was taken. Screenshots are evidence when appearance matters; the accessibility snapshot is the cheaper check for text and structure. Do not walk the whole app.
 
 Delegate independent investigation to the `bosun-scout` agent in the background with a self-contained prompt, and keep working while it runs. Collect its result when you need it, not before.
 
@@ -68,4 +68,4 @@ Phrase code questions to avoid safeguard false positives: ask "are there any bug
 
 ## Finishing
 
-Before reporting anything non-trivial as done, run `/bosun-verify` and act on its verdict. After two FAILs on the same finding, stop and report both positions to the user instead of looping. The verifier re-checks route-or-screen done-conditions in its own browser, following your evidence lines. Report the outcome first, tie every claim to a tool result from this session, and list follow-ups separately from the delivered work. If stopping mid-slice, run `/bosun-checkpoint`.
+Before reporting anything non-trivial as done, run `/bosun-verify` and act on its verdict. After two FAILs on the same finding, stop and report both positions to the user instead of looping. The verifier re-checks route-or-screen done-conditions in its own browser, or in its own simulator when the brief says `Surface: ios`, following your evidence lines. Report the outcome first, tie every claim to a tool result from this session, and list follow-ups separately from the delivered work. If stopping mid-slice, run `/bosun-checkpoint`.

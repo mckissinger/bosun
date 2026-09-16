@@ -14,7 +14,7 @@ The `fable-crew` setup uses Fable 5.1 in Claude Code to plan and coordinate, Sol
 
 For example, ask Bosun to add a CSV export to an existing report, preserving its current filters. The spec defines the expected columns and behavior; the worker implements the scoped change; a separate verifier checks it against those requirements. This is an illustrative workflow, not a benchmark result.
 
-You need the corresponding host installed, authenticated access to the configured models, and Git. Browser checks additionally use Node.js/npx and Playwright. Model availability depends on your host and account. Bosun does not bundle models or bypass usage limits. Start in a disposable project before using continuous runs on important work.
+You need the corresponding host installed, authenticated access to the configured models, and Git. Browser checks additionally use Node.js/npx and Playwright; native-screen checks require macOS with Xcode and an iOS simulator. Model availability depends on your host and account. Bosun does not bundle models or bypass usage limits. Start in a disposable project before using continuous runs on important work.
 
 ## Install
 
@@ -66,11 +66,12 @@ launch session at the right effort
 | Codex worker | `scripts/codex-worker.sh` | Runs one slice on gpt-5.6-sol or gpt-5.6-luna via `codex exec`; owns every flag, refuses `ultra`, runs with `--disable plugins` so the Codex Bosun plugin's lead-mode gate cannot reach a delegated worker, writes usage |
 | `bosun-scout` agent | `agents/bosun-scout.md` | Read-only background investigator, medium effort |
 | `bosun-verifier` agent | `agents/bosun-verifier.md` | Read-only verifier, high effort, with Playwright for done-conditions that name a route or screen |
+| `bosun-verifier-mobile` agent | `agents/bosun-verifier-mobile.md` | Read-only verifier, high effort, with a simulator MCP server for done-conditions that name a native iOS screen |
 | SessionStart hook | `scripts/session-start.sh` | Loads the rules if needed, points at the spec with its provider mode and run policy, prints any checkpoint; on compaction, tells the model to re-read the spec |
 | Codex plugin manifest | `codex/.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json` | The sibling plugin for the ChatGPT desktop app |
 | Codex core rules | `codex/rules/astra.md` | The same contract for an Astra lead: effort ladder, spec, modes, run policy, finishing |
 | Codex skills | `codex/skills/*/SKILL.md` | `$bosun-brief`, `$bosun-verify`, `$bosun-checkpoint`, `$bosun-mode`, `$bosun-ci`, ported for Astra and Codex subagents |
-| Codex agents | `codex/agents/*.toml` | `bosun_scout`, `bosun_verifier`, and one worker per routing row, the verifier and workers with Playwright; installed by `$bosun-mode` |
+| Codex agents | `codex/agents/*.toml` | `bosun_scout`, `bosun_verifier`, `bosun_verifier_mobile`, and one worker per routing row; the web verifier and workers have Playwright, and the mobile verifier has simulator tooling; installed by `$bosun-mode` |
 | Codex hook | `codex/hooks/hooks.json`, `codex/scripts/session-start.sh` | Rules, spec pointer, and checkpoint as session context |
 
 Checkpoints are written to `~/.claude/bosun/checkpoints/<project-slug>.md` in Claude Code and `~/.codex/bosun/checkpoints/<project-slug>.md` in Codex.
@@ -136,7 +137,7 @@ Rules that do not bend: the worker never commits; verification never moves off F
 
 Requires the `codex` CLI (tested with codex-cli 0.149.0) logged in with your own account. The harness spawns your unmodified binary; it never handles provider credentials.
 
-**The astra modes.** `astra-crew` and `astra` run in the ChatGPT desktop app through the Codex plugin, with GPT-6 Astra as the lead. Astra briefs, keeps the spec, commits, and verifies through `$bosun-verify`, which spawns the read-only `bosun_verifier` agent (Astra at high). In `astra-crew`, the Execute step asks Astra to delegate the slice to the worker agent named by the task class (`bosun_worker_small` is Luna at max, `bosun_worker_routine` Sol at medium, `bosun_worker_feature` Sol at high, `bosun_worker_hard` Sol at xhigh) and wait for it; in `astra`, Astra implements the slice itself. Three things differ from fable-crew: workers are native Codex subagents rather than a `codex exec` process, so there is no `usage.json` and the slice log records the route and first-verify verdict only (the app's usage view is the cost record); the scout is `bosun_scout`, Luna at medium, read-only; and checkpoints go to `~/.codex/bosun/checkpoints/`. The same rules that do not bend apply: workers never commit, verification is a fresh read-only context, `ultra` is never used.
+**The astra modes.** `astra-crew` and `astra` run in the ChatGPT desktop app through the Codex plugin, with GPT-6 Astra as the lead. Astra briefs, keeps the spec, commits, and verifies through `$bosun-verify`, which spawns the read-only `bosun_verifier` agent, or `bosun_verifier_mobile` when the brief says `Surface: ios` (Astra at high). In `astra-crew`, the Execute step asks Astra to delegate the slice to the worker agent named by the task class (`bosun_worker_small` is Luna at max, `bosun_worker_routine` Sol at medium, `bosun_worker_feature` Sol at high, `bosun_worker_hard` Sol at xhigh) and wait for it; in `astra`, Astra implements the slice itself. Three things differ from fable-crew: workers are native Codex subagents rather than a `codex exec` process, so there is no `usage.json` and the slice log records the route and first-verify verdict only (the app's usage view is the cost record); the scout is `bosun_scout`, Luna at medium, read-only; and checkpoints go to `~/.codex/bosun/checkpoints/`. The same rules that do not bend apply: workers never commit, verification is a fresh read-only context, `ultra` is never used.
 
 ## Runtime verification
 
@@ -145,6 +146,8 @@ A done-condition may name a route or screen ("`/settings` shows the new toggle")
 The implementer runs the app and looks before marking such a done-condition done, and records one evidence line per done-condition: the route, what was checked, and a screenshot path if one was taken. The Fable lead uses the desktop browser pane or Playwright MCP; the Astra lead uses the built-in browser. Sol and Luna workers get Playwright MCP: in fable-crew the brief says `Worker browser: yes` and the worker script passes `--browser`, which binds the server for that run only; in astra-crew the worker agent files carry it always. Screenshots are evidence when appearance matters; the accessibility snapshot is the cheaper check for text and structure. Nobody walks the whole app.
 
 The verifier gets Playwright too (an inline `mcpServers` entry on `bosun-verifier`; an `mcp_servers` block on `bosun_verifier`, which therefore runs `workspace-write` with a never-edit rule, because Codex's read-only sandbox breaks the MCP process). It uses the browser only to re-check the route-or-screen done-conditions, following the implementer's evidence lines, may start the app with the launch command the brief names, stops it afterward, and reports screenshot paths as evidence. Each slice-log line records how many done-conditions named a route or screen and how many the verifier confirmed, so runtime verification can be compared across modes and projects.
+
+For native iOS screens, the brief says `Surface: ios` and the evidence line records the screen, device, what was checked, and screenshot path. `bosun-verifier-mobile` on both plugins uses the mobile simulator MCP server; fable-crew workers receive the same server for that run through `--simulator`. The lead or verifier may boot the named device with `xcrun simctl boot` and must shut down any simulator it booted with `xcrun simctl shutdown`. Native-screen checks require macOS with Xcode and an iOS simulator.
 
 Requires `npx` able to fetch or find `@playwright/mcp` and a Chromium; the first run downloads them.
 
@@ -193,7 +196,7 @@ Sources: [Overview](https://platform.claude.com/docs/en/models/fable-5-1/overvie
 
 ## Status
 
-Version 0.7.0. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
+Version 0.7.1. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
 
 There is no controlled performance benchmark establishing cost, speed, or quality improvements. Those depend on the project, model access, task routing, and verification workload.
 

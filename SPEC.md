@@ -1,6 +1,6 @@
 # Bosun spec
 
-Provider mode: astra
+Provider mode: fable-crew
 
 Repo: `mckissinger/bosun` (named `fable-harness` until 2026-09-04; evidence pointers and slice names before that date refer to the old paths, which map one to one onto the new ones), plugin version 0.1.2 at the time this spec was written (2026-09-02). The plugin is prompt-only (skills, agents, rules, one hook script); there is no runtime code or test suite. Checks are therefore file reads, `bash -n`, JSON validation, and a dry-run of any script this work adds.
 
@@ -32,6 +32,8 @@ Third outcome (slice 4, 2026-09-04): the harness runs on either Claude Code or C
 - "ignore my old cc harness data entirely." (No routing or effort choice here is justified by cc-harness metrics.)
 - From the research the user accepted without objection: Fable keeps briefing, spec upkeep, and verification; only implementation moves. Sol's `ultra` effort is never used because it auto-delegates, which fights the single-context slice design.
 - Settled 2026-09-02 on the assistant's recommendations, user said "good": the scout stays a Fable agent; the worker never commits and Fable commits after review; the routing table is global with only the per-slice `Route:` override; the README recommends launching the Fable session at `medium` in codex mode but nothing enforces it.
+- (2026-09-16) "Does the current bosun setup allow us to properly verify and test mobile apps?" It did not: the verifier had Playwright only, so a native iOS screen could only be screenshotted through `xcrun simctl` and never tapped or inspected. Michael: "lets proceed" on one slice that adds a mobile verifier, not two.
+- (2026-09-16) The mobile verifier gets its simulator tooling the same way the web verifier gets Playwright: an npx-launched MCP server declared in the agent file, so it behaves the same in every environment. The desktop app's own iOS Simulator tool is not used by the harness.
 
 ## Facts this work relies on (verified 2026-09-02)
 
@@ -213,6 +215,16 @@ Slice 7, CI optimization skill (2026-09-15; user accepted the proposed bosun-ci 
 49. `verified 2026-09-15 bosun_verifier PASS; skill reads, normalized parity, quick_validate.py, JSON/version checks, diff --check` README documents both entry points and measurement limits; all three versioned manifests are 0.7.0 and parse as JSON; both new skills pass skill validation.
 50. `human-check` Exercise an audit and an optimization on a real GitHub Actions project with authenticated run history and comparable before/after hosted runs. No hosted speedup is claimed by this skill-authoring slice.
 
+51. `verified 2026-09-16 bosun-verifier PASS WITH FOLLOW-UPS; agents/bosun-verifier.md:18, codex/agents/bosun-verifier.toml:12, rules/fable.md:63, codex/rules/astra.md:64, both bosun-brief Execute steps` **Web viewport rule.** `agents/bosun-verifier.md`, `codex/agents/bosun-verifier.toml`, `rules/fable.md`, `codex/rules/astra.md`, and both `bosun-brief` skills say that a route-or-screen done-condition may name a viewport width, that the implementer's evidence line then carries the viewport, and that the verifier re-checks it in Playwright at that viewport. No new capability.
+52. `verified 2026-09-16 bosun-verifier PASS WITH FOLLOW-UPS; agents/bosun-verifier-mobile.md:4-12 frontmatter (YAML parse), :20 simulator rule, diff vs web verifier limited to frontmatter, rule, step 3b` **Mobile verifier agent, Claude side.** `agents/bosun-verifier-mobile.md` exists with frontmatter `tools: Read, Grep, Glob, Bash, mcp__mobile`, `effort: high`, and an inline `mcpServers` entry `mobile` that runs `npx -y @mobilenext/mobile-mcp@latest` over stdio with env `MOBILEMCP_DISABLE_TELEMETRY=1`. Its body is the `bosun-verifier` body with the browser rule replaced by a simulator rule: the simulator is for done-conditions that name a native screen and nothing else; follow the implementer's evidence lines (screen, device, what was checked, screenshot path); the app is built and installed with the commands the prompt names; the verifier may boot the named simulator with `xcrun simctl boot` and must shut down anything it booted with `xcrun simctl shutdown` before finishing; use the on-screen element list for text and structure and save a screenshot only when appearance is what the done-condition asserts; no exploratory walkthroughs. Everything else (read-only, evidence citations, judge as written, human-check handling, bug hunt, report format) is identical to `bosun-verifier`.
+53. `verified 2026-09-16 bosun-verifier PASS WITH FOLLOW-UPS; codex/agents/bosun-verifier-mobile.toml:1-5, :32-35 (tomllib parse via python3.12)` **Mobile verifier agent, Codex side.** `codex/agents/bosun-verifier-mobile.toml` exists with `name = "bosun_verifier_mobile"` (underscores only, per the lessons), the same model, effort, and `sandbox_mode = "workspace-write"` as `bosun-verifier.toml`, the same developer instructions as 52 adapted to Codex wording, and a `[mcp_servers.mobile]` block with `command = "npx"`, `args = ["-y", "@mobilenext/mobile-mcp@latest"]`, and `env = { MOBILEMCP_DISABLE_TELEMETRY = "1" }`. `codex/skills/bosun-mode/SKILL.md` needs no change because it copies every `agents/*.toml`.
+54. `verified 2026-09-16 bosun-verifier PASS WITH FOLLOW-UPS; skills/bosun-brief/SKILL.md:38,50,88,93,101; codex/skills/bosun-brief/SKILL.md:37,49,90` **Brief marks the surface.** Both `bosun-brief` skills: the brief template gains an optional line `Surface: ios` present only when a done-condition names a native screen; the evidence line for such a done-condition is `screen, device, what was checked, screenshot path`; the Execute step says the Fable or Astra lead checks a native screen with the simulator tool its session has, or `xcrun simctl` from the shell when it has none, before marking it done. In fable-crew mode the template gains `Worker simulator: <yes | no>` (yes when `Surface: ios`), and the worker prompt rules name the simulator check when it is yes.
+55. `verified 2026-09-16 bosun-verifier PASS WITH FOLLOW-UPS; skills/bosun-verify/SKILL.md:9,20,22; codex/skills/bosun-verify/SKILL.md:8,19,21; web verifier 'not verifiable here' at agents/bosun-verifier.md:18 and the TOML :12` **Verify picks the verifier.** Both `bosun-verify` skills: when the brief says `Surface: ios`, launch `bosun-verifier-mobile` (`bosun_verifier_mobile` in Codex) instead of the web verifier and include in its prompt the device name, the build and install commands, the bundle id, and the evidence lines; otherwise launch the web verifier as today. The web verifier's rule text says a native-screen done-condition is "not verifiable here" and names the mobile verifier.
+56. `verified 2026-09-16 bosun-verifier PASS WITH FOLLOW-UPS; scripts/codex-worker.sh:8,32,67-71; dry-run with --simulator prints three mcp_servers.mobile flags, without prints none; real no-op run Luna/low exit 0, 5 s` **Worker script binds the simulator.** `scripts/codex-worker.sh` accepts `--simulator`, which adds `-c 'mcp_servers.mobile.command="npx"'`, `-c 'mcp_servers.mobile.args=["-y","@mobilenext/mobile-mcp@latest"]'`, and `-c 'mcp_servers.mobile.env={MOBILEMCP_DISABLE_TELEMETRY="1"}'` to the argv, documented in the header comment next to `--browser`; `bash -n` passes; `--dry-run` prints the three `-c` flags when `--simulator` is given and none of them otherwise.
+57. `verified 2026-09-16 bosun-verifier PASS WITH FOLLOW-UPS; README.md:17,69,74,150,199; three manifests parse and say 0.7.1` **Docs and version.** README: the agent table gains a `bosun-verifier-mobile` row and the Codex agents row names `bosun_verifier_mobile`; the "Runtime verification" section gets one paragraph on native screens (surface line, simulator MCP on both verifiers and on fable-crew workers via `--simulator`, `xcrun simctl` boot and shutdown, macOS with Xcode required, evidence line shape); the prerequisites line at README.md:17 mentions macOS with Xcode and a simulator for native-screen checks; the "Version" line says 0.7.1. All three manifests (`.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `codex/.codex-plugin/plugin.json`) say 0.7.1 and parse as JSON.
+58. `verified 2026-09-16 bosun-verifier PASS WITH FOLLOW-UPS; verifier re-ran the stdio handshake: mobile-mcp 1.0.4, 32 tools incl. the four named` **Simulator MCP answers on this machine.** `npx -y @mobilenext/mobile-mcp@latest` started over stdio with `MOBILEMCP_DISABLE_TELEMETRY=1` answers an MCP `initialize` followed by `tools/list` with a tool list that includes `mobile_install_app`, `mobile_launch_app`, `mobile_save_screenshot`, and `mobile_list_elements_on_screen`. Run by the lead as a check, not by the worker.
+59. `human-check` A real native iOS slice on a real project: the fable-crew worker checks a screen with `Worker simulator: yes`, and `bosun-verifier-mobile` confirms it in its own simulator, with the slice log recording the counts. Also the first real spawn of `bosun_verifier_mobile` from Codex, per the lesson that a parse check never proves an agent is usable.
+
 ## Undecided
 
 (none)
@@ -238,17 +250,27 @@ Slice 7, CI optimization skill (2026-09-15; user accepted the proposed bosun-ci 
 - Chrome DevTools MCP, the Claude-in-Chrome connector, or Codex Computer Use as harness-provided tools; leads may use what their session has (slice 6).
 - Exploratory browser walkthroughs by the verifier; it re-checks named done-conditions only (slice 6).
 - Bundling the Playwright package or browsers; the harness assumes `npx` can fetch or has cached them (slice 6).
+- Simulator MCP on the astra-crew worker TOMLs; those carry Playwright always, and a simulator server started in every project is not wanted. Follow-up (mobile-verify).
+- Android as a named surface in the rule text. `mobile-mcp` supports it, but no rule names it until a project needs it (mobile-verify).
+- Real devices, cloud devices, and the mobile MCP's location, clipboard, and recording tools (mobile-verify).
+- Granting the desktop app's own iOS Simulator tool to any agent (mobile-verify).
+- The design/prototyping skill discussed the same day; it is a separate skill, not part of Bosun (mobile-verify).
 
 ## Current slice
 
-Status: verified PASS, 2026-09-15. Done-conditions 47–49 verified independently; 50 remains human-check.
-Outcome: ship evidence-driven GitHub Actions CI audit/optimization skills for both Bosun plugins.
-Done-conditions: 47–49; 50 is human-check.
-Out of scope: CI-provider migration, live workflow changes, timing helper, installation/publishing, changes to the existing brief/verify contracts.
-Assumptions: the user's acceptance authorizes implementation here in astra mode; v1 uses existing GitHub tooling rather than introducing a data collector before real usage establishes its needs. Historical out-of-scope entries above apply to their original slices.
-Effort assumed: high; app picker value is not available.
-Checks: skill-creator quick_validate.py for both skills; JSON parsing of manifests; normalized Claude/Codex skill parity; git diff --check; independent bosun_verifier review, including audit/no-history and unsafe-optimization scenarios.
-Branch: codex/bosun-ci, based on main at 966bff9.
+Status: verified PASS WITH FOLLOW-UPS, 2026-09-16; the five follow-ups fixed the same day by a Luna worker and verified PASS. Done-conditions 51–58 verified independently; 59 remains human-check.
+Outcome: Bosun can verify native iOS screens: a mobile verifier agent on both plugins with an npx simulator MCP server, the brief marks the surface and carries device evidence, verify picks the right verifier, the worker script can bind the simulator, and web viewport checks are stated explicitly.
+Done-conditions: 51–58; 59 is human-check.
+Out of scope: astra-crew worker TOMLs, Android rule text, real or cloud devices, the desktop app's simulator tool, the design skill, any change to fable-mode behavior beyond the lines named above.
+Assumptions: `@mobilenext/mobile-mcp` over `ios-simulator-mcp` because it needs no `idb` install, saves screenshots to a path, lists on-screen elements, and was published 2026-09-13 (scout report, 2026-09-16). Booting stays a shell step because neither package boots a device. The Claude agent frontmatter accepts an `env` map inside the `mcpServers` entry, by analogy with Claude Code's `.mcp.json` shape; 58 proves the server, 59 proves the frontmatter. The Codex TOML `env` table shape follows Codex's `mcp_servers` config; the same 59 proves it.
+Effort assumed: high (session level; cannot change).
+Checks: `bash -n scripts/codex-worker.sh`; `scripts/codex-worker.sh --model gpt-5.6-luna --effort low --cwd . --prompt-file /dev/null --out-dir /tmp/x --simulator --dry-run` prints the three `mcp_servers.mobile` flags, and without `--simulator` prints none; `python3 -c 'import json,sys;[json.load(open(f)) for f in sys.argv[1:]]' .claude-plugin/plugin.json .claude-plugin/marketplace.json codex/.codex-plugin/plugin.json` and `grep -h '"version"' ...` all 0.7.1; `python3 -c 'import tomllib;tomllib.load(open("codex/agents/bosun-verifier-mobile.toml","rb"))'`; `python3 -c 'import yaml,sys;yaml.safe_load(open("agents/bosun-verifier-mobile.md").read().split("---")[1])'`; `git diff --check`; MCP handshake for 58 (lead runs); one real no-op worker run with `--simulator` (Luna, low, "reply OK"; lead runs, per the lessons).
+Branch: fable/mobile-verify, from main at 37f678e.
+Task class: feature (nine files across two plugins, prompt-only, design settled by the done-conditions).
+Route: gpt-5.6-sol / high
+Worker network: no
+Worker browser: no
+Worker simulator: no
 
 ## Follow-ups
 
@@ -274,6 +296,8 @@ Branch: codex/bosun-ci, based on main at 966bff9.
 
 ## Slice log
 
+- 2026-09-16, mobile-verify-followups, fable-crew (gpt-5.6-luna / max, task class small), first verify PASS; the five mobile-verify follow-ups fixed and removed from the follow-ups section; route-or-screen done-conditions: 0 of 0. Usage: 162 s wall, 291,516 input (246,784 cached), 8,183 output (3,650 reasoning).
+- 2026-09-16, mobile-verify, fable-crew (gpt-5.6-sol / high, task class feature), first verify PASS WITH FOLLOW-UPS; done-conditions 51–58 verified, 59 human-check; route-or-screen done-conditions: 0 of 0. Usage: not recorded; the worker was killed by a Claude Code session restart after its last edit and before its report (events.jsonl has 32 events and no turn.completed), so no usage.json exists. Lead-run checks: MCP handshake, and a no-op --simulator worker run (Luna/low, 5 s, 12,742 input of which 8,960 cached, 5 output).
 - 2026-09-15, bosun-ci, astra mode (implemented by Astra), first verify PASS; done-conditions 47–49 verified, 50 human-check; route-or-screen done-conditions: 0 of 0.
 
 (each codex-mode slice appends: date, slice name, task class, route, first-verify verdict, usage)
@@ -286,6 +310,7 @@ Branch: codex/bosun-ci, based on main at 966bff9.
 
 ## Lessons
 
+- A `codex exec` worker started from a Claude Code background shell dies with the session: a session restart (or the app closing) kills it mid-run, leaving `events.jsonl` but no `last-message.md` or `usage.json`. The worktree edits survive. Seen 2026-09-16 on the mobile-verify slice, killed at the worker's self-review step after every edit had landed. On resume, check `git status`, run the slice's checks on the tree, and go straight to verify if the edits are complete; only re-run the worker with a continuation prompt if done-conditions are visibly unfinished. The slice log then records usage as not recorded.
 - Under `codex exec`, a Codex subagent's browser (Playwright MCP) call can be denied by the automatic approval reviewer (`codex-auto-review`) that `--approve-for-me` installs; observed twice with a `gpt-6-astra` agent and never with `gpt-5.6-luna` (2026-09-05, codex-cli 0.153.4). A second failure shape, "The requested module './index.js' does not provide an export named 'default'", appeared on Astra agents and on a read-only agent, and was never reproduced on Luna at workspace-write. CLI probes therefore prove an agent file's shape, not that the Astra-model agent will be allowed to browse; that is settled in the desktop app, where approvals are interactive.
 - Codex subagent spawns fail intermittently with "collab spawn failed: no thread with id: <the lead's own thread id>"; the lead then reports NOTSPAWNED. Seen 2026-09-04 on codex-cli 0.153.4 in five `codex exec --ephemeral` runs from Astra: three succeeded (all in git repos) and two failed (one bare temp dir, one git repo with a commit), while a run without `--ephemeral` succeeded. Neither the git repo nor `--ephemeral` is a proven cause. Treat one failure as inconclusive and retry once before concluding an agent file is broken; a parse check never proves usability.
 - Codex custom agent names accept only lowercase letters, digits, and underscores; a hyphen makes every spawn fail with "agent_name must use only lowercase letters, digits, and underscores", surfaced only in the lead's output, while the TOML still parses fine. File names may keep hyphens (`bosun-scout.toml` holds `name = "bosun_scout"`). Found 2026-09-04 by spawning from Astra in a temp project; a parse check of the agent files is not proof they are usable, so any new agent needs one real spawn.

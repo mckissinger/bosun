@@ -3,8 +3,9 @@
 # `codex exec` CLI. Owns every flag so the model never has to retype them.
 #
 #   codex-worker.sh --model <gpt-5.6-sol|gpt-5.6-luna> --effort <low|medium|high|xhigh|max>
-#                   --cwd <worktree> --prompt-file <file> --out-dir <dir> [--network] [--browser] [--dry-run]
+#                   --cwd <worktree> --prompt-file <file> --out-dir <dir> [--network] [--browser] [--simulator] [--dry-run]
 #   --browser binds the Playwright MCP server so the worker can check done-conditions that name a route or screen.
+#   --simulator binds the mobile MCP server so the worker can check done-conditions that name a native iOS screen.
 #
 # Writes into --out-dir:
 #   events.jsonl      every `codex exec --json` event
@@ -18,7 +19,7 @@
 # Bosun plugin, whose brief skill tells a Codex *lead* to stop on a fable-mode spec.
 set -euo pipefail
 
-model="" effort="" cwd="" prompt_file="" out_dir="" network=0 browser=0 dry_run=0
+model="" effort="" cwd="" prompt_file="" out_dir="" network=0 browser=0 simulator=0 dry_run=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --model) model="$2"; shift 2 ;;
@@ -28,6 +29,7 @@ while [ $# -gt 0 ]; do
     --out-dir) out_dir="$2"; shift 2 ;;
     --network) network=1; shift ;;
     --browser) browser=1; shift ;;
+    --simulator) simulator=1; shift ;;
     --dry-run) dry_run=1; shift ;;
     -h|--help) sed -n '2,17p' "$0"; exit 0 ;;
     *) echo "codex-worker: unknown argument: $1" >&2; exit 2 ;;
@@ -61,6 +63,11 @@ if [ "$network" = 1 ]; then argv+=(-c "sandbox_workspace_write.network_access=tr
 if [ "$browser" = 1 ]; then
   argv+=(-c 'mcp_servers.playwright.command="npx"'
          -c 'mcp_servers.playwright.args=["-y","@playwright/mcp@latest","--headless","--isolated"]')
+fi
+if [ "$simulator" = 1 ]; then
+  argv+=(-c 'mcp_servers.mobile.command="npx"'
+         -c 'mcp_servers.mobile.args=["-y","@mobilenext/mobile-mcp@latest"]'
+         -c 'mcp_servers.mobile.env={MOBILEMCP_DISABLE_TELEMETRY="1"}')
 fi
 argv+=(-)  # prompt is read from stdin
 

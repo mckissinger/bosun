@@ -61,7 +61,7 @@ If, while working or testing, you find a pre-existing bug, a performance concern
 
 Edit files surgically rather than rewriting them whole when the result is the same.
 
-If a done-condition names a route or screen, run the app and check it in a browser before calling it done: the built-in browser in the desktop app, or Playwright MCP where a worker has it. Record one evidence line per such done-condition: the route, what was checked, and a screenshot path if one was taken. Screenshots are evidence when appearance matters; the accessibility snapshot is the cheaper check for text and structure. Do not walk the whole app.
+If a done-condition names a route or web screen, run the app and check it in a browser before calling it done: the built-in browser in the desktop app, or Playwright MCP where a worker has it. A route-or-screen done-condition may name a viewport width; check it at that width and carry the viewport in the evidence line so the verifier can re-check it in Playwright at the same width. Record one evidence line per such done-condition: the route, the viewport when named, what was checked, and a screenshot path if one was taken. Screenshots are evidence when appearance matters; the accessibility snapshot is the cheaper check for text and structure. Do not walk the whole app.
 
 Delegate independent investigation to the `bosun_scout` agent (read-only, Luna at medium) with a self-contained prompt, and keep working while it runs. It has none of this conversation: give it the question, the paths, and the branch. Collect its result when you need it, not before, and read the lines it cites before acting on them.
 

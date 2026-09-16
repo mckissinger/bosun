@@ -6,7 +6,7 @@ argument-hint: "[slice name or done-conditions, if the spec does not identify th
 
 # Bosun verify
 
-The session that wrote the code is the wrong judge of it. This skill hands the judgment to `bosun-verifier`, a read-only agent at `high` effort with no memory of this session.
+The session that wrote the code is the wrong judge of it. This skill hands the judgment to a read-only agent at `high` effort with no memory of this session: `bosun-verifier-mobile` when the brief says `Surface: ios`, otherwise `bosun-verifier`.
 
 ## Steps
 
@@ -16,9 +16,10 @@ The session that wrote the code is the wrong judge of it. This skill hands the j
    - The base to diff against (branch or commit).
    - The exact check commands and any setup they need.
    - Anything the verifier would otherwise misjudge: intentional deviations and their reasons, environment quirks, known pre-existing failures with evidence that they predate the change.
-   - When any done-condition names a route or screen: the implementer's `Evidence:` list (route, what was checked, screenshot path) and the app's launch command. The verifier re-checks only those done-conditions in its browser.
+   - When any done-condition names a route or web screen: the implementer's `Evidence:` list (route, viewport when named, what was checked, screenshot path) and the app's launch command. The verifier re-checks only those done-conditions in Playwright, at the named viewport width when one is specified.
+   - When the brief says `Surface: ios`: the device name, build and install commands, bundle id, and the implementer's evidence lines (screen, device, what was checked, screenshot path).
    - In fable-crew mode: the worker model and effort that produced the diff. FAIL findings then go back to the worker through `scripts/codex-worker.sh` (see `/bosun-brief`, "Fable-crew mode"), not to Fable.
-2. Launch the `bosun-verifier` agent with that prompt. While it runs, do not idle: draft the report, continue unrelated remaining work, or, under `Run policy: until blocked`, stage the next slice's brief as `/bosun-brief` ("Staged briefs") describes. Do not edit files the verifier is reading.
+2. When the brief says `Surface: ios`, launch the `bosun-verifier-mobile` agent with that prompt; otherwise launch `bosun-verifier`. While it runs, do not idle: draft the report, continue unrelated remaining work, or, under `Run policy: until blocked`, stage the next slice's brief as `/bosun-brief` ("Staged briefs") describes. Do not edit files the verifier is reading.
 3. Relay the verdict faithfully. Do not soften a FAIL.
    - FAIL: fix each in-scope finding, then run this skill again. After two FAILs on the same finding, stop and report both positions to the user. Out-of-scope findings go in the report as follow-ups.
    - PASS WITH FOLLOW-UPS: report the follow-ups; do not fix them unless the user asks.

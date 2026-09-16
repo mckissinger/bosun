@@ -5,7 +5,7 @@ description: Independently verify a finished slice in a fresh, read-only context
 
 # Bosun verify (Codex)
 
-The session that wrote the code is the wrong judge of it. This skill hands the judgment to the `bosun_verifier` agent, a read-only subagent with no memory of this session. If the agent is not installed (`~/.codex/agents/bosun-verifier.toml`), run `$bosun-mode` with the current mode first; it installs the agent files.
+The session that wrote the code is the wrong judge of it. This skill hands the judgment to a read-only subagent with no memory of this session: `bosun_verifier_mobile` when the brief says `Surface: ios`, otherwise `bosun_verifier`. If the agents are not installed (`~/.codex/agents/bosun-verifier.toml` and `~/.codex/agents/bosun-verifier-mobile.toml`), run `$bosun-mode` with the current mode first; it installs the agent files.
 
 ## Steps
 
@@ -15,9 +15,10 @@ The session that wrote the code is the wrong judge of it. This skill hands the j
    - The base to diff against (branch or commit).
    - The exact check commands and any setup they need.
    - Anything the verifier would otherwise misjudge: intentional deviations and their reasons, environment quirks, known pre-existing failures with evidence that they predate the change.
-   - When any done-condition names a route or screen: the implementer's `Evidence:` list (route, what was checked, screenshot path) and the app's launch command. The verifier re-checks only those done-conditions in its browser.
+   - When any done-condition names a route or web screen: the implementer's `Evidence:` list (route, viewport when named, what was checked, screenshot path) and the app's launch command. The verifier re-checks only those done-conditions in Playwright, at the named viewport width when one is specified.
+   - When the brief says `Surface: ios`: the device name, build and install commands, bundle id, and the implementer's evidence lines (screen, device, what was checked, screenshot path).
    - In astra-crew mode: which worker agent produced the diff. FAIL findings then go back to that worker (see `$bosun-brief`, "Astra-crew mode"), not to you.
-2. Spawn the `bosun_verifier` agent with that prompt and wait for it. While it runs, do not idle: draft the report, continue unrelated remaining work, or, under `Run policy: until blocked` in astra-crew, stage the next slice's brief as `$bosun-brief` ("Staged briefs") describes. Do not edit files the verifier is reading.
+2. When the brief says `Surface: ios`, spawn the `bosun_verifier_mobile` agent with that prompt; otherwise spawn `bosun_verifier`. Wait for it. While it runs, do not idle: draft the report, continue unrelated remaining work, or, under `Run policy: until blocked` in astra-crew, stage the next slice's brief as `$bosun-brief` ("Staged briefs") describes. Do not edit files the verifier is reading.
 3. Relay the verdict faithfully. Do not soften a FAIL.
    - FAIL: in astra mode fix each in-scope finding yourself; in astra-crew send the findings back to the worker. Then run this skill again. After two FAILs on the same finding, stop and report both positions to the user. Out-of-scope findings go in the report as follow-ups.
    - PASS WITH FOLLOW-UPS: report the follow-ups; do not fix them unless the user asks.

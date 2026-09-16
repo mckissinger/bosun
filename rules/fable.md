@@ -68,4 +68,4 @@ Phrase code questions to avoid safeguard false positives: ask "are there any bug
 
 ## Finishing
 
-Before reporting anything non-trivial as done, run `/bosun-verify` and act on its verdict. After two FAILs on the same finding, stop and report both positions to the user instead of looping. The verifier re-checks route-or-screen done-conditions in its own browser, following your evidence lines. Report the outcome first, tie every claim to a tool result from this session, and list follow-ups separately from the delivered work. If stopping mid-slice, run `/bosun-checkpoint`.
+Before reporting anything non-trivial as done, run `/bosun-verify` and act on its verdict. After two FAILs on the same finding, stop and report both positions to the user instead of looping. The verifier re-checks route-or-screen done-conditions in its own browser, or in its own simulator when the brief says `Surface: ios`, following your evidence lines. Report the outcome first, tie every claim to a tool result from this session, and list follow-ups separately from the delivered work. If stopping mid-slice, run `/bosun-checkpoint`.

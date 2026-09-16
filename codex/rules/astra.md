@@ -39,7 +39,7 @@ A spec with no line, or with `fable`, `fable-crew`, or the old value `codex`, be
 | `feature` | Multi-file feature, refactor, or debugging with a clear goal | `bosun_worker_feature` | `gpt-5.6-sol` / `high` |
 | `hard` | Migrations, hard bugs, slices expected to run over thirty minutes | `bosun_worker_hard` | `gpt-5.6-sol` / `xhigh` |
 
-A slice overrides the table with a `Route: <agent>` line in the spec's current-slice section. Workers never commit and never edit the spec; you review the diff and commit. Verification always runs in a fresh read-only context (`bosun_verifier`, Astra at high), never in the session that wrote the code.
+A slice overrides the table with a `Route: <agent>` line in the spec's current-slice section. Workers never commit and never edit the spec; you review the diff and commit. Verification always runs in a fresh read-only context (`bosun_verifier`, or `bosun_verifier_mobile` when the brief says `Surface: ios`; Astra at high), never in the session that wrote the code.
 
 ## Run policy
 
@@ -67,4 +67,4 @@ Delegate independent investigation to the `bosun_scout` agent (read-only, Luna a
 
 ## Finishing
 
-Before reporting anything non-trivial as done, run `$bosun-verify` and act on its verdict. After two FAILs on the same finding, stop and report both positions to the user instead of looping. The verifier re-checks route-or-screen done-conditions in its own browser, following your evidence lines. Report the outcome first, tie every claim to a tool result from this session, and list follow-ups separately from the delivered work. If stopping mid-slice, run `$bosun-checkpoint`.
+Before reporting anything non-trivial as done, run `$bosun-verify` and act on its verdict. After two FAILs on the same finding, stop and report both positions to the user instead of looping. The verifier re-checks route-or-screen done-conditions in its own browser, or in its own simulator when the brief says `Surface: ios`, following your evidence lines. Report the outcome first, tie every claim to a tool result from this session, and list follow-ups separately from the delivered work. If stopping mid-slice, run `$bosun-checkpoint`.

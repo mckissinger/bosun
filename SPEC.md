@@ -258,7 +258,7 @@ Slice 7, CI optimization skill (2026-09-15; user accepted the proposed bosun-ci 
 
 ## Current slice
 
-Status: verified PASS WITH FOLLOW-UPS, 2026-09-16. Done-conditions 51–58 verified independently; 59 remains human-check.
+Status: verified PASS WITH FOLLOW-UPS, 2026-09-16; the five follow-ups fixed the same day by a Luna worker and verified PASS. Done-conditions 51–58 verified independently; 59 remains human-check.
 Outcome: Bosun can verify native iOS screens: a mobile verifier agent on both plugins with an npx simulator MCP server, the brief marks the surface and carries device evidence, verify picks the right verifier, the worker script can bind the simulator, and web viewport checks are stated explicitly.
 Done-conditions: 51–58; 59 is human-check.
 Out of scope: astra-crew worker TOMLs, Android rule text, real or cloud devices, the desktop app's simulator tool, the design skill, any change to fable-mode behavior beyond the lines named above.
@@ -293,14 +293,10 @@ Worker simulator: no
 - runtime-verify, 2026-09-05: `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` descriptions still say "Built from Anthropic's Fable 5.1 docs" while the README intro now also credits Claude Code guidance.
 - runtime-verify, 2026-09-05: `codex/rules/astra.md`, `codex/skills/bosun-mode/SKILL.md`, `codex/skills/bosun-verify/SKILL.md`, and the verifier TOML description call `bosun_verifier` read-only without saying its sandbox is `workspace-write` with read-only behavior; only the README and the TOML's own rule explain it.
 - runtime-verify, 2026-09-05: whether Claude Code honors the `mcpServers` list-of-maps frontmatter in `agents/bosun-verifier.md` has not been probed; done-condition 46's fable-mode run shows it.
-- mobile-verify, 2026-09-16: `codex/rules/astra.md:42`, `codex/skills/bosun-mode/SKILL.md:37`, and `README.md:140` still say verification runs in `bosun_verifier` alone; `$bosun-verify` may now spawn `bosun_verifier_mobile`.
-- mobile-verify, 2026-09-16: `rules/fable.md:71` and `codex/rules/astra.md:70` say the verifier re-checks "in its own browser" without mentioning the simulator.
-- mobile-verify, 2026-09-16: `codex/skills/bosun-verify/SKILL.md:3` frontmatter description still names only `bosun_verifier`.
-- mobile-verify, 2026-09-16: `agents/bosun-verifier-mobile.md:18` keeps "never install" verbatim while :20 says install the app; the Codex side reads "install dependencies". Decide one wording for both.
-- mobile-verify, 2026-09-16: `scripts/codex-worker.sh:34` help prints `2,17p`; the header now spans 2–19, so the earlier off-by-one is now two lines.
 
 ## Slice log
 
+- 2026-09-16, mobile-verify-followups, fable-crew (gpt-5.6-luna / max, task class small), first verify PASS; the five mobile-verify follow-ups fixed and removed from the follow-ups section; route-or-screen done-conditions: 0 of 0. Usage: 162 s wall, 291,516 input (246,784 cached), 8,183 output (3,650 reasoning).
 - 2026-09-16, mobile-verify, fable-crew (gpt-5.6-sol / high, task class feature), first verify PASS WITH FOLLOW-UPS; done-conditions 51–58 verified, 59 human-check; route-or-screen done-conditions: 0 of 0. Usage: not recorded; the worker was killed by a Claude Code session restart after its last edit and before its report (events.jsonl has 32 events and no turn.completed), so no usage.json exists. Lead-run checks: MCP handshake, and a no-op --simulator worker run (Luna/low, 5 s, 12,742 input of which 8,960 cached, 5 output).
 - 2026-09-15, bosun-ci, astra mode (implemented by Astra), first verify PASS; done-conditions 47–49 verified, 50 human-check; route-or-screen done-conditions: 0 of 0.
 

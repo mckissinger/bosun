@@ -34,4 +34,4 @@ The mode is a line in the project's spec, `Provider mode: <mode>`. It lives in t
 | `feature` | Multi-file feature, refactor, or debugging with a clear goal | `bosun_worker_feature` | `gpt-5.6-sol` / `high` |
 | `hard` | Migrations, hard bugs, slices expected to run over thirty minutes | `bosun_worker_hard` | `gpt-5.6-sol` / `xhigh` |
 
-Verification always runs on Astra through `$bosun-verify`, in the read-only `bosun_verifier` agent.
+Verification always runs on Astra through `$bosun-verify`, in the read-only `bosun_verifier` agent, or `bosun_verifier_mobile` when the brief says `Surface: ios`.

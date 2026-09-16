@@ -1,6 +1,6 @@
 ---
 name: bosun-verify
-description: Independently verify a finished slice in a fresh, read-only context before reporting it done. Spawns the bosun_verifier agent (GPT-6 Astra, high, read-only), which checks the diff against the spec's done-conditions, runs the project's checks, hunts for bugs, and reports; then records verified status in the spec. Use after completing a slice, before opening a PR, or when the user asks "is this actually done", "verify", or "double-check".
+description: Independently verify a finished slice in a fresh, read-only context before reporting it done. Spawns the bosun_verifier agent, or bosun_verifier_mobile when the brief marks the surface as ios (GPT-6 Astra, high, read-only), which checks the diff against the spec's done-conditions, runs the project's checks, hunts for bugs, and reports; then records verified status in the spec. Use after completing a slice, before opening a PR, or when the user asks "is this actually done", "verify", or "double-check".
 ---
 
 # Bosun verify (Codex)

@@ -31,7 +31,7 @@ while [ $# -gt 0 ]; do
     --browser) browser=1; shift ;;
     --simulator) simulator=1; shift ;;
     --dry-run) dry_run=1; shift ;;
-    -h|--help) sed -n '2,17p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,19p' "$0"; exit 0 ;;
     *) echo "codex-worker: unknown argument: $1" >&2; exit 2 ;;
   esac
 done

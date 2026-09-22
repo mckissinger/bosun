@@ -20,16 +20,18 @@ Lessons are what this codebase needs a fresh session to know that the repo and g
 
 ## Provider mode
 
-The harness has four provider modes. The mode is a line in the project's spec, `Provider mode: <mode>`; a spec without the line is in `fable` mode, and the old value `codex` is read as `fable-crew`. `/bosun-mode` sets or reports it.
+The harness has six provider modes. The mode is a line in the project's spec, `Provider mode: <mode>`; a spec without the line is in `fable` mode, and the old value `codex` is read as `fable-crew`. `/bosun-mode` sets or reports it.
 
 | Mode | Lead | Implementation | Harness |
 | --- | --- | --- | --- |
 | `fable` | Fable 5.1 | Fable 5.1 | Claude Code plugin |
 | `fable-crew` | Fable 5.1 | Sol / Luna by task class via `scripts/codex-worker.sh` | Claude Code plugin |
+| `fable-opus` | Fable 5.1 | Opus 5.5 at high as a native subagent | Claude Code |
+| `opus` | Opus 5.5 | Opus 5.5 (also scout and verifier) | Claude Code |
 | `astra-crew` | GPT-6 Astra | Sol / Luna by task class as Codex subagents | Codex plugin (`codex/` in this repo) |
 | `astra` | GPT-6 Astra | GPT-6 Astra | Codex plugin |
 
-The two `fable*` modes run here, in Claude Code. The two `astra*` modes run in Codex through the sibling plugin; if the spec names one, `/bosun-brief` stops and says to open the project in Codex rather than running the slice on Fable. In `fable` mode, Fable 5.1 briefs, implements, verifies, and keeps the spec. In `fable-crew` mode, Fable 5.1 still briefs, keeps the spec, commits, and verifies, but each slice's implementation is handed to an OpenAI Codex model through the user's own `codex exec` CLI via `scripts/codex-worker.sh`, routed by task class:
+The three `fable*` modes and `opus` run here, in Claude Code. The two `astra*` modes run in Codex through the sibling plugin; if the spec names one, `/bosun-brief` stops and says to open the project in Codex rather than running the slice on Fable. In `fable` mode, Fable 5.1 briefs, implements, verifies, and keeps the spec. In `fable-crew` mode, Fable 5.1 still briefs, keeps the spec, commits, and verifies, but each slice's implementation is handed to an OpenAI Codex model through the user's own `codex exec` CLI via `scripts/codex-worker.sh`, routed by task class:
 
 | Task class | When | Model | Effort |
 | --- | --- | --- | --- |
@@ -40,15 +42,21 @@ The two `fable*` modes run here, in Claude Code. The two `astra*` modes run in C
 
 A slice overrides the table with a `Route: <model> / <effort>` line in the spec's current-slice section. `ultra` is never passed: it auto-delegates, which fights the single-context slice design. The worker never commits; Fable reviews the diff and commits. Verification always runs on Fable through `/bosun-verify`. If the codex preflight fails, the slice stops and reports; Fable never silently implements it instead.
 
+In `fable-opus`, Fable retains briefing, spec upkeep, commits, and verification; the project-local `bosun-worker-opus` implements at `claude-opus-5-5` / `high`. Use `/bosun-mode fable-opus` to configure it. There is one worker per slice, no nested delegation, no Codex CLI, and no fallback to Fable implementation. FAIL findings return to Opus. The worker uses the current worktree and never commits or edits the spec.
+
+Verifier effort is independent of lead and worker effort in all four Claude modes. `/bosun-mode --verifier-effort <low|medium|high|xhigh|max>` stores a top-level `Verifier effort:` default in the spec. `/bosun-verify --effort <level>` overrides it for that invocation. Precedence: invocation override, current-slice `Verifier effort:`, top-level `Verifier effort:`, then `high`. Ignore historical slice logs and quoted examples; conflicting settings at one scope or invalid levels stop verification. `/bosun-verify` configures both project-local verifier agents with that effort before launching the appropriate one on Opus 5.5 in `opus`, otherwise Fable 5.1. Record the effective effort with each verdict and in the slice log. A retry keeps the same effort unless the user changes it. This changes the verifier's frontmatter, never the lead session's effort.
+
+In `opus`, Opus 5.5 performs briefing, direct implementation, spec upkeep, commits, scouting, and verification. The verifier still runs in a fresh read-only context. Configure local agents with `/bosun-mode opus`, and confirm the lead session is actually on `claude-opus-5-5` before starting; a spec edit alone cannot change it. Switching back to a Fable mode restores the scout/verifier models and requires a Fable lead. References to Fable in the shared rules below mean the selected Claude lead; Fable-specific model/effort rationale is not a claim about Opus. Use the local scout and verifier definitions, not plugin-scoped substitutes.
+
 ## Run policy
 
-The run policy is a line in the project's spec next to the provider mode: `Run policy: one slice` or `Run policy: until blocked, max N slices`. A spec without the line is `one slice`; `until blocked` without a `max` means `max 3 slices`. It applies in both provider modes.
+The run policy is a line in the project's spec next to the provider mode: `Run policy: one slice` or `Run policy: until blocked, max N slices`. A spec without the line is `one slice`; `until blocked` without a `max` means `max 3 slices`. It applies in all provider modes.
 
 Under `one slice`, `/bosun-brief` runs one slice, verifies, reports, and stops. Under `until blocked`, after a slice verifies (PASS or PASS WITH FOLLOW-UPS), Fable records lessons, commits, pushes, opens a PR for the slice's branch, reports the slice, and then briefs and runs the next slice in the same turn. Every slice has its own branch and its own PR; Fable never merges. The run stops, with a report saying why, at the first of: no runnable done-condition remains; the next runnable done-condition depends on an undecided item; a verify produced two FAILs on the same finding; the codex preflight failed; N slices have been started in this run, counting the first.
 
 A done-condition is runnable when its status is `todo` or `in progress`, it is not `human-check`, and nothing it needs is on the undecided list. When no runnable done-condition remains, under either policy, Fable does not invent work: it reports that the roadmap is exhausted, lists every open human-check condition and every undecided item as the question the spec records, proposes candidate next slices drawn from the spec's follow-ups section as draft done-conditions marked as proposals, and ends the turn asking what next. A proposal becomes a done-condition only when the user says so.
 
-In fable-crew mode under `until blocked`, Fable uses the worker's run time to stage the next slice's brief when that slice does not depend on the running one, and re-validates the staged brief against what actually landed before running it. `/bosun-brief` holds the details.
+In fable-crew and fable-opus modes under `until blocked`, Fable uses the worker's run time to stage the next slice's brief when that slice does not depend on the running one, and re-validates the staged brief against what actually landed before running it. `/bosun-brief` holds the details.
 
 ## Starting substantial work
 

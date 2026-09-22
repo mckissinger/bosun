@@ -13,7 +13,7 @@ Look for `SPEC.md` at the repo root, then under the repo's docs convention. If n
 
 ## Find the provider mode
 
-A line `Provider mode: <mode>` anywhere in the spec names one of four modes (table in the core rules). `astra` is astra mode: you implement each slice yourself. `astra-crew` is astra-crew mode: steps 3 and 6 of "Spec exists" change as described in "Astra-crew mode" at the end of this skill; everything else is the same. `fable`, `fable-crew`, the old value `codex`, or no line at all means the project belongs to Claude Code: report that, name the mode, say to open the project in Claude Code with the harness's Claude plugin (or run `$bosun-mode astra-crew` here to move it), and stop without briefing or running anything.
+A line `Provider mode: <mode>` anywhere in the spec names one of six modes (table in the core rules). `astra` is astra mode: you implement each slice yourself. `astra-crew` is astra-crew mode: steps 3 and 6 of "Spec exists" change as described in "Astra-crew mode" at the end of this skill; everything else is the same. `fable`, `fable-crew`, `fable-opus`, `opus`, the old value `codex`, or no line at all means the project belongs to Claude Code: report that, name the mode, say to open the project in Claude Code with the harness's Claude plugin (or run `$bosun-mode astra-crew` here to move it), and stop without briefing or running anything.
 
 ## Find the run policy
 

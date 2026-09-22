@@ -21,16 +21,18 @@ Lessons are what this codebase needs a fresh session to know that the repo and g
 
 ## Provider mode
 
-The mode is a line in the project's spec, `Provider mode: <mode>`. Four values exist; two run here.
+The mode is a line in the project's spec, `Provider mode: <mode>`. Six values exist; two run here.
 
 | Mode | Lead | Implementation | Runs in |
 | --- | --- | --- | --- |
 | `fable` | Claude Fable 5.1 | Fable 5.1 | Claude Code (the sibling plugin) |
 | `fable-crew` | Claude Fable 5.1 | Sol / Luna by task class | Claude Code |
+| `fable-opus` | Fable 5.1 | Opus 5.5 at high as a native subagent | Claude Code |
+| `opus` | Opus 5.5 | Opus 5.5 (also scout and verifier) | Claude Code |
 | `astra-crew` | GPT-6 Astra | Sol / Luna by task class as subagents | Codex |
 | `astra` | GPT-6 Astra | GPT-6 Astra | Codex |
 
-A spec with no line, or with `fable`, `fable-crew`, or the old value `codex`, belongs to Claude Code: `$bosun-brief` stops and says to open the project there. `$bosun-mode` sets the line and installs the agent files. In both astra modes you brief, keep the spec, commit, and verify through `$bosun-verify`. In `astra-crew` each slice's implementation is delegated to one worker agent chosen by task class:
+A spec with no line, or with `fable`, `fable-crew`, `fable-opus`, `opus`, or the old value `codex`, belongs to Claude Code: `$bosun-brief` stops and says to open the project there. `$bosun-mode` sets the line and installs the agent files. In both astra modes you brief, keep the spec, commit, and verify through `$bosun-verify`. In `astra-crew` each slice's implementation is delegated to one worker agent chosen by task class:
 
 | Task class | When | Agent | Model / effort |
 | --- | --- | --- | --- |

@@ -6,7 +6,7 @@ The `fable-crew` setup uses Fable 5.1 in Claude Code to plan and coordinate, Sol
 
 ## Start here
 
-1. Choose **Claude Code** for `fable` or `fable-crew`, or **Codex** for `astra` or `astra-crew`.
+1. Choose **Claude Code** for `fable`, `fable-crew`, `fable-opus`, or `opus`, or **Codex** for `astra` or `astra-crew`.
 2. Install the matching plugin below. Crew mode requires access to the named worker models; Fable crew also requires a logged-in Codex CLI.
 3. In a new project, invoke `/bosun-brief <your task>` (Claude Code) or `$bosun-brief <your task>` (Codex). Bosun creates a spec and stops for your review.
 4. Review the spec, then select `/bosun-mode fable-crew` in Claude Code or `$bosun-mode astra-crew` in Codex. With an existing spec, select the mode before briefing. Say go to start the slice.
@@ -64,9 +64,11 @@ launch session at the right effort
 | `/bosun-ci` | `skills/bosun-ci/SKILL.md` | Audit GitHub Actions bottlenecks or implement and verify a focused CI improvement |
 | `/bosun-mode` | `skills/bosun-mode/SKILL.md` | Sets or reports the provider mode line in the spec; preflights codex |
 | Codex worker | `scripts/codex-worker.sh` | Runs one slice on gpt-5.6-sol or gpt-5.6-luna via `codex exec`; owns every flag, refuses `ultra`, runs with `--disable plugins` so the Codex Bosun plugin's lead-mode gate cannot reach a delegated worker, writes usage |
+| Claude agent setup | `scripts/configure-claude-agents.py` | Generates project-local worker/verifier definitions; applies verifier effort without changing lead or worker effort |
+| `bosun-worker-opus` agent | `agents/bosun-worker-opus.md` | Opus 5.5 implementation at high; no spec edits, commits, or delegation |
 | `bosun-scout` agent | `agents/bosun-scout.md` | Read-only background investigator, medium effort |
-| `bosun-verifier` agent | `agents/bosun-verifier.md` | Read-only verifier, high effort, with Playwright for done-conditions that name a route or screen |
-| `bosun-verifier-mobile` agent | `agents/bosun-verifier-mobile.md` | Read-only verifier, high effort, with a simulator MCP server for done-conditions that name a native iOS screen |
+| `bosun-verifier` agent | `agents/bosun-verifier.md` | Read-only Fable/Opus verifier selected by mode, selectable effort (default high), with Playwright for done-conditions that name a route or screen |
+| `bosun-verifier-mobile` agent | `agents/bosun-verifier-mobile.md` | Read-only Fable/Opus verifier selected by mode, selectable effort (default high), with a simulator MCP server for done-conditions that name a native iOS screen |
 | SessionStart hook | `scripts/session-start.sh` | Loads the rules if needed, points at the spec with its provider mode and run policy, prints any checkpoint; on compaction, tells the model to re-read the spec |
 | Codex plugin manifest | `codex/.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json` | The sibling plugin for the ChatGPT desktop app |
 | Codex core rules | `codex/rules/astra.md` | The same contract for an Astra lead: effort ladder, spec, modes, run policy, finishing |
@@ -115,10 +117,12 @@ The mode is a line in the project's spec, `Provider mode: <mode>`. No line means
 | --- | --- | --- | --- |
 | `fable` | Fable 5.1 | Fable 5.1 | Claude Code plugin |
 | `fable-crew` | Fable 5.1 | Sol / Luna by task class via `scripts/codex-worker.sh` | Claude Code plugin |
+| `fable-opus` | Fable 5.1 | Opus 5.5 at high as a native subagent | Claude Code plugin |
+| `opus` | Opus 5.5 | Opus 5.5 (also scout and verifier) | Claude Code plugin |
 | `astra-crew` | GPT-6 Astra | Sol / Luna by task class as Codex subagents | Codex plugin (`codex/` in this repo) |
 | `astra` | GPT-6 Astra | GPT-6 Astra | Codex plugin |
 
-The spec, its sections, the run policy, and the routing table are the same in every mode, so moving a project between harnesses is one line. Each plugin refuses the other's modes: `/bosun-brief` in Claude Code stops if the spec names an `astra*` mode, and `$bosun-brief` in Codex stops on a `fable*` mode.
+The spec, its sections, the run policy, and the routing table are the same in every mode, so moving a project between harnesses is one line. Each plugin refuses the other's modes: `/bosun-brief` in Claude Code stops if the spec names an `astra*` mode, and `$bosun-brief` in Codex stops on a `fable*` mode or `opus`.
 
 In `fable-crew` mode Fable 5.1 still writes the brief, keeps the spec, commits, and runs `/bosun-verify`. The implementation step of each slice goes to a Codex model through `scripts/codex-worker.sh`, routed by the task class the brief assigns:
 
@@ -136,6 +140,24 @@ How a fable-crew slice runs: the brief gains `Task class:`, `Route:`, and `Worke
 Rules that do not bend: the worker never commits; verification never moves off Fable; if the codex preflight fails the slice stops and says so rather than falling back to Fable. The sandbox default is `--approve-for-me` (which selects the workspace-write sandbox) and no network; a brief that says `Worker network: yes` adds `sandbox_workspace_write.network_access=true` for installs. Recommended: launch the Fable session at `medium` effort in fable-crew mode, since Fable's own work per slice is briefing and review.
 
 Requires the `codex` CLI (tested with codex-cli 0.149.0) logged in with your own account. The harness spawns your unmodified binary; it never handles provider credentials.
+
+**Opus throughout.** In Claude Code, select `/bosun-mode opus` and use an Opus 5.5 lead session (`claude --model claude-opus-5-5` or `/model claude-opus-5-5`). Opus briefs, implements directly, keeps the spec, and commits; the local scout and fresh web/mobile verifier also use Opus. Mode selection changes the spec and generated agents, not the active session model: confirm that model before starting a slice. Switching back to a Fable mode regenerates the local scout/verifiers on Fable and requires a Fable lead session. There is no model fallback. Live account/model access must be verified separately.
+
+**Fable with Opus implementation.** In Claude Code, select `/bosun-mode fable-opus`. Fable 5.1 briefs, keeps the spec, reviews, commits, and verifies; a native `bosun-worker-opus` subagent implements on `claude-opus-5-5` at `high`. FAIL findings return to Opus. The worker cannot delegate and never commits or edits the spec. This mode needs access to Opus 5.5 and Fable 5.1 in Claude Code, without a Codex CLI. Worker or model failures stop the slice; there is no provider fallback. The route and verdict are recorded in the spec; native subagents do not write `usage.json`.
+
+**Verifier effort (Claude Code).** Set a project default while selecting a mode, or change it independently:
+
+```text
+/bosun-mode fable-opus --verifier-effort xhigh
+/bosun-mode --verifier-effort medium
+/bosun-verify --effort max
+```
+
+The last command overrides effort for that verification and its retries only. Supported values are `low`, `medium`, `high`, `xhigh`, `max`; default is `high`. Resolution is invocation override, current-slice `Verifier effort:`, top-level `Verifier effort:`, then `high`. The mode command changes the top-level default, preserving a current-slice override if present. Effort is recorded per attempt. Both web and mobile verifiers use Opus 5.5 in `opus` and Fable 5.1 in the Fable modes, independently of the lead session and Opus worker. These controls work in `fable`, `fable-crew`, `fable-opus`, and `opus`; Astra verifier effort is unchanged.
+
+Mode selection and verification run `scripts/configure-claude-agents.py` to write the effective settings into `.claude/agents/bosun-scout.md`, `bosun-verifier.md`, and `bosun-verifier-mobile.md`; `fable-opus` also installs `bosun-worker-opus.md`. These project-local copies take precedence over plugin definitions and retain their MCP servers. The next verification regenerates the copies from the current setting, so a one-run override cannot become the default. The generator refuses to overwrite unrelated user-owned files or symlinks. Keep the spec as the settings source; generated copies can remain local or be committed according to your project's policy. Plugin installation alone does not generate these files.
+
+Restart Claude Code if setup creates the project's first `.claude/agents/` directory, then confirm the local agents are loaded. Invoke those local names, not plugin-scoped `bosun:...` agents. Claude Code ignores MCP configuration on plugin-bundled agents; project-local definitions are used so the worker and verifier actually receive their browser/simulator tools. Existing generated files are refreshed by setup, including after a plugin update. A conflicting model environment override must be resolved before claiming a pinned model ran. See [Claude Code's subagent configuration](https://code.claude.com/docs/en/sub-agents) and [Opus 5.5 release and model identifier](https://www.anthropic.com/claude-opus-5-5).
 
 **The astra modes.** `astra-crew` and `astra` run in the ChatGPT desktop app through the Codex plugin, with GPT-6 Astra as the lead. Astra briefs, keeps the spec, commits, and verifies through `$bosun-verify`, which spawns the read-only `bosun_verifier` agent, or `bosun_verifier_mobile` when the brief says `Surface: ios` (Astra at high). In `astra-crew`, the Execute step asks Astra to delegate the slice to the worker agent named by the task class (`bosun_worker_small` is Luna at max, `bosun_worker_routine` Sol at medium, `bosun_worker_feature` Sol at high, `bosun_worker_hard` Sol at xhigh) and wait for it; in `astra`, Astra implements the slice itself. Three things differ from fable-crew: workers are native Codex subagents rather than a `codex exec` process, so there is no `usage.json` and the slice log records the route and first-verify verdict only (the app's usage view is the cost record); the scout is `bosun_scout`, Luna at medium, read-only; and checkpoints go to `~/.codex/bosun/checkpoints/`. The same rules that do not bend apply: workers never commit, verification is a fresh read-only context, `ultra` is never used.
 
@@ -159,7 +181,7 @@ The policy is a line in the spec next to the provider mode: `Run policy: one sli
 
 **Exhausted roadmap.** When no runnable done-condition remains, under either policy, Fable does not invent work. It reports that the roadmap is exhausted, lists the open human-checks and the undecided questions, proposes next slices drawn from the spec's follow-ups section as clearly marked drafts, and asks what next. A proposal becomes a done-condition only when you say so.
 
-**Staging (fable-crew mode).** While the worker runs, under `until blocked` with the cap not reached, Fable scouts the next slice and, if it does not depend on the running one, writes a staged brief to `~/.claude/bosun/workers/<slug>/<next-slice>/brief.md` with a `Based on: <sha>` line. It never writes to the worktree while the worker owns it. If the next slice does depend on the running one, it scouts only.
+**Staging (fable-crew and fable-opus modes).** While the worker runs, under `until blocked` with the cap not reached, Fable scouts the next slice and, if it does not depend on the running one, writes a staged brief to `~/.claude/bosun/workers/<slug>/<next-slice>/brief.md` with a `Based on: <sha>` line. It never writes to the worktree while the worker owns it. If the next slice does depend on the running one, it scouts only.
 
 **Re-validation.** Before a staged brief runs, Fable compares its `Based on:` sha with HEAD. If the previous slice moved it, Fable re-reads the spec and the landed diff, checks every file reference and assumption in the brief, folds in the previous verify's follow-ups that belong to this slice, and only then writes the brief into the spec and generates the worker prompt from it. A staged brief waits on a FAIL, and stays on disk (named in the report) if the run stopped.
 
@@ -181,7 +203,7 @@ Sources: [Overview](https://platform.claude.com/docs/en/models/fable-5-1/overvie
 
 **Safeguard false positives.** The guide names three triggers: compile-check phrasing, lesser-known languages without context, base64 in tool output. The core rules carry the phrasing and a recovery step: rephrase once, then record the blocked step in the spec and move on.
 
-**Verification.** `/bosun-verify` runs a fresh-context, read-only verifier at `high`, the documented starting point, so the judgment is independent of the session that did the work. Two FAILs on the same finding stop the loop and go to the user.
+**Verification.** `/bosun-verify` runs a fresh-context, read-only verifier at the selected effort (default `high`, the documented starting point), so the judgment is independent of the session that did the work. Two FAILs on the same finding stop the loop and go to the user.
 
 **Runtime verification.** This is the one rule that does not come from the Fable 5.1 model guide, which says nothing about browsers. It comes from Anthropic's guidance for running Fable in Claude Code and from OpenAI's equivalent for Codex: the [Claude Code best practices](https://code.claude.com/docs/en/best-practices) ("Give Claude a check it can run: tests, a build, a screenshot to compare"; "Always provide verification (tests, scripts, screenshots). If you can't verify it, don't ship it"; verification by a second-opinion subagent; show evidence, including screenshots, rather than asserting success), Anthropic's [long-running agents article](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) (the coding agent "needed explicit prompting to use browser automation tools and do all testing as a human would", and a browser "dramatically improved performance"), OpenAI's [harness engineering](https://openai.com/index/harness-engineering/) (the Chrome DevTools Protocol wired into the agent runtime so Codex could screenshot, snapshot the DOM, and validate fixes) and the [Codex subagent docs](https://learn.chatgpt.com/docs/agent-configuration/subagents) (a browser-debugging custom agent bound to an MCP server). The model guides on both sides say finish the task and keep tests to what the change warrants; the product guidance says a check for visible behavior is a browser. Both roles get one because the implementer's check is the loop that makes the work correct and the verifier's is the independent gate; self-review measurably favors its own output, so the overlap is the point, and it stays cheap because the verifier re-checks named done-conditions only.
 
@@ -196,7 +218,7 @@ Sources: [Overview](https://platform.claude.com/docs/en/models/fable-5-1/overvie
 
 ## Status
 
-Version 0.7.1. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
+Version 0.8.0. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
 
 There is no controlled performance benchmark establishing cost, speed, or quality improvements. Those depend on the project, model access, task routing, and verification workload.
 

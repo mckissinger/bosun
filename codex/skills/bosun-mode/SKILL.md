@@ -1,6 +1,6 @@
 ---
 name: bosun-mode
-description: Set or report the harness's provider mode for this project from Codex. `astra` has GPT-6 Astra implement each slice itself; `astra-crew` has Astra lead while gpt-5.6-sol or gpt-5.6-luna subagents implement, routed by task class. Setting either also installs the harness's agent files. The `fable` and `fable-crew` modes belong to the Claude Code plugin. Use when the user says "switch to astra-crew", "use sol/luna for implementation", "what mode are we in", or "move this to Claude".
+description: Set or report the harness's provider mode for this project from Codex. `astra` has GPT-6 Astra implement each slice itself; `astra-crew` has Astra lead while gpt-5.6-sol or gpt-5.6-luna subagents implement, routed by task class. Setting either also installs the harness's agent files. The `fable`, `fable-crew`, `fable-opus`, and `opus` modes belong to the Claude Code plugin. Use when the user says "switch to astra-crew", "use sol/luna for implementation", "what mode are we in", or "move this to Claude".
 ---
 
 # Bosun mode (Codex)
@@ -11,6 +11,8 @@ The mode is a line in the project's spec, `Provider mode: <mode>`. It lives in t
 | --- | --- | --- | --- |
 | `fable` | Claude Fable 5.1 | Fable 5.1 | Claude Code |
 | `fable-crew` | Claude Fable 5.1 | Sol / Luna by task class | Claude Code |
+| `fable-opus` | Fable 5.1 | Opus 5.5 at high as a native subagent | Claude Code |
+| `opus` | Opus 5.5 | Opus 5.5 (also scout and verifier) | Claude Code |
 | `astra-crew` | GPT-6 Astra | Sol / Luna by task class as subagents | Codex |
 | `astra` | GPT-6 Astra | GPT-6 Astra | Codex |
 
@@ -22,8 +24,8 @@ The mode is a line in the project's spec, `Provider mode: <mode>`. It lives in t
    - Set the line to `Provider mode: <mode>` (add it under the spec's first heading if absent).
    - Install the agent files: create `~/.codex/agents/` if needed and copy every `<plugin root>/agents/*.toml` into it, overwriting files of the same name. `<plugin root>` is the base directory this skill was loaded from, two levels up from this file. List what was written.
    - Print the routing table (astra-crew) and remind the user that a slice can override it with `Route: <agent>` in the spec's current-slice section, that `ultra` is never used, and that the session's effort comes from the app's picker.
-4. With `fable`, `fable-crew`, or `codex`: set the line to that value (`codex` becomes `fable-crew`), then say the project now runs in Claude Code with the harness's Claude plugin, and that `$bosun-brief` will refuse slices here while the spec names a fable mode. Stop.
-5. Anything else: list the four names and stop.
+4. With `fable`, `fable-crew`, `fable-opus`, `opus`, or `codex`: set the line to that value (`codex` becomes `fable-crew`), then say the project now runs in Claude Code with the harness's Claude plugin, and that `$bosun-brief` will refuse slices here while the spec names a Claude mode. Stop.
+5. Anything else: list the six names and stop.
 
 ## Routing table (astra-crew)
 

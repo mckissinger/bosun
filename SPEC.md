@@ -1,6 +1,6 @@
 # Bosun spec
 
-Provider mode: fable-crew
+Provider mode: astra
 
 Repo: `mckissinger/bosun` (named `fable-harness` until 2026-09-04; evidence pointers and slice names before that date refer to the old paths, which map one to one onto the new ones), plugin version 0.1.2 at the time this spec was written (2026-09-02). The plugin is prompt-only (skills, agents, rules, one hook script); there is no runtime code or test suite. Checks are therefore file reads, `bash -n`, JSON validation, and a dry-run of any script this work adds.
 
@@ -13,6 +13,12 @@ Second outcome (slice 3, 2026-09-03): the harness can keep working instead of id
 Third outcome (slice 4, 2026-09-04): the harness runs on either Claude Code or Codex. Four named provider modes replace the two: `fable` (Fable 5.1 does everything, Claude Code), `fable-crew` (Fable leads, Sol and Luna implement by task class, Claude Code; today's `codex`), `astra-crew` (GPT-6 Astra leads, Sol and Luna implement by task class, Codex), and `astra` (Astra does everything, Codex). The repo ships a second plugin for Codex under `codex/` with the same spec contract, so a project can move between the two harnesses by changing one line.
 
 ## Decisions, in the user's words
+
+- (2026-09-22) "I mean opus 5.5. The model was just released a few hours ago". Confirmed directly from Anthropic's live release page: https://www.anthropic.com/claude-opus-5-5 names `claude-opus-5-5` in Availability. Search results and the installed CLI's embedded model list had lagged the release.
+
+- (2026-09-22) "I would like to 2 more modes to bosun, fable crew with opus 5.5 as the implemented and then another mode with just opus 5.5 for everything". Extend the unfinished fable-opus work to Opus 5.5 and add opus for all roles.
+
+- (2026-09-18) "Can we add another mode to bosun where opus 5 is the implementer?" "Fable as the lead and I would like to be able to toggle effort on the verifier as well." Approved switching this repository to astra for implementation in Codex.
 
 - "so far the slices I have been implementing are pretty reasonably chunked, not long horizon at all. I think sol and potentially Luna could do it."
 - "with different model and effort routing depending on the task."
@@ -51,6 +57,8 @@ Third outcome (slice 4, 2026-09-04): the harness runs on either Claude Code or C
 ## Design
 
 ### Where the mode lives
+
+Historical four-mode design below is superseded by the current six-mode slice: fable, fable-crew, fable-opus, opus, astra-crew, astra. See Current slice and README for current routing.
 
 The mode is a line in the project's spec, `Provider mode: <mode>` (four values, see "Provider modes (four)" below; `codex` is read as `fable-crew`), under a heading the brief skill can find. The spec is already the one input a fresh session needs, so the mode travels with it. There is no global default file; a spec without the line is in `fable` mode.
 
@@ -258,19 +266,21 @@ Slice 7, CI optimization skill (2026-09-15; user accepted the proposed bosun-ci 
 
 ## Current slice
 
-Status: verified PASS WITH FOLLOW-UPS, 2026-09-16; the five follow-ups fixed the same day by a Luna worker and verified PASS. Done-conditions 51–58 verified independently; 59 remains human-check.
-Outcome: Bosun can verify native iOS screens: a mobile verifier agent on both plugins with an npx simulator MCP server, the brief marks the surface and carries device evidence, verify picks the right verifier, the worker script can bind the simulator, and web viewport checks are stated explicitly.
-Done-conditions: 51–58; 59 is human-check.
-Out of scope: astra-crew worker TOMLs, Android rule text, real or cloud devices, the desktop app's simulator tool, the design skill, any change to fable-mode behavior beyond the lines named above.
-Assumptions: `@mobilenext/mobile-mcp` over `ios-simulator-mcp` because it needs no `idb` install, saves screenshots to a path, lists on-screen elements, and was published 2026-09-13 (scout report, 2026-09-16). Booting stays a shell step because neither package boots a device. The Claude agent frontmatter accepts an `env` map inside the `mcpServers` entry, by analogy with Claude Code's `.mcp.json` shape; 58 proves the server, 59 proves the frontmatter. The Codex TOML `env` table shape follows Codex's `mcp_servers` config; the same 59 proves it.
-Effort assumed: high (session level; cannot change).
-Checks: `bash -n scripts/codex-worker.sh`; `scripts/codex-worker.sh --model gpt-5.6-luna --effort low --cwd . --prompt-file /dev/null --out-dir /tmp/x --simulator --dry-run` prints the three `mcp_servers.mobile` flags, and without `--simulator` prints none; `python3 -c 'import json,sys;[json.load(open(f)) for f in sys.argv[1:]]' .claude-plugin/plugin.json .claude-plugin/marketplace.json codex/.codex-plugin/plugin.json` and `grep -h '"version"' ...` all 0.7.1; `python3 -c 'import tomllib;tomllib.load(open("codex/agents/bosun-verifier-mobile.toml","rb"))'`; `python3 -c 'import yaml,sys;yaml.safe_load(open("agents/bosun-verifier-mobile.md").read().split("---")[1])'`; `git diff --check`; MCP handshake for 58 (lead runs); one real no-op worker run with `--simulator` (Luna, low, "reply OK"; lead runs, per the lessons).
-Branch: fable/mobile-verify, from main at 37f678e.
-Task class: feature (nine files across two plugins, prompt-only, design settled by the done-conditions).
-Route: gpt-5.6-sol / high
-Worker network: no
-Worker browser: no
-Worker simulator: no
+Status: verified 2026-09-22, bosun_verifier PASS; completes the uncommitted September 18 slice. Live Claude agent execution remains untested.
+Outcome: Add fable-opus (Fable leads/verifies, native Opus 5.5 worker implements) and opus (Opus 5.5 leads, implements, scouts, and verifies), preserving independent Claude verifier effort controls.
+Done-conditions: O1–O6 below.
+Out of scope: changing Sol/Luna routing; selectable Astra verifier effort; paid benchmarks; publishing/installing globally; unrelated follow-ups.
+Assumptions: retain the unfinished fable-opus name, add opus; both run in Claude Code. Opus worker stays at high. Verifier effort precedence remains invocation, current slice, project default, high. Existing user-owned definitions are not overwritten. Session model must actually match the selected mode; spec edits do not change the running model.
+Effort assumed: inherited session setting (not exposed); no picker change.
+Checks: python3 scripts/configure-claude-agents.py --help; temporary-project generation across modes/efforts, transitions, invalid inputs and collision/symlink refusal; JSON/TOML/frontmatter parsing; bash -n scripts/*.sh codex/scripts/*.sh; claude plugin validate .; git diff --check; independent bosun_verifier review. Live Opus execution is separate from static configuration validation.
+Branch: codex/fable-opus-verifier-effort, existing uncommitted work based on main (98d6025); preserve and complete that work.
+
+O1. `verified 2026-09-22 bosun_verifier PASS` Six-mode tables, selection and host gates recognize fable-opus and opus. Default/legacy modes retain their meaning; Codex redirects both new modes to Claude Code.
+O2. `verified 2026-09-22 bosun_verifier PASS` fable-opus pins the worker to Opus 5.5/high, with Fable lead/verifier, no nested delegation, spec edits, or commits by the worker; same-worker retries and evidence rules remain intact.
+O3. `verified 2026-09-22 bosun_verifier PASS` opus uses Opus 5.5 for lead, direct implementation, scout, and both verifier variants; verifies in a fresh context; gates execution on the actual lead model and restores Fable agents when switching back.
+O4. `verified 2026-09-22 bosun_verifier PASS` Claude verifier effort remains independently configurable; generator validates before writing, preserves tools/MCP, handles spaces, is idempotent, refuses symlinks/unrelated files, and does not change worker effort when verifier effort changes.
+O5. `verified 2026-09-22 bosun_verifier PASS` Docs explain usage, host/model/reload requirements and validation limits; README and manifests consistently use 0.8.0 for the completed unpublished slice.
+O6. `verified 2026-09-22 bosun_verifier PASS; live spawns untested` Static checks and independent review pass; live model verification limits are explicitly recorded without equating generated configuration to a successful spawn.
 
 ## Follow-ups
 
@@ -295,6 +305,8 @@ Worker simulator: no
 - runtime-verify, 2026-09-05: whether Claude Code honors the `mcpServers` list-of-maps frontmatter in `agents/bosun-verifier.md` has not been probed; done-condition 46's fable-mode run shows it.
 
 ## Slice log
+
+- 2026-09-22, opus-modes-and-verifier-effort, astra (implemented by lead), first structural verify PASS WITH FOLLOW-UPS; final verify PASS, O1–O6 verified. Model ID `claude-opus-5-5` confirmed from Anthropic live announcement. Lead: temporary-project mode/effort mutation matrix, idempotence, return-to-Fable, invalid inputs, collision and symlink refusal. Independent verifier: 20 dry-runs, five invalid inputs, shell syntax, 13 JSON/TOML files, changed frontmatter, both Claude validators, existing Sol worker dry-run, diff whitespace. Route/screen checks: 0 of 0. No live Claude agent execution, installation, or publication.
 
 - 2026-09-16, mobile-verify-followups, fable-crew (gpt-5.6-luna / max, task class small), first verify PASS; the five mobile-verify follow-ups fixed and removed from the follow-ups section; route-or-screen done-conditions: 0 of 0. Usage: 162 s wall, 291,516 input (246,784 cached), 8,183 output (3,650 reasoning).
 - 2026-09-16, mobile-verify, fable-crew (gpt-5.6-sol / high, task class feature), first verify PASS WITH FOLLOW-UPS; done-conditions 51–58 verified, 59 human-check; route-or-screen done-conditions: 0 of 0. Usage: not recorded; the worker was killed by a Claude Code session restart after its last edit and before its report (events.jsonl has 32 events and no turn.completed), so no usage.json exists. Lead-run checks: MCP handshake, and a no-op --simulator worker run (Luna/low, 5 s, 12,742 input of which 8,960 cached, 5 output).

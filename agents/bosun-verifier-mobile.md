@@ -2,6 +2,7 @@
 name: bosun-verifier-mobile
 description: Fresh-context, read-only verifier for a finished native iOS coding slice. Checks the diff against the spec's done-conditions, runs the project's own checks, verifies named native screens in a simulator, hunts for correctness bugs, and reports discrepancies with evidence. Never fixes anything.
 tools: Read, Grep, Glob, Bash, mcp__mobile
+model: claude-fable-5-1
 effort: high
 mcpServers:
   - mobile:

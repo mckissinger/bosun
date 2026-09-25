@@ -23,7 +23,7 @@ claude plugin marketplace add mckissinger/bosun
 claude plugin install bosun@bosun
 ```
 
-The plugin's core rules load automatically at session start through a hook. To make them part of your global instructions instead (one less thing printed each session), append `rules/fable.md` to `~/.claude/CLAUDE.md`; the hook detects the section heading and stops printing them.
+The plugin's core rules load automatically at session start through a hook. To make them part of your global instructions instead (one less thing printed each session), append `rules/core.md` to `~/.claude/CLAUDE.md`; the hook detects its heading, `# Bosun core rules (Claude Code)`, and stops printing them. Before 0.9.0 the file was `rules/fable.md` with the heading `# Fable 5.1 agentic development`; if you appended that, remove it and append the new file.
 
 Optional, per the effort doc's "set effort explicitly": add to `~/.claude/settings.json`
 
@@ -57,7 +57,7 @@ launch session at the right effort
 
 | Piece | Path | Job |
 | --- | --- | --- |
-| Core rules | `rules/fable.md` | Effort policy, spec contract, scope and test limits, targeted edits, delegation, refusal recovery, finishing |
+| Core rules | `rules/core.md` | Effort policy, spec contract, scope and test limits, targeted edits, delegation, refusal recovery, finishing |
 | `/bosun-brief` | `skills/bosun-brief/SKILL.md` | Creates the spec on first run and stops for review; afterwards briefs a slice and runs it to completion |
 | `/bosun-verify` | `skills/bosun-verify/SKILL.md` | Fresh-context verification against the spec, records verified status |
 | `/bosun-checkpoint` | `skills/bosun-checkpoint/SKILL.md` | Transient mid-slice state the spec does not hold |
@@ -71,7 +71,7 @@ launch session at the right effort
 | `bosun-verifier-mobile` agent | `agents/bosun-verifier-mobile.md` | Read-only Fable/Opus verifier selected by mode, selectable effort (default high), with a simulator MCP server for done-conditions that name a native iOS screen |
 | SessionStart hook | `scripts/session-start.sh` | Loads the rules if needed, points at the spec with its provider mode and run policy, prints any checkpoint; on compaction, tells the model to re-read the spec |
 | Codex plugin manifest | `codex/.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json` | The sibling plugin for the ChatGPT desktop app |
-| Codex core rules | `codex/rules/astra.md` | The same contract for an Astra lead: effort ladder, spec, modes, run policy, finishing |
+| Codex core rules | `codex/rules/core.md` | The same contract for the Codex lead: effort ladder, spec, modes, run policy, finishing |
 | Codex skills | `codex/skills/*/SKILL.md` | `$bosun-brief`, `$bosun-verify`, `$bosun-checkpoint`, `$bosun-mode`, `$bosun-ci`, ported for Astra and Codex subagents |
 | Codex agents | `codex/agents/*.toml` | `bosun_scout`, `bosun_verifier`, `bosun_verifier_mobile`, and one worker per routing row; the web verifier and workers have Playwright, and the mobile verifier has simulator tooling; installed by `$bosun-mode` |
 | Codex hook | `codex/hooks/hooks.json`, `codex/scripts/session-start.sh` | Rules, spec pointer, and checkpoint as session context |
@@ -165,7 +165,7 @@ Restart Claude Code if setup creates the project's first `.claude/agents/` direc
 
 A done-condition may name a route or screen ("`/settings` shows the new toggle") and still count as checkable, because both the implementer and the verifier have a browser.
 
-The implementer runs the app and looks before marking such a done-condition done, and records one evidence line per done-condition: the route, what was checked, and a screenshot path if one was taken. The Fable lead uses the desktop browser pane or Playwright MCP; the Astra lead uses the built-in browser. Sol and Luna workers get Playwright MCP: in fable-crew the brief says `Worker browser: yes` and the worker script passes `--browser`, which binds the server for that run only; in astra-crew the worker agent files carry it always. Screenshots are evidence when appearance matters; the accessibility snapshot is the cheaper check for text and structure. Nobody walks the whole app.
+The implementer runs the app and looks before marking such a done-condition done, and records one evidence line per done-condition: the route, what was checked, and a screenshot path if one was taken. A Claude Code lead uses the desktop browser pane or Playwright MCP; the Codex lead uses the built-in browser. Sol and Luna workers get Playwright MCP: in fable-crew the brief says `Worker browser: yes` and the worker script passes `--browser`, which binds the server for that run only; in astra-crew the worker agent files carry it always. Screenshots are evidence when appearance matters; the accessibility snapshot is the cheaper check for text and structure. Nobody walks the whole app.
 
 The verifier gets Playwright too (an inline `mcpServers` entry on `bosun-verifier`; an `mcp_servers` block on `bosun_verifier`, which therefore runs `workspace-write` with a never-edit rule, because Codex's read-only sandbox breaks the MCP process). It uses the browser only to re-check the route-or-screen done-conditions, following the implementer's evidence lines, may start the app with the launch command the brief names, stops it afterward, and reports screenshot paths as evidence. Each slice-log line records how many done-conditions named a route or screen and how many the verifier confirmed, so runtime verification can be compared across modes and projects.
 
@@ -177,9 +177,9 @@ Requires `npx` able to fetch or find `@playwright/mcp` and a Chromium; the first
 
 A Claude Code session is turn-based: when the model ends its turn, nothing happens until something wakes it. The default harness ends the turn after every slice, so the user waits between slices, and in fable-crew mode the session idles while the worker runs. The run policy removes most of that idle time without changing what gets built.
 
-The policy is a line in the spec next to the provider mode: `Run policy: one slice` (the default; no line means the same) or `Run policy: until blocked, max N slices` (`until blocked` alone means `max 3 slices`). Under `until blocked`, after a slice verifies, Fable commits, pushes, opens a PR for that slice's branch, reports, and briefs the next slice in the same turn. Every slice keeps its own branch and PR; Fable never merges. The run stops, and the report says why, at the first of: no runnable done-condition left; the next one depends on an undecided item; two FAILs on one verify finding; a failed codex preflight; the slice cap. A done-condition is runnable when it is `todo` or `in progress`, not `human-check`, and needs nothing on the undecided list.
+The policy is a line in the spec next to the provider mode: `Run policy: one slice` (the default; no line means the same) or `Run policy: until blocked, max N slices` (`until blocked` alone means `max 3 slices`). Under `until blocked`, after a slice verifies, the lead commits, pushes, opens a PR for that slice's branch, reports, and briefs the next slice in the same turn. Every slice keeps its own branch and PR; the lead never merges. The run stops, and the report says why, at the first of: no runnable done-condition left; the next one depends on an undecided item; two FAILs on one verify finding; a failed codex preflight; the slice cap. A done-condition is runnable when it is `todo` or `in progress`, not `human-check`, and needs nothing on the undecided list.
 
-**Exhausted roadmap.** When no runnable done-condition remains, under either policy, Fable does not invent work. It reports that the roadmap is exhausted, lists the open human-checks and the undecided questions, proposes next slices drawn from the spec's follow-ups section as clearly marked drafts, and asks what next. A proposal becomes a done-condition only when you say so.
+**Exhausted roadmap.** When no runnable done-condition remains, under either policy, the lead does not invent work. It reports that the roadmap is exhausted, lists the open human-checks and the undecided questions, proposes next slices drawn from the spec's follow-ups section as clearly marked drafts, and asks what next. A proposal becomes a done-condition only when you say so.
 
 **Staging (fable-crew and fable-opus modes).** While the worker runs, under `until blocked` with the cap not reached, Fable scouts the next slice and, if it does not depend on the running one, writes a staged brief to `~/.claude/bosun/workers/<slug>/<next-slice>/brief.md` with a `Based on: <sha>` line. It never writes to the worktree while the worker owns it. If the next slice does depend on the running one, it scouts only.
 
@@ -218,7 +218,7 @@ Sources: [Overview](https://platform.claude.com/docs/en/models/fable-5-1/overvie
 
 ## Status
 
-Version 0.8.0. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
+Version 0.9.0. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
 
 There is no controlled performance benchmark establishing cost, speed, or quality improvements. Those depend on the project, model access, task routing, and verification workload.
 

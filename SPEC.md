@@ -1,6 +1,6 @@
 # Bosun spec
 
-Provider mode: astra
+Provider mode: opus
 
 Repo: `mckissinger/bosun` (named `fable-harness` until 2026-09-04; evidence pointers and slice names before that date refer to the old paths, which map one to one onto the new ones), plugin version 0.1.2 at the time this spec was written (2026-09-02). The plugin is prompt-only (skills, agents, rules, one hook script); there is no runtime code or test suite. Checks are therefore file reads, `bash -n`, JSON validation, and a dry-run of any script this work adds.
 
@@ -13,6 +13,8 @@ Second outcome (slice 3, 2026-09-03): the harness can keep working instead of id
 Third outcome (slice 4, 2026-09-04): the harness runs on either Claude Code or Codex. Four named provider modes replace the two: `fable` (Fable 5.1 does everything, Claude Code), `fable-crew` (Fable leads, Sol and Luna implement by task class, Claude Code; today's `codex`), `astra-crew` (GPT-6 Astra leads, Sol and Luna implement by task class, Codex), and `astra` (Astra does everything, Codex). The repo ships a second plugin for Codex under `codex/` with the same spec contract, so a project can move between the two harnesses by changing one line.
 
 ## Decisions, in the user's words
+
+- (2026-09-25) "If Fable is not the lead, then why would you name it Fable.md? I want it to be clean." Supersedes the 2026-09-04 rule that the two rules files keep model names: they are `rules/core.md` and `codex/rules/core.md`, and shared prose says "the lead". Entries in this spec dated before 2026-09-25 that cite `rules/fable.md` or `codex/rules/astra.md` refer to those files under their old names.
 
 - (2026-09-22) "I mean opus 5.5. The model was just released a few hours ago". Confirmed directly from Anthropic's live release page: https://www.anthropic.com/claude-opus-5-5 names `claude-opus-5-5` in Availability. Search results and the installed CLI's embedded model list had lagged the release.
 
@@ -64,7 +66,7 @@ The mode is a line in the project's spec, `Provider mode: <mode>` (four values, 
 
 ### Routing table (fable-crew and astra-crew)
 
-Task class is chosen by the brief, using the same criteria the effort policy in `rules/fable.md` already uses. The brief names the class and the resulting route in the slice brief so it is reviewable before the run.
+Task class is chosen by the brief, using the same criteria the effort policy in `rules/core.md` already uses. The brief names the class and the resulting route in the slice brief so it is reviewable before the run.
 
 | Task class | When | Model | Effort |
 | --- | --- | --- | --- |
@@ -79,7 +81,7 @@ Task class is chosen by the brief, using the same criteria the effort policy in 
 
 1. `/bosun-brief` reads the spec, finds `Provider mode: fable-crew` (or its alias `codex`), and writes the brief as today plus two lines: `Task class:` and `Route: <model> / <effort>`.
 2. Branch as today. The worker never commits; Fable commits after review.
-3. Fable writes a worker prompt file into the checkpoint directory (`~/.claude/bosun/workers/<slug>/<slice>/prompt.md`) containing: the slice brief verbatim, the spec's decisions and out-of-scope lists, the scope, test, and targeted-edit rules from `rules/fable.md`, the exact check commands, and the instruction not to commit, not to touch the spec, and to finish with a short report of what changed and which checks it ran.
+3. Fable writes a worker prompt file into the checkpoint directory (`~/.claude/bosun/workers/<slug>/<slice>/prompt.md`) containing: the slice brief verbatim, the spec's decisions and out-of-scope lists, the scope, test, and targeted-edit rules from `rules/core.md`, the exact check commands, and the instruction not to commit, not to touch the spec, and to finish with a short report of what changed and which checks it ran.
 4. Fable runs `scripts/codex-worker.sh` in the background with the route, the worktree path, the prompt file, and an output directory. The script owns every `codex exec` flag, refuses `ultra`, refuses unknown models, and writes `events.jsonl`, `last-message.md`, and `usage.json` (input, cached input, output tokens, wall seconds, model, effort) into the output directory.
 5. When the background command exits, Fable reads the worker's last message and the diff, updates done-condition statuses in the spec, and runs `/bosun-verify` exactly as in fable mode. FAIL handling is unchanged: fix findings by sending them back to the worker as a follow-up prompt (same script, same route, prompt = the findings plus the original brief), two FAILs on one finding stops the loop.
 6. The report and the spec's slice log both carry the route and the usage numbers.
@@ -105,15 +107,15 @@ Default is `--approve-for-me` (which selects the workspace-write sandbox), cwd s
 
 ### Codex plugin layout
 
-The Codex plugin is a sibling, not a shared-skills refactor: `codex/.codex-plugin/plugin.json`, `codex/rules/astra.md`, `codex/skills/<bosun-brief|bosun-verify|bosun-checkpoint|bosun-mode>/SKILL.md`, `codex/hooks/hooks.json`, `codex/scripts/session-start.sh`, `codex/agents/*.toml`; the repo-root `.agents/plugins/marketplace.json` points at `./codex`. Duplicated wording is the price of leaving the Claude plugin's fable-mode text untouched. The Codex skills are the Claude ones with: Astra in place of Fable; `$bosun-brief` style invocation; Codex subagents in place of the Agent tool and the worker script; and no `usage.json` (the app shows usage; the slice log records the route and the first-verify verdict only).
+The Codex plugin is a sibling, not a shared-skills refactor: `codex/.codex-plugin/plugin.json`, `codex/rules/core.md`, `codex/skills/<bosun-brief|bosun-verify|bosun-checkpoint|bosun-mode>/SKILL.md`, `codex/hooks/hooks.json`, `codex/scripts/session-start.sh`, `codex/agents/*.toml`; the repo-root `.agents/plugins/marketplace.json` points at `./codex`. Duplicated wording is the price of leaving the Claude plugin's fable-mode text untouched. The Codex skills are the Claude ones with: Astra in place of Fable; `$bosun-brief` style invocation; Codex subagents in place of the Agent tool and the worker script; and no `usage.json` (the app shows usage; the slice log records the route and the first-verify verdict only).
 
 Agents shipped (installed into `~/.codex/agents/` by `$bosun-mode astra-crew` or `$bosun-mode astra`, since plugins cannot bundle agents): `bosun_scout` (gpt-5.6-luna, medium, read-only), `bosun_verifier` (gpt-6-astra, high, read-only, the verifier agent text), and one worker per routing row, `bosun_worker_small` (luna/max), `bosun_worker_routine` (sol/medium), `bosun_worker_feature` (sol/high), `bosun_worker_hard` (sol/xhigh), all workspace-write with the worker instructions (no commit, no spec edits, run the checks, report). In `astra-crew` the brief's Execute step asks Astra to delegate the slice to the worker agent named by the task class and wait for it; in `astra` Astra implements itself.
 
-Effort for the Astra lead follows the same ladder and rules as Fable's (chosen at session start in the app's picker, held for the session, `ultra` never used). The SessionStart hook prints `codex/rules/astra.md` unless `~/.codex/AGENTS.md` already carries its heading, then the spec path with mode and run policy, then any checkpoint, as JSON `additionalContext`.
+Effort for the Astra lead follows the same ladder and rules as Fable's (chosen at session start in the app's picker, held for the session, `ultra` never used). The SessionStart hook prints `codex/rules/core.md` unless `~/.codex/AGENTS.md` already carries its heading, then the spec path with mode and run policy, then any checkpoint, as JSON `additionalContext`.
 
 ### Naming
 
-The harness is `bosun`. Everything derived from the harness name is neutral: plugin and marketplace names (`bosun@bosun` on both sides), skill prefix (`/bosun-brief`, `$bosun-brief`), agent prefix (`bosun-scout`, `bosun-verifier` on Claude; `bosun_scout`, `bosun_verifier`, `bosun_worker_*` on Codex), working directories (`~/.claude/bosun/`, `~/.codex/bosun/`), hook messages, and the repo. Model names appear only where they mean the model: mode values (`fable`, `fable-crew`, `astra`, `astra-crew`), `rules/fable.md` and `codex/rules/astra.md` and their headings (which the hooks grep for in the user's global instruction files), and prose about what a model does.
+The harness is `bosun`. Everything derived from the harness name is neutral: plugin and marketplace names (`bosun@bosun` on both sides), skill prefix (`/bosun-brief`, `$bosun-brief`), agent prefix (`bosun-scout`, `bosun-verifier` on Claude; `bosun_scout`, `bosun_verifier`, `bosun_worker_*` on Codex), working directories (`~/.claude/bosun/`, `~/.codex/bosun/`), hook messages, and the repo. Model names appear only where they mean the model: mode values (`fable`, `fable-crew`, `fable-opus`, `opus`, `astra`, `astra-crew`), model-specific agents (`bosun-worker-opus`), mode-specific sections, and prose about what a model does. Shared files are named for their role: `rules/core.md` and `codex/rules/core.md`, headed `# Bosun core rules (Claude Code)` and `# Bosun core rules (Codex)`, which the hooks grep for in the user's global instruction files (2026-09-25; before that the files were `rules/fable.md` and `codex/rules/astra.md`).
 
 ### Runtime verification
 
@@ -233,6 +235,24 @@ Slice 7, CI optimization skill (2026-09-15; user accepted the proposed bosun-ci 
 58. `verified 2026-09-16 bosun-verifier PASS WITH FOLLOW-UPS; verifier re-ran the stdio handshake: mobile-mcp 1.0.4, 32 tools incl. the four named` **Simulator MCP answers on this machine.** `npx -y @mobilenext/mobile-mcp@latest` started over stdio with `MOBILEMCP_DISABLE_TELEMETRY=1` answers an MCP `initialize` followed by `tools/list` with a tool list that includes `mobile_install_app`, `mobile_launch_app`, `mobile_save_screenshot`, and `mobile_list_elements_on_screen`. Run by the lead as a check, not by the worker.
 59. `human-check` A real native iOS slice on a real project: the fable-crew worker checks a screen with `Worker simulator: yes`, and `bosun-verifier-mobile` confirms it in its own simulator, with the slice log recording the counts. Also the first real spawn of `bosun_verifier_mobile` from Codex, per the lesson that a parse check never proves an agent is usable.
 
+### Opus modes slice (2026-09-22, verified)
+
+Status: verified 2026-09-22, bosun_verifier PASS; completes the uncommitted September 18 slice. Live Claude agent execution remains untested.
+Outcome: Add fable-opus (Fable leads/verifies, native Opus 5.5 worker implements) and opus (Opus 5.5 leads, implements, scouts, and verifies), preserving independent Claude verifier effort controls.
+Done-conditions: O1–O6 below.
+Out of scope: changing Sol/Luna routing; selectable Astra verifier effort; paid benchmarks; publishing/installing globally; unrelated follow-ups.
+Assumptions: retain the unfinished fable-opus name, add opus; both run in Claude Code. Opus worker stays at high. Verifier effort precedence remains invocation, current slice, project default, high. Existing user-owned definitions are not overwritten. Session model must actually match the selected mode; spec edits do not change the running model.
+Effort assumed: inherited session setting (not exposed); no picker change.
+Checks: python3 scripts/configure-claude-agents.py --help; temporary-project generation across modes/efforts, transitions, invalid inputs and collision/symlink refusal; JSON/TOML/frontmatter parsing; bash -n scripts/*.sh codex/scripts/*.sh; claude plugin validate .; git diff --check; independent bosun_verifier review. Live Opus execution is separate from static configuration validation.
+Branch: codex/fable-opus-verifier-effort, existing uncommitted work based on main (98d6025); preserve and complete that work.
+
+O1. `verified 2026-09-22 bosun_verifier PASS` Six-mode tables, selection and host gates recognize fable-opus and opus. Default/legacy modes retain their meaning; Codex redirects both new modes to Claude Code.
+O2. `verified 2026-09-22 bosun_verifier PASS` fable-opus pins the worker to Opus 5.5/high, with Fable lead/verifier, no nested delegation, spec edits, or commits by the worker; same-worker retries and evidence rules remain intact.
+O3. `verified 2026-09-22 bosun_verifier PASS` opus uses Opus 5.5 for lead, direct implementation, scout, and both verifier variants; verifies in a fresh context; gates execution on the actual lead model and restores Fable agents when switching back.
+O4. `verified 2026-09-22 bosun_verifier PASS` Claude verifier effort remains independently configurable; generator validates before writing, preserves tools/MCP, handles spaces, is idempotent, refuses symlinks/unrelated files, and does not change worker effort when verifier effort changes.
+O5. `verified 2026-09-22 bosun_verifier PASS` Docs explain usage, host/model/reload requirements and validation limits; README and manifests consistently use 0.8.0 for the completed unpublished slice.
+O6. `verified 2026-09-22 bosun_verifier PASS; live spawns untested` Static checks and independent review pass; live model verification limits are explicitly recorded without equating generated configuration to a successful spawn.
+
 ## Undecided
 
 (none)
@@ -266,21 +286,30 @@ Slice 7, CI optimization skill (2026-09-15; user accepted the proposed bosun-ci 
 
 ## Current slice
 
-Status: verified 2026-09-22, bosun_verifier PASS; completes the uncommitted September 18 slice. Live Claude agent execution remains untested.
-Outcome: Add fable-opus (Fable leads/verifies, native Opus 5.5 worker implements) and opus (Opus 5.5 leads, implements, scouts, and verifies), preserving independent Claude verifier effort controls.
-Done-conditions: O1–O6 below.
-Out of scope: changing Sol/Luna routing; selectable Astra verifier effort; paid benchmarks; publishing/installing globally; unrelated follow-ups.
-Assumptions: retain the unfinished fable-opus name, add opus; both run in Claude Code. Opus worker stays at high. Verifier effort precedence remains invocation, current slice, project default, high. Existing user-owned definitions are not overwritten. Session model must actually match the selected mode; spec edits do not change the running model.
-Effort assumed: inherited session setting (not exposed); no picker change.
-Checks: python3 scripts/configure-claude-agents.py --help; temporary-project generation across modes/efforts, transitions, invalid inputs and collision/symlink refusal; JSON/TOML/frontmatter parsing; bash -n scripts/*.sh codex/scripts/*.sh; claude plugin validate .; git diff --check; independent bosun_verifier review. Live Opus execution is separate from static configuration validation.
-Branch: codex/fable-opus-verifier-effort, existing uncommitted work based on main (98d6025); preserve and complete that work.
+Name: core-rules-rename (2026-09-25). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS 2026-09-25.
+Outcome: Shared files are named for their role, not a model: the two core rules files become `rules/core.md` and `codex/rules/core.md`, and shared prose says "the lead" wherever it means whichever model is leading.
+Done-conditions:
+R1. `verified 2026-09-25 bosun-verifier (claude-opus-5-5/high) PASS` `rules/fable.md` is renamed (git mv) to `rules/core.md` with first heading `# Bosun core rules (Claude Code)`, and `codex/rules/astra.md` to `codex/rules/core.md` with `# Bosun core rules (Codex)`. The old paths no longer exist.
+R2. `verified 2026-09-25 bosun-verifier (claude-opus-5-5/high) PASS` `scripts/session-start.sh` prints `rules/core.md` unless `~/.claude/CLAUDE.md` has a line `# Bosun core rules (Claude Code)`; `codex/scripts/session-start.sh` prints `codex/rules/core.md` unless `~/.codex/AGENTS.md` has `# Bosun core rules (Codex)`. Checked by running each hook with a temporary HOME, with and without the heading.
+R3. `verified 2026-09-25 bosun-verifier (claude-opus-5-5/high) PASS` Outside SPEC.md history, no file names `rules/fable.md`, `codex/rules/astra.md`, `rules/astra.md`, `# Fable 5.1 agentic development`, or `# Astra agentic development` (grep), except the README sentence telling users who appended the old file how to migrate.
+R4. `verified 2026-09-25 bosun-verifier (claude-opus-5-5/high) PASS` In both core rules files, the shared (not mode-specific) parts of `bosun-brief`, `bosun-verify`, and `bosun-mode` in both plugins, and README, "Fable" or "Astra" that means whichever model is leading reads "the lead". Model names remain only for mode names, model-specific agents (`bosun-worker-opus`), mode-specific sections, and facts about a specific model. The line "References to Fable in the shared rules below mean the selected Claude lead" is removed.
+R5. `verified 2026-09-25 bosun-verifier (claude-opus-5-5/high) PASS` The spec records the user's decision superseding the 2026-09-04 naming rule, the Naming design paragraph matches, and a note says older entries refer to the old rules paths.
+R6. `verified 2026-09-25 bosun-verifier (claude-opus-5-5/high) PASS` Version 0.9.0 in all three manifests and the README version line; manifests parse.
+R7. `verified 2026-09-25 bosun-verifier (claude-opus-5-5/high) PASS` Checks pass: `bash -n scripts/*.sh codex/scripts/*.sh`; JSON parse of the three manifests and `hooks/hooks.json`, `codex/hooks/hooks.json`; `claude plugin validate .`; `git diff --check`.
+Out of scope: the Tests and CI rules and `bosun-ci` changes (next slice); renaming mode values, agents, or the working directories; rewriting historical spec entries; fixing unrelated follow-ups.
+Assumptions: "Fable"/"Astra" in the fable-crew, fable-opus, and Astra-mode sections stays where it names the model that holds that role in that mode. The minor version bump is because users who appended the old rules heading to their global file must re-append under the new heading. The user's global CLAUDE.md stale copy was removed by the user's approval on 2026-09-25 before this slice, so nothing on this machine still carries the old heading.
+Effort assumed: the session's setting (not exposed to the lead).
+Verifier effort: high (no override at any scope).
+Checks: as in R7, plus the R2 hook runs and the R3 grep.
+Branch: rename-core-rules, from main (574003a); carries the uncommitted mode-line change astra -> opus.
 
-O1. `verified 2026-09-22 bosun_verifier PASS` Six-mode tables, selection and host gates recognize fable-opus and opus. Default/legacy modes retain their meaning; Codex redirects both new modes to Claude Code.
-O2. `verified 2026-09-22 bosun_verifier PASS` fable-opus pins the worker to Opus 5.5/high, with Fable lead/verifier, no nested delegation, spec edits, or commits by the worker; same-worker retries and evidence rules remain intact.
-O3. `verified 2026-09-22 bosun_verifier PASS` opus uses Opus 5.5 for lead, direct implementation, scout, and both verifier variants; verifies in a fresh context; gates execution on the actual lead model and restores Fable agents when switching back.
-O4. `verified 2026-09-22 bosun_verifier PASS` Claude verifier effort remains independently configurable; generator validates before writing, preserves tools/MCP, handles spaces, is idempotent, refuses symlinks/unrelated files, and does not change worker effort when verifier effort changes.
-O5. `verified 2026-09-22 bosun_verifier PASS` Docs explain usage, host/model/reload requirements and validation limits; README and manifests consistently use 0.8.0 for the completed unpublished slice.
-O6. `verified 2026-09-22 bosun_verifier PASS; live spawns untested` Static checks and independent review pass; live model verification limits are explicitly recorded without equating generated configuration to a successful spawn.
+## Next slice (agreed 2026-09-25, not started)
+
+Name: tests-ci-standard. Branch: tests-ci-standard. Version 0.10.0.
+1. A "Tests and CI" block in both core rules files (leads), in `agents/bosun-worker-opus.md`, the four Codex worker TOMLs, and the fable-crew worker prompt template in `bosun-brief` (implementers): run the tests for what you touched before handoff or push, the full suite only for shared code, config, dependencies, or test setup, and never push to find out whether tests pass; never weaken, skip, or delete a test to make a change pass, and say so when a specified behavior change requires a test change; new tests make no real network calls, use no real sleeps or wall-clock time, and do not depend on order or leak global state; follow the repo's written test and CI conventions; a failure that passes on rerun with no change and is unrelated to the change is a flake candidate, reported with name and message, never fixed with retries or longer sleeps, quarantined only with the user's approval; a workflow change says in the PR whether it adds or removes CI time and does not undo existing optimizations.
+2. Both harnesses' verifiers treat as findings: weakened, skipped, or deleted tests; new tests with real network, sleeps, or clock dependence; CI-time changes not stated in the PR.
+3. `bosun-ci` in both plugins: Blacksmith is the runner standard (per-job sizing, org and default runner group requirement); migration is an in-scope recommendation, not done unasked; after a migration, measure checkout time and hangs; rank gate jobs first; do the setup-times-shards arithmetic before adding shards; candidates for per-file isolation opt-in, type-aware lint cost, and base-image reliability; a new done-condition that any optimization constraining how code is written is recorded in the project's CLAUDE.md or spec lessons.
+4. Testbox stays a follow-up.
 
 ## Follow-ups
 
@@ -298,14 +327,17 @@ O6. `verified 2026-09-22 bosun_verifier PASS; live spawns untested` Static check
 - run-policy, 2026-09-03: the stop condition "next runnable done-condition depends on an undecided item" can never fire, since the runnable definition already excludes those. Drop it or reword.
 - codex-port, 2026-09-04: `Route:` override is not portable across harnesses: Claude side is `Route: <model> / <effort>`, Codex side is `Route: <agent>`. A spec moved between them with a Route line set would confuse the other brief. Add a one-line rule on each side to map or reject the foreign form.
 - codex-port, 2026-09-04: `README.md` "Why each piece exists" tail still says "The codex provider mode has not yet run a real slice" and "Version 0.2.0"; manifests are 0.4.0 and the mode is now `fable-crew`.
-- codex-port, 2026-09-04: `rules/fable.md` run-policy section and this spec's design still say "applies in both provider modes"; there are four.
-- codex-port, 2026-09-04: `README.md` documents appending `rules/fable.md` to `~/.claude/CLAUDE.md` but not the Codex equivalent (append `codex/rules/astra.md` to `~/.codex/AGENTS.md`, which the Codex hook checks for). The checkpoints line under the plugin table names only the Claude path.
+- codex-port, 2026-09-04: `rules/core.md` run-policy section and this spec's design still say "applies in both provider modes"; there are four.
+- codex-port, 2026-09-04: `README.md` documents appending `rules/core.md` to `~/.claude/CLAUDE.md` but not the Codex equivalent (append `codex/rules/core.md` to `~/.codex/AGENTS.md`, which the Codex hook checks for). The checkpoints line under the plugin table names only the Claude path.
 - runtime-verify, 2026-09-05: `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` descriptions still say "Built from Anthropic's Fable 5.1 docs" while the README intro now also credits Claude Code guidance.
-- runtime-verify, 2026-09-05: `codex/rules/astra.md`, `codex/skills/bosun-mode/SKILL.md`, `codex/skills/bosun-verify/SKILL.md`, and the verifier TOML description call `bosun_verifier` read-only without saying its sandbox is `workspace-write` with read-only behavior; only the README and the TOML's own rule explain it.
+- runtime-verify, 2026-09-05: `codex/rules/core.md`, `codex/skills/bosun-mode/SKILL.md`, `codex/skills/bosun-verify/SKILL.md`, and the verifier TOML description call `bosun_verifier` read-only without saying its sandbox is `workspace-write` with read-only behavior; only the README and the TOML's own rule explain it.
+- core-rules-rename, 2026-09-25: Blacksmith Testbox (agent-run CI environment, early beta, billed per minute with a 30-minute idle timeout) is deferred by the user. Try it by hand on one project with service-dependent tests before deciding whether the verifier uses it.
+- core-rules-rename, 2026-09-25: `skills/bosun-brief/SKILL.md:57` says to follow the scope and edit rules "in the global CLAUDE.md"; they come from the core rules the hook loads. The Codex skill already says "in the core rules". Pre-existing on main.
 - runtime-verify, 2026-09-05: whether Claude Code honors the `mcpServers` list-of-maps frontmatter in `agents/bosun-verifier.md` has not been probed; done-condition 46's fable-mode run shows it.
 
 ## Slice log
 
+- 2026-09-25, core-rules-rename, opus (implemented by lead), first verify PASS (bosun-verifier on claude-opus-5-5 / high); R1–R7 verified; route-or-screen done-conditions: 0 of 0.
 - 2026-09-22, opus-modes-and-verifier-effort, astra (implemented by lead), first structural verify PASS WITH FOLLOW-UPS; final verify PASS, O1–O6 verified. Model ID `claude-opus-5-5` confirmed from Anthropic live announcement. Lead: temporary-project mode/effort mutation matrix, idempotence, return-to-Fable, invalid inputs, collision and symlink refusal. Independent verifier: 20 dry-runs, five invalid inputs, shell syntax, 13 JSON/TOML files, changed frontmatter, both Claude validators, existing Sol worker dry-run, diff whitespace. Route/screen checks: 0 of 0. No live Claude agent execution, installation, or publication.
 
 - 2026-09-16, mobile-verify-followups, fable-crew (gpt-5.6-luna / max, task class small), first verify PASS; the five mobile-verify follow-ups fixed and removed from the follow-ups section; route-or-screen done-conditions: 0 of 0. Usage: 162 s wall, 291,516 input (246,784 cached), 8,183 output (3,650 reasoning).

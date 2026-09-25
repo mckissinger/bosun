@@ -26,8 +26,8 @@ if [ "$source_kind" = "compact" ]; then
     out="Context was just compacted. No spec file was found in $dir; if a task is in progress, restate its done-conditions before continuing."
   fi
 else
-  if ! grep -qs '^# Astra agentic development' "$HOME/.codex/AGENTS.md"; then
-    out="$(cat "$plugin_root/rules/astra.md")"$'\n\n'
+  if ! grep -qs '^# Bosun core rules (Codex)' "$HOME/.codex/AGENTS.md"; then
+    out="$(cat "$plugin_root/rules/core.md")"$'\n\n'
   fi
   if [ -n "$spec" ]; then
     mode="$(grep -m1 '^Provider mode:' "$spec" 2>/dev/null | sed 's/^Provider mode:[[:space:]]*//')"

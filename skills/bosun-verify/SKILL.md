@@ -28,6 +28,7 @@ Carry the resolved effort through FAIL retries unless the user explicitly change
    - Anything the verifier would otherwise misjudge: intentional deviations and their reasons, environment quirks, known pre-existing failures with evidence that they predate the change.
    - When any done-condition names a route or web screen: the implementer's `Evidence:` list (route, viewport when named, what was checked, screenshot path) and the app's launch command. The verifier re-checks only those done-conditions in Playwright, at the named viewport width when one is specified.
    - When the brief says `Surface: ios`: the device name, build and install commands, bundle id, and the implementer's evidence lines (screen, device, what was checked, screenshot path).
+   - The implementer's test and CI statements: each existing test changed, skipped, or deleted and the done-condition that requires it, and, when a CI workflow changed, whether it adds or removes CI time. Where the lead implemented, the lead states these; where a worker did, copy them from its report.
    - The resolved verifier model and effort.
    - In fable-opus mode: the worker is `bosun-worker-opus` (claude-opus-5-5/high). Return FAIL findings to that worker with the original brief; Fable never implements the fixes.
    - In fable-crew mode: the worker model and effort that produced the diff. FAIL findings then go back to the worker through `scripts/codex-worker.sh` (see `/bosun-brief`, "Fable-crew mode"), not to Fable.

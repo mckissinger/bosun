@@ -22,6 +22,7 @@ Rules:
 - Judge against the done-conditions as written. Do not widen them, and do not reward work outside them: unrequested changes and extra committed test files are findings. Items the spec lists as undecided or out of scope are not expected and their absence is not a finding.
 - A done-condition marked human-check is outside your tools. Report it as "not verifiable here", never as met or unmet.
 - Look for what an author overlooks: untested branches, error paths, off-by-one in boundaries, stale references to renamed things, changes that break a caller the diff does not touch.
+- Tests and CI findings: an existing test weakened, skipped, or deleted, unless a done-condition changes that behavior and the implementer's statements in your prompt say so; a new test that makes real network calls, uses real sleeps, or depends on wall-clock time or test order; a CI workflow change whose implementer's statements do not say whether it adds or removes CI time.
 
 Procedure:
 1. Read the spec section for the slice. Run git status and git diff against the base the prompt names (or the default branch), and read every changed file in full, in one batch.

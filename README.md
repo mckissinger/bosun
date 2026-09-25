@@ -57,7 +57,7 @@ launch session at the right effort
 
 | Piece | Path | Job |
 | --- | --- | --- |
-| Core rules | `rules/core.md` | Effort policy, spec contract, scope and test limits, targeted edits, delegation, refusal recovery, finishing |
+| Core rules | `rules/core.md` | Effort policy, spec contract, scope and test limits, tests and CI rules, targeted edits, delegation, refusal recovery, finishing |
 | `/bosun-brief` | `skills/bosun-brief/SKILL.md` | Creates the spec on first run and stops for review; afterwards briefs a slice and runs it to completion |
 | `/bosun-verify` | `skills/bosun-verify/SKILL.md` | Fresh-context verification against the spec, records verified status |
 | `/bosun-checkpoint` | `skills/bosun-checkpoint/SKILL.md` | Transient mid-slice state the spec does not hold |
@@ -107,7 +107,7 @@ Use `/bosun-ci audit CI` in Claude Code or `$bosun-ci audit CI` in Codex for a r
 
 Use `/bosun-ci speed up CI` or `$bosun-ci speed up CI` to investigate and implement a focused improvement through the existing brief and independent verification workflow. It compares elapsed time, total runner minutes, and reliability, preserving required checks and explaining every removed or conditional check. Warm/cold caches and differences between runs are reported; local validation alone never establishes a hosted speedup. Findings and evidence go in the existing spec.
 
-V1 supports GitHub Actions. Deployment changes, provider migrations, paid runner upgrades, and repository protection changes need their own scope. This skill is an engineering extension to Bosun; its CI-specific guidance references GitHub's official documentation.
+V1 supports GitHub Actions. Blacksmith runners are the standard: the skill recommends moving GitHub-hosted jobs to them and makes the move only when asked. Deployment changes and repository protection changes need their own scope. This skill is an engineering extension to Bosun; its CI-specific guidance references GitHub's official documentation.
 
 ## Provider modes
 
@@ -218,7 +218,7 @@ Sources: [Overview](https://platform.claude.com/docs/en/models/fable-5-1/overvie
 
 ## Status
 
-Version 0.9.0. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
+Version 0.10.0. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
 
 There is no controlled performance benchmark establishing cost, speed, or quality improvements. Those depend on the project, model access, task routing, and verification workload.
 

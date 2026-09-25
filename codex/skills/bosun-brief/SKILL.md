@@ -5,7 +5,7 @@ description: Start substantial coding work on GPT-6 Astra in Codex. On a project
 
 # Bosun brief (Codex)
 
-Astra runs long tasks well when the goal is clear and stops to ask when it is not. This skill makes the goal clear once, in the spec, so runs need no mid-task input.
+The lead runs long tasks well when the goal is clear and stops to ask when it is not. This skill makes the goal clear once, in the spec, so runs need no mid-task input.
 
 ## Find the spec
 

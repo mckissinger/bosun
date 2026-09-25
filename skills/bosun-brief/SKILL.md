@@ -6,7 +6,7 @@ argument-hint: "<task, or a paste / path of the structures you already have>"
 
 # Bosun brief
 
-Fable 5.1 runs long tasks well when the goal is clear and stops to ask when it is not. This skill makes the goal clear once, in the spec, so runs need no mid-task input.
+The lead runs long tasks well when the goal is clear and stops to ask when it is not. This skill makes the goal clear once, in the spec, so runs need no mid-task input.
 
 ## Find the spec
 
@@ -18,7 +18,7 @@ A line `Provider mode: <mode>` anywhere in the spec names one of six modes (tabl
 
 ## Opus lead and session model
 
-`opus` runs in Claude Code with Opus 5.5 in every role. Apply the ordinary fable-mode flow with Opus as the lead: brief, implement directly, keep the spec, commit, and fix FAIL findings yourself. References to Fable ownership in this shared flow mean the selected lead. Do not use the fable-opus worker flow or stage concurrent implementation. Use the project-local `bosun-scout` and both verifier variants configured on Opus by `/bosun-mode opus`; verification remains a fresh read-only context.
+`opus` runs in Claude Code with Opus 5.5 in every role. Apply the ordinary fable-mode flow with Opus as the lead: brief, implement directly, keep the spec, commit, and fix FAIL findings yourself. Do not use the fable-opus worker flow or stage concurrent implementation. Use the project-local `bosun-scout` and both verifier variants configured on Opus by `/bosun-mode opus`; verification remains a fresh read-only context.
 
 Before briefing or running any Claude mode, confirm the actual session model: `claude-opus-5-5` for `opus`, Fable 5.1 for the three Fable modes. A spec line does not switch the session model. If mismatched, select the required model with `/model` or relaunch with `claude --model <model>` and confirm before continuing. Configure local agents with `/bosun-mode <mode>` when absent or stale after switching modes; confirm the local scout and verifier model settings are loaded (restart Claude Code when needed). Never silently fall back to plugin-scoped or differently modeled agents. Unknown provider modes are errors.
 

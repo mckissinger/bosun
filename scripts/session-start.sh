@@ -24,8 +24,8 @@ if [ "$source_kind" = "compact" ]; then
 fi
 
 # Core rules: printed here unless the user has appended them to ~/.claude/CLAUDE.md (see README).
-if ! grep -qs '^# Fable 5.1 agentic development' "$HOME/.claude/CLAUDE.md"; then
-  cat "$plugin_root/rules/fable.md"
+if ! grep -qs '^# Bosun core rules (Claude Code)' "$HOME/.claude/CLAUDE.md"; then
+  cat "$plugin_root/rules/core.md"
   echo
 fi
 

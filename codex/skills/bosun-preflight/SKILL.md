@@ -28,7 +28,7 @@ Batch the reads. Independent areas can go to `bosun_scout` in the background whi
 - Every finding cites evidence: a file and line, a command and its output, or a browser observation with the URL and what was seen. A suspicion you could not confirm goes under "Unknown", with the check that would settle it, never under findings.
 - Use the tools the project already has: its typecheck, lint, and tests that touch no live provider (read the test configuration first; a suite that would call real payment, email, SMS, or AI services is skipped and listed under "Unknown"); its dependency audit (`npm audit`, `pnpm audit`, or the equivalent); provider advisors when a provider offers them (for example the Supabase security and performance advisors); and a browser on a local production build or a preview deployment. Check cookies and page source on a production build, since development servers differ in exactly those places. Check response headers on a preview deployment or in the host's header configuration (for example `vercel.json` or a `_headers` file), because hosts add some headers at the edge that a local build never sends.
 - Never read or print a secret value. Do not open `.env` files that hold values or print environment variables; take variable names from example files such as `.env.example`, or from tooling that lists names only.
-- Make no calls that cost money, send email or SMS, or change hosted data. Do not load-test or probe production; probes run against local or preview environments. A plain unauthenticated request for a public production page, to read its headers, is allowed, and so is reading a hosted provider's settings or advisors where the session has access.
+- Make no calls that cost money, send email or SMS, or change production data. Do not load-test or probe production; probes run against local or preview environments. A plain unauthenticated request for a public production page, to read its headers, is allowed, and so is reading a hosted provider's settings or advisors where the session has access.
 - Before running any flow that writes, confirm from variable names, configuration, or the service hosts the build calls that it talks to local or preview services, not production. If that cannot be confirmed, do not run write flows; list them under "Unknown".
 - If a hosted setting cannot be read (backups, spend caps, branch protection), list it under "Unknown" with where the user can check it.
 
@@ -38,7 +38,7 @@ Batch the reads. Independent areas can go to `bosun_scout` in the background whi
 - **Should fix:** likely to hurt within the first weeks of real use: missing error tracking, no timeouts, broken empty or error states, missing rate limits on cheaper endpoints.
 - **Later:** worth doing, with low near-term risk.
 
-A private beta or internal launch may lower reliability, legal, product polish, and operations findings by one level; say which. It never lowers an access-control or data-exposure, abuse and cost, or store-policy finding, because those hurt regardless of audience.
+A private beta or internal launch may lower reliability, product polish, and operations findings by one level; say which. It never lowers an access-control or data-exposure, abuse and cost, store-policy, or legal finding, or data loss with no recovery path: those hurt beta users as much as anyone, and a legal requirement is already judged against the launch audience.
 
 ## Areas and checks
 
@@ -104,7 +104,7 @@ Check each area that applies. These are the minimum; follow the evidence further
 
 ### Native mobile
 
-- Store policy, checked against the current App Store Review Guidelines and Google Play policies: in-app account deletion when the app lets users create accounts; an equivalent privacy-focused sign-in option when the app offers third-party sign-in on iOS (Sign in with Apple satisfies it); a privacy manifest and accurate App Store privacy labels; an accurate Google Play Data safety form; and purpose strings for every permission.
+- Store policy, checked against the current App Store Review Guidelines and Google Play policies: in-app account deletion when the app lets users create accounts, plus a web link for deletion requests on Google Play; an equivalent privacy-focused sign-in option when the app offers third-party sign-in on iOS (Sign in with Apple satisfies it); a privacy manifest and accurate App Store privacy labels; an accurate Google Play Data safety form; and purpose strings for every permission.
 - Release builds use production endpoints and contain no development menus or debug flags; over-the-air update channels keep development and production apart.
 - Tokens live in secure storage, and deep links validate their parameters before acting.
 - Crash reporting is wired for release builds.
@@ -127,7 +127,7 @@ Take the findings the user chose, or every blocker when they say "fix the blocke
 
 - An access-control fix adds a test of the denied case: the other user's row, the forged claim, the normalized redirect, the protected string absent from the page source.
 - A guardrail fix shows the limit tripping in a test.
-- A header, cookie, or metadata fix is checked on a production build in the browser, as a route done-condition the verifier can re-check.
+- A cookie or metadata fix is checked on a production build in the browser, and a header fix on a preview deployment or in the host's header configuration (as in "Evidence and safety"), each as a route done-condition the verifier can re-check.
 - A reliability fix has a test of the failure path: the timeout, the duplicate delivery, the failed post-commit step.
 
 Verify each slice through `$bosun-verify`. After the fixes land, re-run the checks behind each fixed finding and update the Production preflight record.

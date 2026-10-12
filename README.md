@@ -63,6 +63,7 @@ launch session at the right effort
 | `/bosun-checkpoint` | `skills/bosun-checkpoint/SKILL.md` | Transient mid-slice state the spec does not hold |
 | `/bosun-ci` | `skills/bosun-ci/SKILL.md` | Audit GitHub Actions bottlenecks or implement and verify a focused CI improvement |
 | `/bosun-preflight` | `skills/bosun-preflight/SKILL.md` | Audit a feature-complete app for production readiness, or fix chosen findings through verified slices |
+| `/bosun-triage` | `skills/bosun-triage/SKILL.md` | Review the spec against code and history: fix statuses, clear resolved follow-ups, surface what is waiting on you |
 | `/bosun-mode` | `skills/bosun-mode/SKILL.md` | Sets or reports the provider mode line in the spec; preflights codex |
 | Codex worker | `scripts/codex-worker.sh` | Runs one slice on gpt-5.6-sol or gpt-5.6-luna via `codex exec`; owns every flag, refuses `ultra`, runs with `--disable plugins` so the Codex Bosun plugin's lead-mode gate cannot reach a delegated worker, writes usage |
 | Claude agent setup | `scripts/configure-claude-agents.py` | Generates project-local worker/verifier definitions; applies verifier effort without changing lead or worker effort |
@@ -73,7 +74,7 @@ launch session at the right effort
 | SessionStart hook | `scripts/session-start.sh` | Loads the rules if needed, points at the spec with its provider mode and run policy, prints any checkpoint; on compaction, tells the model to re-read the spec |
 | Codex plugin manifest | `codex/.codex-plugin/plugin.json`, `.agents/plugins/marketplace.json` | The sibling plugin for the ChatGPT desktop app |
 | Codex core rules | `codex/rules/core.md` | The same contract for the Codex lead: effort ladder, spec, modes, run policy, finishing |
-| Codex skills | `codex/skills/*/SKILL.md` | `$bosun-brief`, `$bosun-verify`, `$bosun-checkpoint`, `$bosun-mode`, `$bosun-ci`, `$bosun-preflight`, ported for Astra and Codex subagents |
+| Codex skills | `codex/skills/*/SKILL.md` | `$bosun-brief`, `$bosun-verify`, `$bosun-checkpoint`, `$bosun-mode`, `$bosun-ci`, `$bosun-preflight`, `$bosun-triage`, ported for Astra and Codex subagents |
 | Codex agents | `codex/agents/*.toml` | `bosun_scout`, `bosun_verifier`, `bosun_verifier_mobile`, and one worker per routing row; the web verifier and workers have Playwright, and the mobile verifier has simulator tooling; installed by `$bosun-mode` |
 | Codex hook | `codex/hooks/hooks.json`, `codex/scripts/session-start.sh` | Rules, spec pointer, and checkpoint as session context |
 
@@ -113,6 +114,10 @@ V1 supports GitHub Actions. Blacksmith runners are the standard: the skill recom
 ## Production preflight
 
 Use `/bosun-preflight` in Claude Code or `$bosun-preflight` in Codex when an app is feature-complete and before it launches. The audit reads the whole app and reports a ranked punch list (blockers, should-fix, later) across security, abuse and cost guardrails, reliability, legal and data, product polish, operations, and native mobile. Every finding cites a file, a command's output, or a browser observation, and what could not be checked is listed separately. When the project has a spec, the audit records its verdict there in a "Production preflight" section. Ask it to fix chosen findings, or "fix the blockers", and each fix runs as a slice with a done-condition that proves it, such as a test of the denied case. It does not deploy or change hosted settings; those go to you as manual steps.
+
+## Spec triage
+
+Follow-ups pile up, statuses drift, and deferrals get lost as slices land. Use `/bosun-triage` in Claude Code or `$bosun-triage` in Codex, between slices, to review the spec against the code and git history. The report proposes removing follow-ups that are resolved, obsolete, or duplicated (each with its evidence), corrects statuses, tags the follow-ups that remain (`bug`, `drift`, `nit`, `deferral`), groups them into draft slices, finds decisions that never became done-conditions, and lists the human-checks and deferrals waiting on you. Nothing changes until you approve. Approved changes land as spec bookkeeping only; a reorder that puts live content ahead of finished work is a pure move, checked line by line, and nothing is condensed or reworded.
 
 ## Provider modes
 
@@ -223,7 +228,7 @@ Sources: [Overview](https://platform.claude.com/docs/en/models/fable-5-1/overvie
 
 ## Status
 
-Version 0.11.0. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
+Version 0.12.0. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
 
 There is no controlled performance benchmark establishing cost, speed, or quality improvements. Those depend on the project, model access, task routing, and verification workload.
 

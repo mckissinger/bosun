@@ -90,7 +90,7 @@ Checkpoints are written to `~/.claude/bosun/checkpoints/<project-slug>.md` in Cl
 - undecided items, as questions
 - out-of-scope items
 - the current slice
-- follow-ups: things noticed and not done, one line each with the slice and date; the exhausted-roadmap report draws its proposals from here
+- follow-ups: things noticed and not done, one line each with the slice, the date, and a tag (`bug`, `drift`, `nit`, `deferral`); the exhausted-roadmap report draws its proposals from here, and `/bosun-triage` clears the ones it shows resolved once you approve
 - lessons: what a fresh session needs to know about this codebase that the repo does not already record
 
 The model chooses the layout per project, keeps it reviewable by a person in one sitting, and reorganizes or splits it when it stops being that. Status is updated as work lands, so a crash mid-run loses little. The test of the spec: with the checkpoint deleted, can a fresh session continue from spec, branch, and git log? If not, the spec is incomplete.

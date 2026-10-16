@@ -46,7 +46,7 @@ Out of scope: <what a careful engineer might touch but must not>
 Assumptions: <each ambiguity and the reading chosen, with why>
 Effort assumed: <the session's level; you cannot change it>
 Verifier effort: <current-slice override, project default, or high; independent of lead/worker>
-Checks: <exact commands and any setup they need>
+Checks: <exact commands and any setup they need; end-to-end checks name the targeted specs, not the full suite, and say whether a required CI check runs the full end-to-end suite>
 Branch: <name>
 ```
 

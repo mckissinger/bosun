@@ -228,7 +228,7 @@ Sources: [Overview](https://platform.claude.com/docs/en/models/fable-5-1/overvie
 
 ## Status
 
-Version 0.12.0. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
+Version 0.13.0. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
 
 There is no controlled performance benchmark establishing cost, speed, or quality improvements. Those depend on the project, model access, task routing, and verification workload.
 

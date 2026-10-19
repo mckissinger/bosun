@@ -1,0 +1,34 @@
+name: checks
+
+on:
+  pull_request:
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # The job name is the required status check on main.
+  checks:
+    # GitHub-hosted: Blacksmith runners need an organization, and this repo is personal (free for public repos).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Shell syntax
+        run: bash -n scripts/*.sh codex/scripts/*.sh
+      - name: JSON parses
+        run: for f in .claude-plugin/*.json codex/.codex-plugin/plugin.json .agents/plugins/marketplace.json hooks/hooks.json codex/hooks/hooks.json; do python3 -m json.tool "$f" > /dev/null || { echo "::error file=$f::invalid JSON"; exit 1; }; done
+      - name: TOML parses
+        run: python3 -c "import glob, tomllib; [tomllib.load(open(f, 'rb')) for f in glob.glob('codex/agents/*.toml')]"
+      - name: Python compiles
+        run: python3 -c "import glob, py_compile; [py_compile.compile(f, cfile='/tmp/c.pyc', doraise=True) for f in glob.glob('scripts/*.py')]"
+      - name: Whitespace
+        run: git diff --check origin/${{ github.base_ref }}...HEAD
+      - name: Plugin validates
+        run: npx -y @anthropic-ai/claude-code plugin validate .

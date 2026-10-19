@@ -455,6 +455,7 @@ Branch: agents-gitignore, from main (7e0b5fa).
 
 ## Slice log
 
+- 2026-10-19, ci-checks, opus (implemented by lead, at the user's request "Lets do it"; no verifier run, one-file workflow): `.github/workflows/checks.yml` runs the slice checks (shell syntax, JSON and TOML parsing, Python compile, `git diff --check`, `claude plugin validate .`) on every PR on a GitHub-hosted runner (personal repo, so no Blacksmith); its `checks` job is the required check on `main` (strict, admins enforced), so PRs here auto-merge on green. First run 13 s, all steps passed; merged as #20.
 - 2026-10-19, agents-gitignore, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (bosun-verifier on claude-opus-5-5 / high; four follow-ups recorded); A1–A4 verified; route-or-screen done-conditions: 0 of 0.
 - 2026-10-16, e2e-cadence, opus (implemented by lead), first verify FAIL (six findings: fingerprint quoting, external diff, subdirectory, spec edits and worker modes; worker default; verifier shell allowance; all fixed), second PASS WITH FOLLOW-UPS (two nits and one deferral recorded); both bosun-verifier on claude-opus-5-5 / high; E1–E6 verified; route-or-screen done-conditions: 0 of 0.
 - 2026-10-11, bosun-triage, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (six follow-ups, fixed in-slice at the user's request), second PASS WITH FOLLOW-UPS (four errors in the fixes, corrected), third PASS WITH FOLLOW-UPS (one follow-up recorded); all bosun-verifier on claude-opus-5-5 / high; G1–G5 verified, G6 human-check; route-or-screen done-conditions: 0 of 0.

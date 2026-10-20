@@ -14,6 +14,8 @@ Third outcome (slice 4, 2026-09-04): the harness runs on either Claude Code or C
 
 ## Decisions, in the user's words
 
+- (2026-10-20) After a review of the hub-and-lane sessions in cre-list and rv-rez (lanes sharing one local Supabase stack, every cre-list e2e run wiping it, an unapproved migration applied to the shared stack, SPEC.md conflicts between parallel slices, the hub handing out stack instances and migration numbers by message), the lead proposed one Bosun slice: a parallel-lanes section in the core rules, per-lane spec files, an overlap check in `/bosun-brief`, and a `Stack isolation:` spec line, with stack scripts and migration numbering left to each project and no lease tooling yet. Michael: "so should we change bosun then?" then "proceed". This supersedes the slice 3 out-of-scope line on parallel slices in separate worktrees.
+
 - (2026-09-25) "If Fable is not the lead, then why would you name it Fable.md? I want it to be clean." Supersedes the 2026-09-04 rule that the two rules files keep model names: they are `rules/core.md` and `codex/rules/core.md`, and shared prose says "the lead". Entries in this spec dated before 2026-09-25 that cite `rules/fable.md` or `codex/rules/astra.md` refer to those files under their old names.
 
 - (2026-09-22) "I mean opus 5.5. The model was just released a few hours ago". Confirmed directly from Anthropic's live release page: https://www.anthropic.com/claude-opus-5-5 names `claude-opus-5-5` in Availability. Search results and the installed CLI's embedded model list had lagged the release.
@@ -366,6 +368,23 @@ Verifier effort: high (no override at any scope).
 Checks: as in E6.
 Branch: e2e-cadence, from main (8194f09).
 
+### Agents gitignore slice (2026-10-19, verified)
+
+Name: agents-gitignore (2026-10-19). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS WITH FOLLOW-UPS 2026-10-19.
+Decisions (user, 2026-10-18): on the lead's recommendation to stop tracking Bosun-generated agent files in the seven projects that committed them and to make Bosun add the ignore itself: "Yes".
+Outcome: `scripts/configure-claude-agents.py` keeps the agent files it generates out of git, so a plugin update never shows as a diff in a project.
+Done-conditions:
+A1. `verified 2026-10-19 bosun-verifier (claude-opus-5-5/high) PASS WITH FOLLOW-UPS; scripts/configure-claude-agents.py:16-17,56-59,69-70` When it writes agents (not on `--dry-run`), the script writes `.claude/agents/.gitignore` containing the Bosun marker comment, `bosun-*.md`, and `.gitignore` (so the ignore file itself stays untracked), creating it when absent and rewriting it only when it carries the marker; an existing `.gitignore` there without the marker is left unchanged and the script prints that it was left alone. It refuses a symlinked `.gitignore` like it refuses symlinked agents.
+A2. `verified 2026-10-19 bosun-verifier (claude-opus-5-5/high) PASS WITH FOLLOW-UPS; scripts/configure-claude-agents.py:71-79` When git still tracks any generated `bosun-*.md` in the project, the script prints a note naming them and the `git rm --cached` command; it never runs git commands that change state.
+A3. `verified 2026-10-19 bosun-verifier (claude-opus-5-5/high) PASS WITH FOLLOW-UPS; README.md:168` README's agent-setup sentence (line 168) says the generated files are git-ignored through `.claude/agents/.gitignore`.
+A4. `verified 2026-10-19 bosun-verifier (claude-opus-5-5/high) PASS WITH FOLLOW-UPS; manifests and README:231 at 0.13.1; all A4 checks exit 0; 7-case lead matrix plus 15 verifier cases` Version 0.13.1 in all three manifests and the README version line. Checks pass: `bash -n scripts/*.sh codex/scripts/*.sh`; JSON parses; `claude plugin validate .`; `git diff main --check`; `python3 -m py_compile scripts/configure-claude-agents.py`; temp-repo runs show: a fresh repo gets the agents and the ignore file and `git status --porcelain` lists nothing under `.claude/`; a second run changes nothing; `--dry-run` writes nothing; a user-owned `.claude/agents/.gitignore` is left byte-identical with the printed note; a repo that tracks `bosun-verifier.md` gets the A2 note; a symlinked ignore file is refused before any write.
+Out of scope: Codex agent files (`$bosun-mode` installs those; no project tracks them); changing which agents are generated; the projects' own `.gitignore` files (handled by their seven PRs on 2026-10-19).
+Assumptions: a nested `.gitignore` is used instead of editing the project's root `.gitignore` so the script never modifies a tracked project file. Patch bump because no interface changes.
+Effort assumed: the session's setting (not exposed to the lead).
+Verifier effort: high (no override at any scope).
+Checks: as in A4.
+Branch: agents-gitignore, from main (7e0b5fa).
+
 ## Undecided
 
 (none)
@@ -378,7 +397,7 @@ Branch: e2e-cadence, from main (8194f09).
 - Codex hooks, guard scripts, or hook-trust flags. The worker is bounded by the sandbox and the prompt only.
 - `gpt-5.6-terra` or any model not in the table.
 - Parallel workers.
-- Parallel slices in separate worktrees (slice 3).
+- Parallel slices in separate worktrees (slice 3; superseded 2026-10-20 by the parallel-lanes slice, which covers lanes the user runs as separate sessions).
 - A skill to set the run policy; the line is edited by hand or by asking Fable (slice 3).
 - Staging while Fable itself implements in fable mode; there is nothing to wait on (slice 3).
 - Machine-checkable dependency syntax between done-conditions; Fable judges dependence from the text (slice 3).
@@ -399,20 +418,20 @@ Branch: e2e-cadence, from main (8194f09).
 
 ## Current slice
 
-Name: agents-gitignore (2026-10-19). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS WITH FOLLOW-UPS 2026-10-19.
-Decisions (user, 2026-10-18): on the lead's recommendation to stop tracking Bosun-generated agent files in the seven projects that committed them and to make Bosun add the ignore itself: "Yes".
-Outcome: `scripts/configure-claude-agents.py` keeps the agent files it generates out of git, so a plugin update never shows as a diff in a project.
+Name: parallel-lanes (2026-10-20). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS WITH FOLLOW-UPS 2026-10-20 (first verify PASS WITH FOLLOW-UPS with seven text findings, fixed; second FAIL: lane end dropped statuses and slice log, L1 text stale, staged briefs and mid-slice sessions skipped the check, stale local default branch, core stop list; all fixed).
+Decisions: see the 2026-10-20 entry under Decisions.
+Outcome: Bosun says when slices may run as parallel lanes, keeps parallel lanes from conflicting in the spec, checks a new slice against other open work before it starts, and never lets a lane run migrations or data-resetting suites on a stack another session uses.
 Done-conditions:
-A1. `verified 2026-10-19 bosun-verifier (claude-opus-5-5/high) PASS WITH FOLLOW-UPS; scripts/configure-claude-agents.py:16-17,56-59,69-70` When it writes agents (not on `--dry-run`), the script writes `.claude/agents/.gitignore` containing the Bosun marker comment, `bosun-*.md`, and `.gitignore` (so the ignore file itself stays untracked), creating it when absent and rewriting it only when it carries the marker; an existing `.gitignore` there without the marker is left unchanged and the script prints that it was left alone. It refuses a symlinked `.gitignore` like it refuses symlinked agents.
-A2. `verified 2026-10-19 bosun-verifier (claude-opus-5-5/high) PASS WITH FOLLOW-UPS; scripts/configure-claude-agents.py:71-79` When git still tracks any generated `bosun-*.md` in the project, the script prints a note naming them and the `git rm --cached` command; it never runs git commands that change state.
-A3. `verified 2026-10-19 bosun-verifier (claude-opus-5-5/high) PASS WITH FOLLOW-UPS; README.md:168` README's agent-setup sentence (line 168) says the generated files are git-ignored through `.claude/agents/.gitignore`.
-A4. `verified 2026-10-19 bosun-verifier (claude-opus-5-5/high) PASS WITH FOLLOW-UPS; manifests and README:231 at 0.13.1; all A4 checks exit 0; 7-case lead matrix plus 15 verifier cases` Version 0.13.1 in all three manifests and the README version line. Checks pass: `bash -n scripts/*.sh codex/scripts/*.sh`; JSON parses; `claude plugin validate .`; `git diff main --check`; `python3 -m py_compile scripts/configure-claude-agents.py`; temp-repo runs show: a fresh repo gets the agents and the ignore file and `git status --porcelain` lists nothing under `.claude/`; a second run changes nothing; `--dry-run` writes nothing; a user-owned `.claude/agents/.gitignore` is left byte-identical with the printed note; a repo that tracks `bosun-verifier.md` gets the A2 note; a symlinked ignore file is refused before any write.
-Out of scope: Codex agent files (`$bosun-mode` installs those; no project tracks them); changing which agents are generated; the projects' own `.gitignore` files (handled by their seven PRs on 2026-10-19).
-Assumptions: a nested `.gitignore` is used instead of editing the project's root `.gitignore` so the script never modifies a tracked project file. Patch bump because no interface changes.
+L1. `verified 2026-10-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second FAIL, third PASS WITH FOLLOW-UPS; rules/core.md:55,61-69, codex/rules/core.md:50,56-64` Both core rules files gain an identical "Parallel lanes" section after "Run policy" that says: what a lane is; run in parallel only when slices touch different files and tables and neither needs the other's result, one after the other when one depends on the other, either is a wide refactor, or both change migrations or the same schema; two lanes per project by default; every writing lane in its own worktree and branch; while more than one lane is active, each lane keeps everything it would write to the spec (brief, done-conditions and statuses, slice log, follow-ups, lessons and lesson corrections) in `lanes/<lane>.md` next to the spec and does not edit the spec file; the spec file plus every lane file in `lanes/` is the spec; lanes find each other through the lane files in the repo's other worktrees; at lane end its last PR moves everything in the lane file into the spec and deletes the lane file; a session mid-slice when a second lane starts finishes that slice in the spec and becomes a lane from its next slice; the optional `Stack isolation: <command>` line, claimed stacks recorded in the lane file and released at lane end, one lane at a time on a shared stack without the line; never an unapproved or unmerged migration on, or a reset or stop of, a stack or server another session uses; an optional hub that decides lanes and merge order, relays approvals in the user's words, alone edits the spec's shared sections, and does not hand out resources a command can claim. Both files' run-policy stop lists include the overlap stop.
+L2. `verified 2026-10-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second FAIL, third PASS WITH FOLLOW-UPS; skills/bosun-brief/SKILL.md:38,62-73,85,96, codex/skills/bosun-brief/SKILL.md:31,54-65,76,87` Both `bosun-brief` skills: step 2 points to a new "Parallel lanes" section, identical in both, which says that when another worktree holds an active lane file or the repo has open PRs other than this session's own and the branch step 4 stacks on, the lead lists the files each other lane or mid-slice worktree changes against `origin/<default>` (committed or not) and expects to change per its lane file, and each such PR's files (leaving out the spec and lane files), compares them with the files this slice expects to change, adds `Lane:`, `Files expected:`, `Overlap:`, and `Stack:` lines to the brief, re-runs the check when a staged brief is re-validated, does not start a slice that overlaps or is a wide refactor alongside another lane (picks the next runnable slice with no overlap, or reports and stops when none, which is also a stop condition under "Until blocked"), and in a lane sends every spec write the skill describes (steps 3, 4, 6, 8, 9) to the lane file.
+L3. `verified 2026-10-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second FAIL, third PASS WITH FOLLOW-UPS; README.md:190,198-208,238,243; manifests 0.14.0` README gains a short "Parallel lanes" section and its "Not covered on purpose" parallel-agents bullet says lanes are covered there; version 0.14.0 in all three manifests and the README version line.
+L4. `verified 2026-10-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second FAIL, third PASS WITH FOLLOW-UPS; all L4 checks exit 0 on fingerprint 9b98b1b` Checks pass: `bash -n scripts/*.sh codex/scripts/*.sh`; JSON parses for the manifests and hooks; `claude plugin validate .`; `git diff main --check`; the L1 section is byte-identical in both core rules files; the L2 section in the two brief skills differs only in plugin naming (`bosun-scout`/`bosun_scout`, `/bosun-brief`/`$bosun-brief`).
+Out of scope: stack-isolation scripts, port bands, and migration-numbering checks in any project (cre-list's per-lane stacks are its own slice); a lease or lock tool; changes to `bosun-triage`, `bosun-verify`, `bosun-checkpoint`, or the agents (they read "the spec", which L1 defines to include lane files); converting any project to lanes.
+Assumptions: lane files sit in a `lanes/` directory next to the spec so they work for root and docs-convention specs alike. The hub is optional because two lanes can be coordinated by the user directly. Minor version bump for a new rule.
 Effort assumed: the session's setting (not exposed to the lead).
 Verifier effort: high (no override at any scope).
-Checks: as in A4.
-Branch: agents-gitignore, from main (7e0b5fa).
+Checks: as in L4. No end-to-end suite; CI's `checks` job is the required check.
+Branch: parallel-lanes, from main (2361b96).
 
 ## Follow-ups
 
@@ -452,9 +471,17 @@ Branch: agents-gitignore, from main (7e0b5fa).
 - agents-gitignore, 2026-10-19, nit: the tracked-files note splits names on whitespace and prints them unquoted, and its paths are relative to the project, so the command works only from the project directory.
 - agents-gitignore, 2026-10-19, bug: a non-UTF-8 user `.claude/agents/.gitignore` makes the run exit 2 (UnicodeDecodeError) instead of being left alone with the note; nothing is written.
 - agents-gitignore, 2026-10-19, nit: a read-only marker-owned ignore with stale content fails after the agents are written, so the run applies partially.
+- parallel-lanes, 2026-10-20, nit: both `bosun-verify` skills' fingerprint command excludes only the spec path, so in a lane the lane file's status edits change the fingerprint and the verifier reruns checks it could skip; exclude `lanes/` too.
+- parallel-lanes, 2026-10-20, bug: the overlap check's trigger (`skills/bosun-brief/SKILL.md:38,64`, both plugins) fires on another worktree only when it holds a lane file or uncommitted changes, so a worktree with committed, unpushed work and no PR is never compared; trigger on any diff against `origin/<default>`.
+- parallel-lanes, 2026-10-20, drift: step 2 (`SKILL.md:38`) says "open PRs from other sessions" while the section (`:64`) also excludes the branch step 4 stacks on; use one wording.
+- parallel-lanes, 2026-10-20, deferral: the core rules do not say what the remaining lane does when the other lane ends (keep its lane file until its own last PR, or fold back now).
+- parallel-lanes, 2026-10-20, bug: the brief's refusal (`SKILL.md:73`) checks shared files and wide refactors but not "both change migrations or the same schema" from the core rules, so two lanes adding different migration files pass the check.
+- parallel-lanes, 2026-10-20, deferral: "every lane file in `lanes/`" is visible only in the checkout that holds it; skills reading "the spec" from one checkout (for example `bosun-triage`'s active-slice check) do not see other worktrees' lane files.
+- parallel-lanes, 2026-10-20, nit: the Design "Run policy" stop list in this spec has no overlap stop.
 
 ## Slice log
 
+- 2026-10-20, parallel-lanes, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (seven text findings, fixed), second FAIL (lane end lost statuses and slice log; L1 text stale; staged briefs and mid-slice sessions skipped the overlap check; stale local default branch; core stop list; all fixed), third PASS WITH FOLLOW-UPS (six follow-ups recorded); all bosun-verifier on claude-opus-5-5 / high; L1–L4 verified; route-or-screen done-conditions: 0 of 0.
 - 2026-10-19, ci-checks, opus (implemented by lead, at the user's request "Lets do it"; no verifier run, one-file workflow): `.github/workflows/checks.yml` runs the slice checks (shell syntax, JSON and TOML parsing, Python compile, `git diff --check`, `claude plugin validate .`) on every PR on a GitHub-hosted runner (personal repo, so no Blacksmith); its `checks` job is the required check on `main` (strict, admins enforced), so PRs here auto-merge on green. First run 13 s, all steps passed; merged as #20.
 - 2026-10-19, agents-gitignore, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (bosun-verifier on claude-opus-5-5 / high; four follow-ups recorded); A1–A4 verified; route-or-screen done-conditions: 0 of 0.
 - 2026-10-16, e2e-cadence, opus (implemented by lead), first verify FAIL (six findings: fingerprint quoting, external diff, subdirectory, spec edits and worker modes; worker default; verifier shell allowance; all fixed), second PASS WITH FOLLOW-UPS (two nits and one deferral recorded); both bosun-verifier on claude-opus-5-5 / high; E1–E6 verified; route-or-screen done-conditions: 0 of 0.

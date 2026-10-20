@@ -187,13 +187,25 @@ Requires `npx` able to fetch or find `@playwright/mcp` and a Chromium; the first
 
 A Claude Code session is turn-based: when the model ends its turn, nothing happens until something wakes it. The default harness ends the turn after every slice, so the user waits between slices, and in fable-crew mode the session idles while the worker runs. The run policy removes most of that idle time without changing what gets built.
 
-The policy is a line in the spec next to the provider mode: `Run policy: one slice` (the default; no line means the same) or `Run policy: until blocked, max N slices` (`until blocked` alone means `max 3 slices`). Under `until blocked`, after a slice verifies, the lead commits, pushes, opens a PR for that slice's branch, reports, and briefs the next slice in the same turn. Every slice keeps its own branch and PR; the lead never merges. The run stops, and the report says why, at the first of: no runnable done-condition left; the next one depends on an undecided item; two FAILs on one verify finding; a failed codex preflight; the slice cap. A done-condition is runnable when it is `todo` or `in progress`, not `human-check`, and needs nothing on the undecided list.
+The policy is a line in the spec next to the provider mode: `Run policy: one slice` (the default; no line means the same) or `Run policy: until blocked, max N slices` (`until blocked` alone means `max 3 slices`). Under `until blocked`, after a slice verifies, the lead commits, pushes, opens a PR for that slice's branch, reports, and briefs the next slice in the same turn. Every slice keeps its own branch and PR; the lead never merges. The run stops, and the report says why, at the first of: no runnable done-condition left; the next one depends on an undecided item; two FAILs on one verify finding; a failed codex preflight; an overlap with another lane or open PR when no other slice is free of it; the slice cap. A done-condition is runnable when it is `todo` or `in progress`, not `human-check`, and needs nothing on the undecided list.
 
 **Exhausted roadmap.** When no runnable done-condition remains, under either policy, the lead does not invent work. It reports that the roadmap is exhausted, lists the open human-checks and the undecided questions, proposes next slices drawn from the spec's follow-ups section as clearly marked drafts, and asks what next. A proposal becomes a done-condition only when you say so.
 
 **Staging (fable-crew and fable-opus modes).** While the worker runs, under `until blocked` with the cap not reached, Fable scouts the next slice and, if it does not depend on the running one, writes a staged brief to `~/.claude/bosun/workers/<slug>/<next-slice>/brief.md` with a `Based on: <sha>` line. It never writes to the worktree while the worker owns it. If the next slice does depend on the running one, it scouts only.
 
 **Re-validation.** Before a staged brief runs, Fable compares its `Based on:` sha with HEAD. If the previous slice moved it, Fable re-reads the spec and the landed diff, checks every file reference and assumption in the brief, folds in the previous verify's follow-ups that belong to this slice, and only then writes the brief into the spec and generates the worker prompt from it. A staged brief waits on a FAIL, and stays on disk (named in the report) if the run stopped.
+
+## Parallel lanes
+
+You can run two sessions on one project at once, each running its own slices: two lanes. The core rules say when that pays off (the slices touch different files and tables and neither needs the other) and when to run them one after the other (a dependency, a wide refactor, or migrations on both sides). Each writing lane gets its own worktree and branch.
+
+**Lane files.** Every slice edits the spec, so two lanes editing `SPEC.md` conflict on every merge. While more than one lane is active, each lane writes everything it would put in the spec (brief, statuses, slice log, follow-ups, lessons) to its own `lanes/<lane>.md` next to the spec and leaves the spec file alone. Lanes find each other by reading the lane files in the repo's other worktrees. When a lane ends, its last PR moves everything in the lane file (statuses, slice log, lessons, follow-ups) back into the spec and deletes the lane file.
+
+**Overlap check.** Before a slice starts, `/bosun-brief` compares the files it expects to change with what every other active lane or mid-slice session is changing, committed or not, and with every open PR from another session. If they share files, or a wide refactor would run alongside another lane, it picks a different slice or asks you.
+
+**Stacks.** A project whose tests share a local database or fixed ports adds `Stack isolation: <command>` to the spec (for example a script that starts a second Supabase stack on offset ports). Lanes then run migrations, end-to-end tests, and data-resetting suites only on a stack they claimed. Without the line, those checks run in one lane at a time. The command itself belongs to the project.
+
+**Hub (optional).** One session can coordinate: it picks lanes and merge order, relays your approvals in your words, and owns the spec's shared sections. It does not hand out stacks or lock them by message; the claim command does that. With two lanes, you can coordinate them yourself.
 
 ## Why each piece exists
 
@@ -223,12 +235,12 @@ Sources: [Overview](https://platform.claude.com/docs/en/models/fable-5-1/overvie
 
 ## Not covered on purpose
 
-- Parallel builder agents. The docs credit the model's gains to long single-context runs; splitting work buys wall-clock at the cost of context and merge work, and there is no evidence yet that wall-clock is the constraint.
+- Parallel builder agents inside one slice (parallel lanes run by you as separate sessions are covered under "Parallel lanes"). The docs credit the model's gains to long single-context runs; splitting work buys wall-clock at the cost of context and merge work, and there is no evidence yet that wall-clock is the constraint.
 - API-side migration concerns (beta headers, append-only message arrays, `tool_choice`, `input_transformations`, fallback middleware). Claude Code manages the conversation prefix itself. If you call the Messages API directly, read the migration guide's "Preserved thinking" section first.
 
 ## Status
 
-Version 0.13.1. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
+Version 0.14.0. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
 
 There is no controlled performance benchmark establishing cost, speed, or quality improvements. Those depend on the project, model access, task routing, and verification workload.
 

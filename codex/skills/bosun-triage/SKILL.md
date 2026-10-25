@@ -1,6 +1,6 @@
 ---
 name: bosun-triage
-description: Review a project's spec against its code and history and clean up its bookkeeping. Finds done-conditions whose status is wrong, follow-ups that are resolved, stale, duplicated, or deferred, decisions that never became done-conditions, and open human-checks, and keeps live content ahead of finished work. Use when the spec has piled up follow-ups, feels out of date, or the user asks to "triage the spec", "clean up follow-ups", or "what's actually left". Produces a report; changes the spec only after the user approves.
+description: Review a project's spec against its code and history and clean up its bookkeeping. Finds done-conditions whose status is wrong, follow-ups that are resolved, stale, duplicated, or deferred, decisions that never became done-conditions, and open human-checks, and keeps live content ahead of finished work. Use when the spec has piled up follow-ups, feels out of date, or the user asks to "triage the spec", "clean up follow-ups", or "what's actually left". Produces a report; changes the spec only after the user approves, except at a milestone end under `Decisions: take recommendations`, where it applies the evidence-backed corrections itself.
 ---
 
 # Bosun triage (Codex)
@@ -9,7 +9,7 @@ Bring the spec back in line with what the code and history show, so the next ses
 
 ## When to run
 
-Only when the user asks. First check for an active slice: a current-slice status of `in progress`, done-conditions marked implemented and awaiting verify (a plain `done` does not count), or a checkpoint for the project (`~/.claude/bosun/checkpoints/<slug>.md` in Claude Code, `~/.codex/bosun/checkpoints/<slug>.md` in Codex, with the slug `bosun-checkpoint` uses). If you find one, report it with its date and the date of the last commit that touched the spec, and ask the user whether that work is still active. Stop if it is, because the running slice owns the spec until it finishes. If the user says it is not, proceed and report the stale status or checkpoint as a finding; never delete a checkpoint yourself.
+When the user asks, and at each milestone end under `Run policy: until blocked` (core rules, "Follow-ups and milestones"). First check for an active slice: a current-slice status of `in progress`, done-conditions marked implemented and awaiting verify (a plain `done` does not count), or a checkpoint for the project (`~/.claude/bosun/checkpoints/<slug>.md` in Claude Code, `~/.codex/bosun/checkpoints/<slug>.md` in Codex, with the slug `bosun-checkpoint` uses). If you find one, report it with its date and the date of the last commit that touched the spec, and ask the user whether that work is still active. Stop if it is, because the running slice owns the spec until it finishes. If the user says it is not, proceed and report the stale status or checkpoint as a finding; never delete a checkpoint yourself.
 
 ## Read the spec as it is
 
@@ -44,17 +44,23 @@ Deliver, in this order:
 5. **Missed items** and **waiting on the user**.
 6. **Spec health**, with the proposed reorder as a list of section moves, or the reason none is proposed.
 
-End by asking the user which parts to apply. Do not change the spec before they answer.
+End by asking the user which parts to apply. Do not change the spec before they answer, except as "Milestone end" below says.
+
+## Milestone end
+
+When triage runs at a milestone end under `Decisions: take recommendations`, the lead applies it itself instead of asking: the proposed removals and the status corrections, each with its evidence, and the draft slices built from open bugs, promoted to hygiene done-conditions. Unclear items stay as they are, everything else stays a draft for the user, and no decision is reworded. The result is a bookkeeping commit on its own branch and PR, made as "Apply on approval" describes. Under `Decisions: ask`, triage reports and waits as above, at a milestone end too.
+
+At a milestone end under `until blocked`, the run's own last slice is finished, not active, so the active-slice check in "When to run" asks about other work only. When earlier slices' PRs are still unmerged, branch from the latest slice's branch instead of the default branch, so the bookkeeping is built on the spec the run left, and say so in the PR.
 
 ## Apply on approval
 
-Apply only what the user approved, on a new branch from the default branch, in two separate commits:
+Apply only what the user approved (or what "Milestone end" applies), on a new branch from the default branch, in two separate commits:
 
-1. **Bookkeeping:** remove the approved batch of follow-ups; correct the approved statuses; add tags to untagged follow-ups that stay, except items reported as unclear; add missed follow-ups; add draft slices clearly marked as drafts. Never promote a draft to a done-condition: the user does that. Never change a decision's wording.
+1. **Bookkeeping:** remove the approved batch of follow-ups; correct the approved statuses; add tags to untagged follow-ups that stay, except items reported as unclear; add missed follow-ups; add draft slices clearly marked as drafts. Never promote a draft to a done-condition: the user does that, apart from the hygiene done-conditions "Milestone end" allows. Never change a decision's wording.
 2. **Reorder**, when approved: move sections and nothing else. Existing headings keep their text and level. Prove it before committing by comparing the full sorted list of non-blank lines before and after the move, duplicates included (a plain sort and diff, never a unique sort); the lists must match exactly except for exactly one added line, the history heading. If they differ in any other way, undo the move and report the difference.
 
 Open a PR for the branch as the user's git instructions require. Report what changed and what was left as it was.
 
 ## Boundaries
 
-Triage never edits code, tests, or configuration, never runs `$bosun-brief` or implements a follow-up, and never marks a done-condition verified. It does not decide what is worth doing: draft slices are proposals, and deferrals stay deferred until the user says otherwise.
+Triage never edits code, tests, or configuration, never runs `$bosun-brief` or implements a follow-up, and never marks a done-condition verified. It does not decide what is worth doing: draft slices are proposals (apart from hygiene slices under "Milestone end"), and deferrals stay deferred until the user says otherwise.

@@ -14,6 +14,8 @@ Third outcome (slice 4, 2026-09-04): the harness runs on either Claude Code or C
 
 ## Decisions, in the user's words
 
+- (2026-10-25) After a review of the Quillery, RV Rez and CRE Launch sessions. Michael: "95% of the time … we always proceed with Bosun's recommendations. We like to make sure that we take care of follow-ups, especially when Bosun recommends they be taken care of." On design: "I want that to be a staple too." The review found he took the recommendation about 60% of the time at first ask, and about 75–85% after asking "what do you recommend?". His overrides fell on product scope, pricing and fees, spend and design taste, not on process. He called stops between slices, merge prompts and the 3-slice cap unnecessary. After nearly every slice he asked whether to resolve follow-ups and almost always said yes. Design approval differs by project: CRE Launch and RV Rez get his approval of a prototype; Quillery runs an unattended critique loop against approved boards. The lead proposed one setting (a `Decisions:` line, with build mode as `take recommendations`) plus a `Design approval:` line. Michael asked whether these were several build modes or one setting; the lead answered "one setting." Michael: "ok lets brief it."
+
 - (2026-10-20) After a review of the hub-and-lane sessions in cre-list and rv-rez (lanes sharing one local Supabase stack, every cre-list e2e run wiping it, an unapproved migration applied to the shared stack, SPEC.md conflicts between parallel slices, the hub handing out stack instances and migration numbers by message), the lead proposed one Bosun slice: a parallel-lanes section in the core rules, per-lane spec files, an overlap check in `/bosun-brief`, and a `Stack isolation:` spec line, with stack scripts and migration numbering left to each project and no lease tooling yet. Michael: "so should we change bosun then?" then "proceed". This supersedes the slice 3 out-of-scope line on parallel slices in separate worktrees.
 
 - (2026-09-25) "If Fable is not the lead, then why would you name it Fable.md? I want it to be clean." Supersedes the 2026-09-04 rule that the two rules files keep model names: they are `rules/core.md` and `codex/rules/core.md`, and shared prose says "the lead". Entries in this spec dated before 2026-09-25 that cite `rules/fable.md` or `codex/rules/astra.md` refer to those files under their old names.
@@ -385,6 +387,23 @@ Verifier effort: high (no override at any scope).
 Checks: as in A4.
 Branch: agents-gitignore, from main (7e0b5fa).
 
+### Parallel lanes slice (2026-10-20, verified)
+
+Name: parallel-lanes (2026-10-20). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS WITH FOLLOW-UPS 2026-10-20 (first verify PASS WITH FOLLOW-UPS with seven text findings, fixed; second FAIL: lane end dropped statuses and slice log, L1 text stale, staged briefs and mid-slice sessions skipped the check, stale local default branch, core stop list; all fixed).
+Decisions: see the 2026-10-20 entry under Decisions.
+Outcome: Bosun says when slices may run as parallel lanes, keeps parallel lanes from conflicting in the spec, checks a new slice against other open work before it starts, and never lets a lane run migrations or data-resetting suites on a stack another session uses.
+Done-conditions:
+L1. `verified 2026-10-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second FAIL, third PASS WITH FOLLOW-UPS; rules/core.md:55,61-69, codex/rules/core.md:50,56-64` Both core rules files gain an identical "Parallel lanes" section after "Run policy" that says: what a lane is; run in parallel only when slices touch different files and tables and neither needs the other's result, one after the other when one depends on the other, either is a wide refactor, or both change migrations or the same schema; two lanes per project by default; every writing lane in its own worktree and branch; while more than one lane is active, each lane keeps everything it would write to the spec (brief, done-conditions and statuses, slice log, follow-ups, lessons and lesson corrections) in `lanes/<lane>.md` next to the spec and does not edit the spec file; the spec file plus every lane file in `lanes/` is the spec; lanes find each other through the lane files in the repo's other worktrees; at lane end its last PR moves everything in the lane file into the spec and deletes the lane file; a session mid-slice when a second lane starts finishes that slice in the spec and becomes a lane from its next slice; the optional `Stack isolation: <command>` line, claimed stacks recorded in the lane file and released at lane end, one lane at a time on a shared stack without the line; never an unapproved or unmerged migration on, or a reset or stop of, a stack or server another session uses; an optional hub that decides lanes and merge order, relays approvals in the user's words, alone edits the spec's shared sections, and does not hand out resources a command can claim. Both files' run-policy stop lists include the overlap stop.
+L2. `verified 2026-10-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second FAIL, third PASS WITH FOLLOW-UPS; skills/bosun-brief/SKILL.md:38,62-73,85,96, codex/skills/bosun-brief/SKILL.md:31,54-65,76,87` Both `bosun-brief` skills: step 2 points to a new "Parallel lanes" section, identical in both, which says that when another worktree holds an active lane file or the repo has open PRs other than this session's own and the branch step 4 stacks on, the lead lists the files each other lane or mid-slice worktree changes against `origin/<default>` (committed or not) and expects to change per its lane file, and each such PR's files (leaving out the spec and lane files), compares them with the files this slice expects to change, adds `Lane:`, `Files expected:`, `Overlap:`, and `Stack:` lines to the brief, re-runs the check when a staged brief is re-validated, does not start a slice that overlaps or is a wide refactor alongside another lane (picks the next runnable slice with no overlap, or reports and stops when none, which is also a stop condition under "Until blocked"), and in a lane sends every spec write the skill describes (steps 3, 4, 6, 8, 9) to the lane file.
+L3. `verified 2026-10-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second FAIL, third PASS WITH FOLLOW-UPS; README.md:190,198-208,238,243; manifests 0.14.0` README gains a short "Parallel lanes" section and its "Not covered on purpose" parallel-agents bullet says lanes are covered there; version 0.14.0 in all three manifests and the README version line.
+L4. `verified 2026-10-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second FAIL, third PASS WITH FOLLOW-UPS; all L4 checks exit 0 on fingerprint 9b98b1b` Checks pass: `bash -n scripts/*.sh codex/scripts/*.sh`; JSON parses for the manifests and hooks; `claude plugin validate .`; `git diff main --check`; the L1 section is byte-identical in both core rules files; the L2 section in the two brief skills differs only in plugin naming (`bosun-scout`/`bosun_scout`, `/bosun-brief`/`$bosun-brief`).
+Out of scope: stack-isolation scripts, port bands, and migration-numbering checks in any project (cre-list's per-lane stacks are its own slice); a lease or lock tool; changes to `bosun-triage`, `bosun-verify`, `bosun-checkpoint`, or the agents (they read "the spec", which L1 defines to include lane files); converting any project to lanes.
+Assumptions: lane files sit in a `lanes/` directory next to the spec so they work for root and docs-convention specs alike. The hub is optional because two lanes can be coordinated by the user directly. Minor version bump for a new rule.
+Effort assumed: the session's setting (not exposed to the lead).
+Verifier effort: high (no override at any scope).
+Checks: as in L4. No end-to-end suite; CI's `checks` job is the required check.
+Branch: parallel-lanes, from main (2361b96).
+
 ## Undecided
 
 (none)
@@ -418,20 +437,108 @@ Branch: agents-gitignore, from main (7e0b5fa).
 
 ## Current slice
 
-Name: parallel-lanes (2026-10-20). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS WITH FOLLOW-UPS 2026-10-20 (first verify PASS WITH FOLLOW-UPS with seven text findings, fixed; second FAIL: lane end dropped statuses and slice log, L1 text stale, staged briefs and mid-slice sessions skipped the check, stale local default branch, core stop list; all fixed).
-Decisions: see the 2026-10-20 entry under Decisions.
-Outcome: Bosun says when slices may run as parallel lanes, keeps parallel lanes from conflicting in the spec, checks a new slice against other open work before it starts, and never lets a lane run migrations or data-resetting suites on a stack another session uses.
+Name: build-mode (2026-10-25). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS WITH FOLLOW-UPS 2026-10-25 (Michael: "we just created a new brief i would like to build"; first verify FAIL: take recommendations still stopped at undecided items, fable-opus two-FAIL stop, milestone triage branch base, no re-verify after follow-up fixes, approval drift in the core rules and README; all fixed).
+Decisions: see the 2026-10-25 entry under Decisions.
+Outcome: A project can let the lead act on its own recommendations and keep running. It stops only for decisions that are Michael's. It handles follow-ups and CI audits without being asked, arms auto-merge on verified PRs, and holds every screen to a design-fidelity loop whose approval gate the project chooses.
 Done-conditions:
-L1. `verified 2026-10-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second FAIL, third PASS WITH FOLLOW-UPS; rules/core.md:55,61-69, codex/rules/core.md:50,56-64` Both core rules files gain an identical "Parallel lanes" section after "Run policy" that says: what a lane is; run in parallel only when slices touch different files and tables and neither needs the other's result, one after the other when one depends on the other, either is a wide refactor, or both change migrations or the same schema; two lanes per project by default; every writing lane in its own worktree and branch; while more than one lane is active, each lane keeps everything it would write to the spec (brief, done-conditions and statuses, slice log, follow-ups, lessons and lesson corrections) in `lanes/<lane>.md` next to the spec and does not edit the spec file; the spec file plus every lane file in `lanes/` is the spec; lanes find each other through the lane files in the repo's other worktrees; at lane end its last PR moves everything in the lane file into the spec and deletes the lane file; a session mid-slice when a second lane starts finishes that slice in the spec and becomes a lane from its next slice; the optional `Stack isolation: <command>` line, claimed stacks recorded in the lane file and released at lane end, one lane at a time on a shared stack without the line; never an unapproved or unmerged migration on, or a reset or stop of, a stack or server another session uses; an optional hub that decides lanes and merge order, relays approvals in the user's words, alone edits the spec's shared sections, and does not hand out resources a command can claim. Both files' run-policy stop lists include the overlap stop.
-L2. `verified 2026-10-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second FAIL, third PASS WITH FOLLOW-UPS; skills/bosun-brief/SKILL.md:38,62-73,85,96, codex/skills/bosun-brief/SKILL.md:31,54-65,76,87` Both `bosun-brief` skills: step 2 points to a new "Parallel lanes" section, identical in both, which says that when another worktree holds an active lane file or the repo has open PRs other than this session's own and the branch step 4 stacks on, the lead lists the files each other lane or mid-slice worktree changes against `origin/<default>` (committed or not) and expects to change per its lane file, and each such PR's files (leaving out the spec and lane files), compares them with the files this slice expects to change, adds `Lane:`, `Files expected:`, `Overlap:`, and `Stack:` lines to the brief, re-runs the check when a staged brief is re-validated, does not start a slice that overlaps or is a wide refactor alongside another lane (picks the next runnable slice with no overlap, or reports and stops when none, which is also a stop condition under "Until blocked"), and in a lane sends every spec write the skill describes (steps 3, 4, 6, 8, 9) to the lane file.
-L3. `verified 2026-10-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second FAIL, third PASS WITH FOLLOW-UPS; README.md:190,198-208,238,243; manifests 0.14.0` README gains a short "Parallel lanes" section and its "Not covered on purpose" parallel-agents bullet says lanes are covered there; version 0.14.0 in all three manifests and the README version line.
-L4. `verified 2026-10-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second FAIL, third PASS WITH FOLLOW-UPS; all L4 checks exit 0 on fingerprint 9b98b1b` Checks pass: `bash -n scripts/*.sh codex/scripts/*.sh`; JSON parses for the manifests and hooks; `claude plugin validate .`; `git diff main --check`; the L1 section is byte-identical in both core rules files; the L2 section in the two brief skills differs only in plugin naming (`bosun-scout`/`bosun_scout`, `/bosun-brief`/`$bosun-brief`).
-Out of scope: stack-isolation scripts, port bands, and migration-numbering checks in any project (cre-list's per-lane stacks are its own slice); a lease or lock tool; changes to `bosun-triage`, `bosun-verify`, `bosun-checkpoint`, or the agents (they read "the spec", which L1 defines to include lane files); converting any project to lanes.
-Assumptions: lane files sit in a `lanes/` directory next to the spec so they work for root and docs-convention specs alike. The hub is optional because two lanes can be coordinated by the user directly. Minor version bump for a new rule.
+B1. `verified 2026-10-25 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS; fingerprint 86ef731` Both core rules files gain an identical "Decisions" section after "Provider mode", covering the following.
+   - **The setting.** The `Decisions: ask | take recommendations` spec line; no line means `ask`, today's behavior.
+   - **What the lead decides itself under `take recommendations`:**
+     - an open question that comes up mid-run;
+     - an undecided item the spec's outcome or decisions lean on;
+     - a two-FAIL disagreement, taking the fix it recommends.
+   - **How it records each one.** In the spec's decisions as "(build mode, <date>)" with the choice and one line of why, then it continues without ending the turn.
+   - **What it never decides itself; the work that needs it is parked:**
+     - credentials, accounts and sign-ins;
+     - prices, fees and any live spend;
+     - production data and anything sent to real people;
+     - legal, naming and trademark questions;
+     - new-design approval when `Design approval: me`;
+     - anything the spec lists as the user's.
+
+     Parking means recording a human-check, or an undecided item phrased as a question with the lead's recommendation, then taking the next runnable work.
+   - **The limit.** A third FAIL on the same finding stops the run under either setting.
+B2. `verified 2026-10-25 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS; fingerprint 86ef731` Both core rules files' "Run policy" section says the following.
+   - `until blocked` without a `max` means `max 10 slices`.
+   - Under `until blocked`, the lead never ends the turn between slices to ask whether to continue or to announce the next slice. The stop list is the only way a run ends.
+   - **Merging.** After a slice verifies, the lead pushes, opens the PR and arms auto-merge with `gh pr merge <n> --auto --merge`. If GitHub refuses because every required check is already green, it merges with `gh pr merge <n> --merge`. It never merges past a red or missing required check and never bypasses protection. Where the repo has no required checks or disallows auto-merge, it leaves the PR open and says so. Where the project's spec or instructions say merging is the user's, those win.
+   - **No waiting on CI.** While a PR's CI runs, the lead briefs and starts the next slice, stacked when it depends on the unmerged branch.
+   - **The stop list.** "The next runnable done-condition depends on an undecided item", which can never fire, is replaced by "every remaining runnable item needs a decision the lead may not make (see Decisions)", and the two-FAIL entry reads per B1.
+
+   This resolves the run-policy follow-up of 2026-09-03 about the stop that can never fire.
+B3. `verified 2026-10-25 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS; fingerprint 86ef731` Both core rules files gain an identical "Follow-ups and milestones" paragraph. Every follow-up gets a home when it is written:
+   - **Bugs and security issues in the slice's own work:** fixed in that slice.
+   - **Bugs in shipped code:** fixed by the next slice that touches the file, or by a hygiene slice before the milestone closes. No bug outlives its milestone.
+   - **Nits:** folded into the next slice that touches the file. Dropped at milestone end if still open and not cheap.
+   - **Deferrals:** name their target done-condition or milestone.
+   - **Items that need the user or gate a launch:** go to the spec's human-checks.
+   - **A milestone** is a group of done-conditions the spec names as one, or every fifth slice in a spec without groups.
+   - **At each milestone end, under `until blocked`, the lead runs:**
+     - `/bosun-triage`;
+     - a hygiene slice, own PR, for the open bugs;
+     - a `/bosun-ci` audit against recent runs, with findings recorded as follow-ups and fixes as their own slice, never folded into a feature slice.
+   - **More than five open bugs** makes the next slice a hygiene slice.
+B4. `verified 2026-10-25 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS; fingerprint 86ef731` Both core rules files gain an identical "Design" section, which applies to any slice that adds or changes a screen.
+   - **The setting.** A `Design approval: me | critique` spec line. With no line, a project with UI is `me`.
+   - **The loop:**
+     1. Read the screen's board, the design system and any motion and mock-data notes before writing UI code.
+     2. Mock up a screen with no board first, in the project's design system: on a design canvas artifact when the session has one, with a copy in the repo's design folder.
+     3. Get the mockup approved:
+        - under `me`, Michael approves it before product UI is written, and a new design direction or new interaction pattern always waits for that;
+        - under `critique`, a fresh agent critiques it and the board is revised, with an "After critique" note.
+     4. Build the screen.
+     5. Before the first verify, check it at 390, 768, 1024, 1280 and 1440 wide (or the project's named widths), with empty, loading, error, hover and focus states and the board's motion including exits and reduced motion.
+     6. A fresh agent compares the screenshots with the board, and open differences block the done-condition.
+   - **New directions start fresh:** several new options, not variations on an older approved mockup.
+   - **Screenshot paths** go in the evidence lines.
+B5. `verified 2026-10-25 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS; fingerprint 86ef731` Both `bosun-brief` skills carry the changes as follows.
+   - **Step 5:** stop only when B1's list blocks, and otherwise park the item and take other work.
+   - **Step 6:** run B4's loop for screen done-conditions.
+   - **Step 7:** apply B1's two-FAIL handling.
+   - **"Until blocked":** apply B2's merging, no waiting on CI, no asking between slices, the stop list and B3's milestone-end steps.
+   - **"Exhausted roadmap":** under `take recommendations`, hygiene slices built from open bug follow-ups count as runnable work. New features are still never invented.
+   - **Worker prompts** in fable-crew and fable-opus mode include the Design section when the slice touches a screen.
+   - **The brief template** gains `Decisions:` and `Design approval:` lines, with the effective value and its source.
+B6. `verified 2026-10-25 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS; fingerprint 86ef731` Both `bosun-triage` skills say triage also runs at milestone end under `until blocked`.
+   - Under `Decisions: take recommendations`, the lead applies that triage itself:
+     - removals and status corrections, with evidence;
+     - draft slices from open bugs promoted to hygiene done-conditions.
+
+     Everything else stays a draft, decisions are never reworded, and the result goes in a commit on its own branch and PR.
+   - Under `ask`, triage reports and waits as it does today.
+B7. `verified 2026-10-25 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS; fingerprint 86ef731` Both `bosun-verify` skills pass the board path, the widths and the states to check for every screen done-condition that names a board. The verifier compares its screenshots with the board and reports each difference as a finding.
+B8. `verified 2026-10-25 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS; fingerprint 86ef731` README:
+   - "Run policy" describes B2;
+   - new short "Decisions" and "Design" sections;
+   - the "lead never merges" wording is removed;
+   - version 0.15.0 in all three manifests (`.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `codex/.codex-plugin/plugin.json`), `.agents/plugins/marketplace.json` if it carries a version, and the README version line.
+B9. `verified 2026-10-25 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS; fingerprint 86ef731` Checks pass, and the new sections in the two core rules files are byte-identical:
+   - `bash -n scripts/*.sh codex/scripts/*.sh`;
+   - JSON parses for the manifests and hooks;
+   - TOML parses for `codex/agents/*.toml`;
+   - `claude plugin validate .`;
+   - `git diff main --check`;
+   - B1–B4 byte-identical in `rules/core.md` and `codex/rules/core.md`;
+   - the changed sections of the two brief, triage and verify skills differ only in plugin naming (`bosun-scout`/`bosun_scout`, `/bosun-x`/`$bosun-x`).
+Out of scope:
+- Changing any project's spec. Quillery, RV Rez and CRE Launch adopt the lines in their next slice.
+- Michael's global `~/.claude/CLAUDE.md`.
+- The agent definition files, apart from what the verify prompt carries.
+- A design skill, and any automated design-diff tooling.
+- Scheduled `bosun-ci` runs (still deferred).
+- The other open follow-ups, apart from the one B2 resolves.
+Assumptions:
+- **The two-FAIL limit.** Under `take recommendations` a two-FAIL disagreement is decided by the lead because Michael took its fix every time it reached him in Quillery. A third FAIL on the same finding still stops the run, so a wrong fix cannot loop.
+- **Money stays with Michael.** Prices, fees and spend are on the never-decide list because they are where he overrode recommendations most.
+- **The design default.** `Design approval: me` is the default, because two of three projects gate on his approval. `critique` is opt-in for projects with an approved design system.
+- **Merging an already-green PR.** `gh pr merge --merge`, used only when GitHub refuses auto-merge because every required check is already green, does what auto-merge would have done at once. Michael answered this case "Merge green prs." on RV Rez on 2026-10-18. Your global CLAUDE.md says "never merge by hand", so this needs your yes. Without it, the lead reports the PR as green and waiting.
+- **The default cap of 10.** Michael raised CRE Launch and RV Rez to 10.
+- **The milestone fallback.** "Every fifth slice" is used when a spec names no milestones, so triage and audits still happen.
+- **Versioning.** Minor version bump for new rules.
 Effort assumed: the session's setting (not exposed to the lead).
 Verifier effort: high (no override at any scope).
-Checks: as in L4. No end-to-end suite; CI's `checks` job is the required check.
-Branch: parallel-lanes, from main (2361b96).
+Checks: as in B9. No end-to-end suite; CI's `checks` job is the required check.
+Branch: build-mode, from main (be42956).
 
 ## Follow-ups
 
@@ -446,7 +553,6 @@ Branch: parallel-lanes, from main (2361b96).
 - run-policy, 2026-09-03: `skills/bosun-brief/SKILL.md` step 9 reports before "Until blocked" commits and opens the PR, while the rules, README, and design say commit, push, PR, then report; the per-slice report cannot name its PR. Pick one order.
 - run-policy, 2026-09-03: `skills/bosun-verify/SKILL.md:20` invites staging under `until blocked` without saying codex mode only, while the brief skill and design scope staging to codex mode. Say which applies.
 - run-policy, 2026-09-03: `README.md` "Version" line says 0.2.0; manifests are at 0.3.0 (already stale on main at 0.2.1).
-- run-policy, 2026-09-03: the stop condition "next runnable done-condition depends on an undecided item" can never fire, since the runnable definition already excludes those. Drop it or reword.
 - codex-port, 2026-09-04: `Route:` override is not portable across harnesses: Claude side is `Route: <model> / <effort>`, Codex side is `Route: <agent>`. A spec moved between them with a Route line set would confuse the other brief. Add a one-line rule on each side to map or reject the foreign form.
 - codex-port, 2026-09-04: `README.md` "Why each piece exists" tail still says "The codex provider mode has not yet run a real slice" and "Version 0.2.0"; manifests are 0.4.0 and the mode is now `fable-crew`.
 - codex-port, 2026-09-04: `rules/core.md` run-policy section and this spec's design still say "applies in both provider modes"; there are four.
@@ -478,9 +584,13 @@ Branch: parallel-lanes, from main (2361b96).
 - parallel-lanes, 2026-10-20, bug: the brief's refusal (`SKILL.md:73`) checks shared files and wide refactors but not "both change migrations or the same schema" from the core rules, so two lanes adding different migration files pass the check.
 - parallel-lanes, 2026-10-20, deferral: "every lane file in `lanes/`" is visible only in the checkout that holds it; skills reading "the spec" from one checkout (for example `bosun-triage`'s active-slice check) do not see other worktrees' lane files.
 - parallel-lanes, 2026-10-20, nit: the Design "Run policy" stop list in this spec has no overlap stop.
+- build-mode, 2026-10-25, nit: both `bosun-triage` skills' "Apply on approval" still says "a new branch from the default branch" while "Milestone end" branches from the latest slice branch when earlier PRs are unmerged; add "(or the branch 'Milestone end' names)".
+- build-mode, 2026-10-25, bug: the verify skills' PASS WITH FOLLOW-UPS path (fix slice-own bugs, then verify again) has no cap, so a run of re-verifies that each find a new slice-own bug never ends; give it the same limit as the FAIL path.
+- build-mode, 2026-10-25, nit: `codex/rules/core.md` Run policy mixes "you" (existing paragraph) and "the lead" (new paragraph, kept byte-identical with the Claude file).
 
 ## Slice log
 
+- 2026-10-25, build-mode, opus (implemented by lead), first verify FAIL (undecided items still stopped take-recommendations runs, plus six text findings; all fixed), second PASS WITH FOLLOW-UPS (two follow-ups recorded); both bosun-verifier on claude-opus-5-5 / high; B1–B9 verified; route-or-screen done-conditions: 0 of 0.
 - 2026-10-20, parallel-lanes, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (seven text findings, fixed), second FAIL (lane end lost statuses and slice log; L1 text stale; staged briefs and mid-slice sessions skipped the overlap check; stale local default branch; core stop list; all fixed), third PASS WITH FOLLOW-UPS (six follow-ups recorded); all bosun-verifier on claude-opus-5-5 / high; L1–L4 verified; route-or-screen done-conditions: 0 of 0.
 - 2026-10-19, ci-checks, opus (implemented by lead, at the user's request "Lets do it"; no verifier run, one-file workflow): `.github/workflows/checks.yml` runs the slice checks (shell syntax, JSON and TOML parsing, Python compile, `git diff --check`, `claude plugin validate .`) on every PR on a GitHub-hosted runner (personal repo, so no Blacksmith); its `checks` job is the required check on `main` (strict, admins enforced), so PRs here auto-merge on green. First run 13 s, all steps passed; merged as #20.
 - 2026-10-19, agents-gitignore, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (bosun-verifier on claude-opus-5-5 / high; four follow-ups recorded); A1–A4 verified; route-or-screen done-conditions: 0 of 0.

@@ -15,7 +15,7 @@ Effort is chosen in the app's picker when the session starts and held for the se
 
 ## The spec
 
-Every project with substantial work has a spec file: `SPEC.md` at the repo root, or wherever the repo's docs convention puts it. It is the durable record of expectations and the only input a fresh session needs. It must contain, findably: the outcome; decisions in the user's own words; done-conditions with a status, each checkable by the verifier's tools (git diff, reading files, running the repo's checks, and a browser for a done-condition that names a route or screen) or marked human-check; undecided items; out-of-scope items; the current slice; follow-ups (things noticed and not done, one line each with the slice, the date, and one tag: `bug`, `drift`, `nit`, or `deferral`; removed when promoted to a done-condition, dropped by the user, or shown resolved by `bosun-triage` in a batch the user approves; a nit is folded into the next slice that touches its file, named as a done-condition in that slice's brief so it is in scope, or dropped through triage); and lessons. The layout is yours to choose per project. Keep it reviewable by a person in one sitting, and reorganize or split it when it stops being that, saying so in your report. Update status in the spec as work lands, not only at the end. Never build an undecided item; propose wording for it as a draft and leave the decision to the user.
+Every project with substantial work has a spec file: `SPEC.md` at the repo root, or wherever the repo's docs convention puts it. It is the durable record of expectations and the only input a fresh session needs. It must contain, findably: the outcome; decisions in the user's own words; done-conditions with a status, each checkable by the verifier's tools (git diff, reading files, running the repo's checks, and a browser for a done-condition that names a route or screen) or marked human-check; undecided items; out-of-scope items; the current slice; follow-ups (things noticed and not done, one line each with the slice, the date, and one tag: `bug`, `drift`, `nit`, or `deferral`; removed when promoted to a done-condition, dropped by the user, or shown resolved by `bosun-triage` in a batch the user approves (or that the lead applies at a milestone end under `Decisions: take recommendations`); a nit is folded into the next slice that touches its file, named as a done-condition in that slice's brief so it is in scope, or dropped through triage); and lessons. The layout is yours to choose per project. Keep it reviewable by a person in one sitting, and reorganize or split it when it stops being that, saying so in your report. Update status in the spec as work lands, not only at the end. Never build an undecided item; propose wording for it as a draft and leave the decision to the user, unless `Decisions: take recommendations` lets the lead decide it (see Decisions).
 
 Lessons are what this codebase needs a fresh session to know that the repo and git history do not already record: corrections, confirmed approaches, environment quirks, and why each mattered. One entry per lesson with a one-line summary first. Read them before starting a slice. Update an existing entry rather than adding a duplicate, delete entries that turn out to be wrong, and do not record what the code, the checks, or the spec already say.
 
@@ -43,13 +43,38 @@ A spec with no line, or with `fable`, `fable-crew`, `fable-opus`, `opus`, or the
 
 A slice overrides the table with a `Route: <agent>` line in the spec's current-slice section. Workers never commit and never edit the spec; you review the diff and commit. Verification always runs in a fresh read-only context (`bosun_verifier`, or `bosun_verifier_mobile` when the brief says `Surface: ios`; Astra at high), never in the session that wrote the code.
 
+## Decisions
+
+The decisions setting is a line in the project's spec next to the provider mode: `Decisions: ask` or `Decisions: take recommendations`. A spec without the line is `ask`: the lead stops for the user wherever these rules say to stop.
+
+Under `take recommendations`, the lead decides these itself, taking the option it would recommend:
+
+- an open question that comes up mid-run;
+- an undecided item, when the spec's outcome or decisions point to an answer;
+- a disagreement after two FAILs on the same finding, by taking the fix it recommends and verifying again.
+
+It records each one in the spec's decisions as "(build mode, <date>)" with the choice and one line of why, moves a decided undecided item out of the undecided list, and continues without ending the turn.
+
+The lead never decides these itself, under either setting:
+
+- credentials, accounts, and sign-ins;
+- prices, fees, and any live spend;
+- production data, and anything sent to real people;
+- legal, naming, and trademark questions;
+- approval of a new design when `Design approval: me` (see Design);
+- anything the spec lists as the user's.
+
+Work that needs one of these is parked: the lead records it as a human-check, or as an undecided item phrased as a question with the lead's recommendation, and takes the next runnable work. Under `ask`, two FAILs on the same finding stop the run; under `take recommendations`, a third FAIL on the same finding stops it.
+
 ## Run policy
 
-The run policy is a line in the spec next to the provider mode: `Run policy: one slice` or `Run policy: until blocked, max N slices`. No line means `one slice`; `until blocked` without a `max` means `max 3 slices`.
+The run policy is a line in the spec next to the provider mode: `Run policy: one slice` or `Run policy: until blocked, max N slices`. No line means `one slice`; `until blocked` without a `max` means `max 10 slices`.
 
-Under `one slice`, `$bosun-brief` runs one slice, verifies, reports, and stops. Under `until blocked`, after a slice verifies (PASS or PASS WITH FOLLOW-UPS), you record lessons, commit, push, open a PR for the slice's branch, report the slice, and then brief and run the next slice in the same turn. Every slice has its own branch and its own PR; you never merge. The run stops, with a report saying why, at the first of: no runnable done-condition remains; the next runnable done-condition depends on an undecided item; a verify produced two FAILs on the same finding; the next runnable slice overlaps another lane or open PR and no other runnable slice is free of overlap (see Parallel lanes); N slices have been started in this run, counting the first.
+Under `one slice`, `$bosun-brief` runs one slice, verifies, reports, and stops. Under `until blocked`, after a slice verifies (PASS or PASS WITH FOLLOW-UPS), you record lessons, commit, push, open a PR for the slice's branch, report the slice, and then brief and run the next slice in the same turn. Every slice has its own branch and its own PR, merged as the next paragraph says. The run stops, with a report saying why, at the first of: no runnable done-condition remains; every remaining runnable item needs a decision the lead may not make (see Decisions); a verify produced two FAILs on the same finding (three under `Decisions: take recommendations`; see Decisions); the next runnable slice overlaps another lane or open PR and no other runnable slice is free of overlap (see Parallel lanes); N slices have been started in this run, counting the first.
 
-A done-condition is runnable when its status is `todo` or `in progress`, it is not `human-check`, and nothing it needs is on the undecided list. When no runnable done-condition remains, do not invent work: report that the roadmap is exhausted, list every open human-check condition and every undecided item as the question the spec records, propose candidate next slices drawn from the spec's follow-ups section as draft done-conditions marked as proposals, and end the turn asking what next. A proposal becomes a done-condition only when the user says so.
+Under `until blocked`, the lead never ends the turn between slices to ask whether to continue or to announce the next slice; the stop list is the only way a run ends. After a slice verifies, the lead pushes its branch, opens its PR, and arms auto-merge with `gh pr merge <n> --auto --merge`. If GitHub refuses because every required check is already green, the lead merges with `gh pr merge <n> --merge`. It never merges past a red or missing required check and never bypasses branch protection. Where the repo has no required checks or does not allow auto-merge, it leaves the PR open and says so in the report. Where the project's spec or the user's instructions say merging is the user's, those win. The lead does not wait on CI: while a PR's checks run, it briefs and starts the next slice, stacked on the unmerged branch when the next slice depends on it.
+
+A done-condition is runnable when its status is `todo` or `in progress`, it is not `human-check`, and nothing it needs is on the undecided list. Under `Decisions: take recommendations`, before concluding that none remains, the lead decides the undecided items the Decisions section lets it decide, which makes the work that waited on them runnable. When no runnable done-condition remains, do not invent work: report that the roadmap is exhausted, list every open human-check condition and every undecided item as the question the spec records, propose candidate next slices drawn from the spec's follow-ups section as draft done-conditions marked as proposals, and end the turn asking what next. A proposal becomes a done-condition only when the user says so.
 
 In astra-crew under `until blocked`, use the worker's run time to stage the next slice's brief when that slice does not depend on the running one, and re-validate the staged brief against what actually landed before running it. `$bosun-brief` holds the details.
 
@@ -62,6 +87,23 @@ While more than one lane is active, each lane keeps everything it would write to
 A project whose local checks share a database or fixed ports records how a lane gets its own copy in a `Stack isolation: <command>` line next to the provider mode, for example `Stack isolation: scripts/instance.sh claim <N>`. While more than one lane is active, a lane runs migrations, end-to-end tests, and any suite that resets or seeds data only on a stack it claimed with that command; it records the claim in its lane file and releases it when the lane ends. Without the line, those checks run in one lane at a time, and the brief names the lane that holds the shared stack. A lane never applies a migration that is unapproved or unmerged to a stack another session uses, never resets or stops another session's stack or server, and never stops processes by name.
 
 One session may act as the hub. It decides which slices run as lanes and the order their PRs merge, relays the user's approvals in the user's own words, and alone edits the spec's shared sections (outcome, decisions, undecided, out of scope). It does not hand out resources a command can claim, and does not lock a stack by message. Without a hub, the user plays that role.
+
+## Follow-ups and milestones
+
+Every follow-up gets a home when it is written. A bug or security issue in the slice's own work is fixed in that slice. A bug in shipped code is fixed by the next slice that touches its file, or by a hygiene slice before its milestone closes; no bug outlives its milestone. A nit is folded into the next slice that touches its file, and dropped at milestone end if it is still open and not cheap. A deferral names the done-condition or milestone it waits for. An item that needs the user or gates a launch goes to the spec's human-checks. A milestone is a group of done-conditions the spec names as one; in a spec without groups, every fifth slice ends one. At each milestone end under `until blocked`, the lead runs the `bosun-triage` skill, then a hygiene slice with its own PR for the open bugs, then a `bosun-ci` audit against recent runs, recording its findings as follow-ups and running any fixes as their own slice, never folded into a feature slice. When more than five bugs are open, the next slice is a hygiene slice. Under `Decisions: take recommendations`, a hygiene slice built from open bug follow-ups is runnable work, and the lead promotes those bugs to done-conditions itself; it still never invents features.
+
+## Design
+
+These rules apply to every slice that adds or changes a screen. The approval gate is a line in the spec next to the provider mode: `Design approval: me` or `Design approval: critique`. A project with UI and no line is `me`.
+
+1. Before writing UI code, read the screen's board, the design system, and any motion and mock-data notes the project keeps.
+2. Mock up a screen that has no board first, in the project's design system: on a design canvas artifact when the session has one, with a copy in the repo's design folder.
+3. Get the mockup approved before writing product UI. Under `me`, the user approves it, and a new design direction or a new interaction pattern always waits for that approval (parked as Decisions describes). Under `critique`, a fresh agent critiques the mockup, the board is revised, and it gains an "After critique" note.
+4. Build the screen.
+5. Before the first verify, check it at 390, 768, 1024, 1280, and 1440 pixels wide, or the widths the project names, in its empty, loading, error, hover, and focus states, with the board's motion, including exits and reduced motion.
+6. A fresh agent compares the screenshots with the board. Open differences block the done-condition.
+
+A new direction starts fresh: several new options, not variations on an older approved mockup. Screenshot paths go in the evidence lines.
 
 ## Starting substantial work
 
@@ -81,4 +123,4 @@ Delegate independent investigation to the `bosun_scout` agent (read-only, Luna a
 
 ## Finishing
 
-Before reporting anything non-trivial as done, run `$bosun-verify` and act on its verdict. After two FAILs on the same finding, stop and report both positions to the user instead of looping. The verifier re-checks route-or-screen done-conditions in its own browser, or in its own simulator when the brief says `Surface: ios`, following your evidence lines. Report the outcome first, tie every claim to a tool result from this session, and list follow-ups separately from the delivered work. If stopping mid-slice, run `$bosun-checkpoint`.
+Before reporting anything non-trivial as done, run `$bosun-verify` and act on its verdict. After two FAILs on the same finding, stop and report both positions to the user instead of looping, unless `Decisions: take recommendations` lets the lead decide it (see Decisions). The verifier re-checks route-or-screen done-conditions in its own browser, or in its own simulator when the brief says `Surface: ios`, following your evidence lines. Report the outcome first, tie every claim to a tool result from this session, and list follow-ups separately from the delivered work. If stopping mid-slice, run `$bosun-checkpoint`.

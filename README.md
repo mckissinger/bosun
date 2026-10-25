@@ -50,7 +50,7 @@ launch session at the right effort
   -> work, updating spec status as done-conditions land
   -> /bosun-verify  (fresh read-only verifier; marks verified in spec)
   -> report; /bosun-checkpoint only if stopping mid-slice
-  -> under "Run policy: until blocked": commit, push, PR, next slice, until something stops it
+  -> under "Run policy: until blocked": commit, push, PR with auto-merge, next slice, until something stops it
 ```
 
 ## What is in the plugin
@@ -90,7 +90,7 @@ Checkpoints are written to `~/.claude/bosun/checkpoints/<project-slug>.md` in Cl
 - undecided items, as questions
 - out-of-scope items
 - the current slice
-- follow-ups: things noticed and not done, one line each with the slice, the date, and a tag (`bug`, `drift`, `nit`, `deferral`); the exhausted-roadmap report draws its proposals from here, and `/bosun-triage` clears the ones it shows resolved once you approve
+- follow-ups: things noticed and not done, one line each with the slice, the date, and a tag (`bug`, `drift`, `nit`, `deferral`); the exhausted-roadmap report draws its proposals from here, and `/bosun-triage` clears the ones it shows resolved once you approve (or itself, at a milestone end under `Decisions: take recommendations`)
 - lessons: what a fresh session needs to know about this codebase that the repo does not already record
 
 The model chooses the layout per project, keeps it reviewable by a person in one sitting, and reorganizes or splits it when it stops being that. Status is updated as work lands, so a crash mid-run loses little. The test of the spec: with the checkpoint deleted, can a fresh session continue from spec, branch, and git log? If not, the spec is incomplete.
@@ -117,7 +117,7 @@ Use `/bosun-preflight` in Claude Code or `$bosun-preflight` in Codex when an app
 
 ## Spec triage
 
-Follow-ups pile up, statuses drift, and deferrals get lost as slices land. Use `/bosun-triage` in Claude Code or `$bosun-triage` in Codex, between slices, to review the spec against the code and git history. The report proposes removing follow-ups that are resolved, obsolete, or duplicated (each with its evidence), corrects statuses, tags the follow-ups that remain (`bug`, `drift`, `nit`, `deferral`), groups them into draft slices, finds decisions that never became done-conditions, and lists the human-checks and deferrals waiting on you. Nothing changes until you approve. Approved changes land as spec bookkeeping only; a reorder that puts live content ahead of finished work is a pure move, checked line by line, and nothing is condensed or reworded.
+Follow-ups pile up, statuses drift, and deferrals get lost as slices land. Use `/bosun-triage` in Claude Code or `$bosun-triage` in Codex, between slices, to review the spec against the code and git history. The report proposes removing follow-ups that are resolved, obsolete, or duplicated (each with its evidence), corrects statuses, tags the follow-ups that remain (`bug`, `drift`, `nit`, `deferral`), groups them into draft slices, finds decisions that never became done-conditions, and lists the human-checks and deferrals waiting on you. Nothing changes until you approve, except at a milestone end under `Decisions: take recommendations`, where the lead applies the evidence-backed removals and status corrections and promotes open bugs to a hygiene slice itself. Approved changes land as spec bookkeeping only; a reorder that puts live content ahead of finished work is a pure move, checked line by line, and nothing is condensed or reworded.
 
 ## Provider modes
 
@@ -187,13 +187,23 @@ Requires `npx` able to fetch or find `@playwright/mcp` and a Chromium; the first
 
 A Claude Code session is turn-based: when the model ends its turn, nothing happens until something wakes it. The default harness ends the turn after every slice, so the user waits between slices, and in fable-crew mode the session idles while the worker runs. The run policy removes most of that idle time without changing what gets built.
 
-The policy is a line in the spec next to the provider mode: `Run policy: one slice` (the default; no line means the same) or `Run policy: until blocked, max N slices` (`until blocked` alone means `max 3 slices`). Under `until blocked`, after a slice verifies, the lead commits, pushes, opens a PR for that slice's branch, reports, and briefs the next slice in the same turn. Every slice keeps its own branch and PR; the lead never merges. The run stops, and the report says why, at the first of: no runnable done-condition left; the next one depends on an undecided item; two FAILs on one verify finding; a failed codex preflight; an overlap with another lane or open PR when no other slice is free of it; the slice cap. A done-condition is runnable when it is `todo` or `in progress`, not `human-check`, and needs nothing on the undecided list.
+The policy is a line in the spec next to the provider mode: `Run policy: one slice` (the default; no line means the same) or `Run policy: until blocked, max N slices` (`until blocked` alone means `max 10 slices`). Under `until blocked`, after a slice verifies, the lead commits, pushes, opens a PR for that slice's branch, arms auto-merge (`gh pr merge <n> --auto --merge`), reports, and briefs the next slice in the same turn, without waiting for CI and without asking whether to go on. Every slice keeps its own branch and PR. Auto-merge lands it once the required checks pass; if GitHub refuses auto-merge because every required check is already green, the lead merges it with `gh pr merge <n> --merge`. It never merges past a red or missing required check or bypasses branch protection, and it leaves the PR open and says so when the repo has no required checks, disallows auto-merge, or the spec or your instructions keep merging for you. The run stops, and the report says why, at the first of: no runnable done-condition left; every remaining runnable item needs a decision the lead may not make (see "Decisions"); two FAILs on one verify finding (three under `Decisions: take recommendations`); a failed codex preflight; an overlap with another lane or open PR when no other slice is free of it; the slice cap. A done-condition is runnable when it is `todo` or `in progress`, not `human-check`, and needs nothing on the undecided list.
 
-**Exhausted roadmap.** When no runnable done-condition remains, under either policy, the lead does not invent work. It reports that the roadmap is exhausted, lists the open human-checks and the undecided questions, proposes next slices drawn from the spec's follow-ups section as clearly marked drafts, and asks what next. A proposal becomes a done-condition only when you say so.
+**Exhausted roadmap.** When no runnable done-condition remains, under either policy, the lead does not invent work. It reports that the roadmap is exhausted, lists the open human-checks and the undecided questions, proposes next slices drawn from the spec's follow-ups section as clearly marked drafts, and asks what next. A proposal becomes a done-condition only when you say so; under `Decisions: take recommendations`, the lead first decides the undecided items it may decide, and a hygiene slice built from open bug follow-ups counts as runnable work.
 
 **Staging (fable-crew and fable-opus modes).** While the worker runs, under `until blocked` with the cap not reached, Fable scouts the next slice and, if it does not depend on the running one, writes a staged brief to `~/.claude/bosun/workers/<slug>/<next-slice>/brief.md` with a `Based on: <sha>` line. It never writes to the worktree while the worker owns it. If the next slice does depend on the running one, it scouts only.
 
 **Re-validation.** Before a staged brief runs, Fable compares its `Based on:` sha with HEAD. If the previous slice moved it, Fable re-reads the spec and the landed diff, checks every file reference and assumption in the brief, folds in the previous verify's follow-ups that belong to this slice, and only then writes the brief into the spec and generates the worker prompt from it. A staged brief waits on a FAIL, and stays on disk (named in the report) if the run stopped.
+
+**Milestones.** Every follow-up gets a home when it is written: bugs in the slice's own work are fixed in that slice, other bugs by the next slice that touches the file or a hygiene slice before the milestone closes, nits by the next slice that touches the file, deferrals name their target, and anything that needs you goes to human-checks. A milestone is a group of done-conditions the spec names, or every fifth slice. At each milestone end under `until blocked`, the lead runs `/bosun-triage`, a hygiene slice for the open bugs, and a `/bosun-ci` audit. More than five open bugs makes the next slice a hygiene slice.
+
+## Decisions
+
+`Decisions: take recommendations` in the spec (no line means `ask`) lets the lead act on its own recommendations instead of stopping: it decides open questions that come up mid-run, undecided items the spec's outcome or decisions point to, and a two-FAIL disagreement on one verify finding, records each in the spec's decisions as "(build mode, <date>)" with a line of why, and keeps going. A third FAIL on the same finding still stops the run. It never decides credentials, accounts, or sign-ins; prices, fees, or live spend; production data or anything sent to real people; legal, naming, or trademark questions; new-design approval under `Design approval: me`; or anything the spec lists as yours. Work that needs one of those is parked as a human-check or an undecided question with the lead's recommendation, and the run takes other work.
+
+## Design
+
+Every slice that adds or changes a screen runs one loop: read the board and design system, mock up any screen without a board first (on a design canvas when the session has one, with a copy in the repo), get the mockup approved, build, check it at 390, 768, 1024, 1280, and 1440 wide (or the project's widths) in its empty, loading, error, hover, and focus states and its motion, and have a fresh agent compare the screenshots with the board; open differences block the done-condition, and the verifier compares against the board too. `Design approval: me` (the default for a project with UI) means you approve each mockup, and a new direction or interaction pattern always waits for you; `Design approval: critique` means a fresh agent critiques the mockup and the board is revised with an "After critique" note. A new direction starts from several fresh options, not variations on an older mockup.
 
 ## Parallel lanes
 
@@ -225,7 +235,7 @@ Sources: [Overview](https://platform.claude.com/docs/en/models/fable-5-1/overvie
 
 **Safeguard false positives.** The guide names three triggers: compile-check phrasing, lesser-known languages without context, base64 in tool output. The core rules carry the phrasing and a recovery step: rephrase once, then record the blocked step in the spec and move on.
 
-**Verification.** `/bosun-verify` runs a fresh-context, read-only verifier at the selected effort (default `high`, the documented starting point), so the judgment is independent of the session that did the work. Two FAILs on the same finding stop the loop and go to the user.
+**Verification.** `/bosun-verify` runs a fresh-context, read-only verifier at the selected effort (default `high`, the documented starting point), so the judgment is independent of the session that did the work. Two FAILs on the same finding stop the loop and go to the user, unless `Decisions: take recommendations` lets the lead decide it; a third FAIL stops it either way.
 
 **Runtime verification.** This is the one rule that does not come from the Fable 5.1 model guide, which says nothing about browsers. It comes from Anthropic's guidance for running Fable in Claude Code and from OpenAI's equivalent for Codex: the [Claude Code best practices](https://code.claude.com/docs/en/best-practices) ("Give Claude a check it can run: tests, a build, a screenshot to compare"; "Always provide verification (tests, scripts, screenshots). If you can't verify it, don't ship it"; verification by a second-opinion subagent; show evidence, including screenshots, rather than asserting success), Anthropic's [long-running agents article](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) (the coding agent "needed explicit prompting to use browser automation tools and do all testing as a human would", and a browser "dramatically improved performance"), OpenAI's [harness engineering](https://openai.com/index/harness-engineering/) (the Chrome DevTools Protocol wired into the agent runtime so Codex could screenshot, snapshot the DOM, and validate fixes) and the [Codex subagent docs](https://learn.chatgpt.com/docs/agent-configuration/subagents) (a browser-debugging custom agent bound to an MCP server). The model guides on both sides say finish the task and keep tests to what the change warrants; the product guidance says a check for visible behavior is a browser. Both roles get one because the implementer's check is the loop that makes the work correct and the verifier's is the independent gate; self-review measurably favors its own output, so the overlap is the point, and it stays cheap because the verifier re-checks named done-conditions only.
 
@@ -240,7 +250,7 @@ Sources: [Overview](https://platform.claude.com/docs/en/models/fable-5-1/overvie
 
 ## Status
 
-Version 0.14.0. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
+Version 0.15.0. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
 
 There is no controlled performance benchmark establishing cost, speed, or quality improvements. Those depend on the project, model access, task routing, and verification workload.
 
@@ -248,7 +258,7 @@ There is no controlled performance benchmark establishing cost, speed, or qualit
 
 Bosun delegates through your installed tools and their permissions. Workers can edit project files. The Codex verifier has a workspace-write sandbox to support its browser tooling, but instructions prohibit it from editing; that is a behavioral rule, not enforced filesystem read-only access. Review the rules and SessionStart hooks before enabling them.
 
-Specs, checkpoints, worker prompts, event logs, and usage files can contain project information. Review them before sharing or committing them. Do not include credentials or customer records in a public example or issue. Continuous runs can commit, push, and open pull requests under the documented run policy; start with one slice.
+Specs, checkpoints, worker prompts, event logs, and usage files can contain project information. Review them before sharing or committing them. Do not include credentials or customer records in a public example or issue. Continuous runs can commit, push, open pull requests, and arm auto-merge on them under the documented run policy; start with one slice.
 
 ## Contributing and license
 

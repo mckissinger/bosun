@@ -1,6 +1,6 @@
 ---
 name: bosun-triage
-description: Review a project's spec against its code and history and clean up its bookkeeping. Finds done-conditions whose status is wrong, follow-ups that are resolved, stale, duplicated, or deferred, decisions that never became done-conditions, and open human-checks, and keeps live content ahead of finished work. Use when the spec has piled up follow-ups, feels out of date, or the user asks to "triage the spec", "clean up follow-ups", or "what's actually left". Produces a report; changes the spec only after the user approves, except at a milestone end under `Decisions: take recommendations`, where it applies the evidence-backed corrections itself.
+description: Review a project's spec against its code and history and clean up its bookkeeping and its merged worktrees and branches. Finds done-conditions whose status is wrong, follow-ups that are resolved, stale, duplicated, or deferred, decisions that never became done-conditions, and open human-checks, and keeps live content ahead of finished work. Use when the spec has piled up follow-ups, feels out of date, or the user asks to "triage the spec", "clean up follow-ups", or "what's actually left". Produces a report; changes the spec only after the user approves, except at a milestone end under `Decisions: take recommendations`, where it applies the evidence-backed corrections itself.
 ---
 
 # Bosun triage
@@ -46,9 +46,24 @@ Deliver, in this order:
 
 End by asking the user which parts to apply. Do not change the spec before they answer, except as "Milestone end" below says.
 
+## Git cleanup
+
+Triage also reports the repo's leftover worktrees and local branches. Run `git fetch --prune` and `git worktree prune` (they only refresh remote-tracking refs and drop records of worktrees whose directory is already gone; no checkout or local branch changes), then read `git worktree list --porcelain`. A worktree is removable only when all of these hold:
+
+- it is not the main checkout or the one this session runs in, and it is not locked;
+- it is not under `.claude/worktrees/`, since the Claude desktop app cleans up the worktrees it creates;
+- it has a branch checked out, not a detached HEAD, and that branch is not the default branch;
+- its work is merged: `gh pr list --state merged --head <branch> --base <default> --json headRefOid` shows a PR merged into the default branch whose head commit is the branch tip. Ancestry of `origin/<default>` alone is not enough, since a branch with no commits of its own passes it; a branch merged without a PR is reported, not removed;
+- `git -C "<path>" status --porcelain --ignored` shows no uncommitted or untracked files, and no ignored files other than dependency and build output (such as `node_modules`, `.next`, `dist`, or caches); a `.env` file or local data keeps it, because `git worktree remove` deletes ignored files without asking;
+- no process has its working directory inside it (`lsof -a -d cwd -Fn` lists none under the path, compared with symlinks resolved, as `pwd -P` prints it).
+
+A local branch with no worktree is removable when it is not the default branch, not the branch this session is on, and its work is merged by the same merged-PR test. Remove a worktree with `git worktree remove "<path>"`, never with `--force`, then delete its branch. Delete a branch with `git branch -D`, which the merged-PR test makes safe (`git branch -d` refuses squash-merged branches). Never delete a remote branch, and never remove anything that fails a test; when a command refuses, leave that item and report why.
+
+The report lists each removable worktree and branch with the evidence for it, and every other worktree with the reason it stays. Under `Decisions: ask`, removal waits for the user's approval like the rest of the report. At a milestone end under `Decisions: take recommendations`, the lead removes them itself, as "Milestone end" says. Cleanup changes no file in the repo, so it is never part of a commit.
+
 ## Milestone end
 
-When triage runs at a milestone end under `Decisions: take recommendations`, the lead applies it itself instead of asking: the proposed removals and the status corrections, each with its evidence, and the draft slices built from open bugs, promoted to hygiene done-conditions. Unclear items stay as they are, everything else stays a draft for the user, and no decision is reworded. The result is a bookkeeping commit on its own branch and PR, made as "Apply on approval" describes. Under `Decisions: ask`, triage reports and waits as above, at a milestone end too.
+When triage runs at a milestone end under `Decisions: take recommendations`, the lead applies it itself instead of asking: the proposed removals and the status corrections, each with its evidence, and the draft slices built from open bugs, promoted to hygiene done-conditions, and the removable worktrees and branches "Git cleanup" found. Unclear items stay as they are, everything else stays a draft for the user, and no decision is reworded. The result is a bookkeeping commit on its own branch and PR, made as "Apply on approval" describes. Under `Decisions: ask`, triage reports and waits as above, at a milestone end too.
 
 At a milestone end under `until blocked`, the run's own last slice is finished, not active, so the active-slice check in "When to run" asks about other work only. When earlier slices' PRs are still unmerged, branch from the latest slice's branch instead of the default branch, so the bookkeeping is built on the spec the run left, and say so in the PR.
 
@@ -59,8 +74,10 @@ Apply only what the user approved (or what "Milestone end" applies), on a new br
 1. **Bookkeeping:** remove the approved batch of follow-ups; correct the approved statuses; add tags to untagged follow-ups that stay, except items reported as unclear; add missed follow-ups; add draft slices clearly marked as drafts. Never promote a draft to a done-condition: the user does that, apart from the hygiene done-conditions "Milestone end" allows. Never change a decision's wording.
 2. **Reorder**, when approved: move sections and nothing else. Existing headings keep their text and level. Prove it before committing by comparing the full sorted list of non-blank lines before and after the move, duplicates included (a plain sort and diff, never a unique sort); the lists must match exactly except for exactly one added line, the history heading. If they differ in any other way, undo the move and report the difference.
 
+Run any approved git cleanup as "Git cleanup" says; it is not part of either commit.
+
 Open a PR for the branch as the user's git instructions require. Report what changed and what was left as it was.
 
 ## Boundaries
 
-Triage never edits code, tests, or configuration, never runs `/bosun-brief` or implements a follow-up, and never marks a done-condition verified. It does not decide what is worth doing: draft slices are proposals (apart from hygiene slices under "Milestone end"), and deferrals stay deferred until the user says otherwise.
+Triage never edits code, tests, or configuration, removes worktrees and branches only as "Git cleanup" says, never runs `/bosun-brief` or implements a follow-up, and never marks a done-condition verified. It does not decide what is worth doing: draft slices are proposals (apart from hygiene slices under "Milestone end"), and deferrals stay deferred until the user says otherwise.

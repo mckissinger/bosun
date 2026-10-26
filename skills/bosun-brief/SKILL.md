@@ -39,7 +39,7 @@ A line `Decisions: take recommendations` anywhere in the spec lets the lead deci
 ## Spec exists: brief a slice and run
 
 1. Read the spec, including its lessons. Under `Decisions: take recommendations`, first decide each undecided item the core rules' "Decisions" section lets you decide (one the spec's outcome or decisions point to, and not on the never-decide list), record it as that section says, and move it out of the undecided list; then judge what is runnable. If no runnable done-condition remains (status `todo` or `in progress`, not `human-check`, nothing it needs on the undecided list), follow "Exhausted roadmap" below and stop. Otherwise take the done-conditions the user named, or the next unstarted ones that form a coherent slice. Undecided items are out of scope for this slice. If a staged brief exists for this slice (see "Staged briefs"), re-validate it as described there instead of writing a new one.
-2. Gather what the slice depends on: the files involved, the test setup, the exact check commands and any setup they need, and the branch state. Batch the reads. Hand side questions to `bosun-scout` in the background and keep working. If another worktree of this repo holds a lane file or uncommitted changes, or the repo has open PRs from other sessions, run the check in "Parallel lanes" below before writing the brief.
+2. Gather what the slice depends on: the files involved, the test setup, the exact check commands and any setup they need, and the branch state. Batch the reads. Hand side questions to `bosun-scout` in the background and keep working.
 3. Write the slice brief into the spec's current-slice section and in your reply:
 
 ```
@@ -65,24 +65,11 @@ Branch: <name>
 8. Record lessons. Before reporting, add to the spec's lessons section anything this slice taught that a fresh session would need and the repo does not record, following the lessons rules in the core rules. Correct or delete entries this slice proved wrong. Often there is nothing to add.
 9. Report. Outcome first, then each done-condition with its evidence, then an `Evidence:` list of the route-or-screen checks (route or screen, viewport or device when applicable, what was checked, screenshot path), then follow-ups you noticed but did not do, then anything left out and why. Append a line to the spec's slice log: date, slice name, mode, first-verify verdict, and how many done-conditions named a route or screen against how many the verifier confirmed in its browser or simulator. Append each follow-up to the spec's follow-ups section, one line with the slice name, the date, and its tag (`bug`, `drift`, `nit`, or `deferral`). If undecided items remain, you may add draft done-conditions for the next one to the spec, clearly marked as drafts for the user. If you are stopping mid-slice, run `/bosun-checkpoint`. Under `until blocked`, do not end the turn here; continue with "Until blocked".
 
-## Parallel lanes
-
-Run this check before step 3, and again when a staged brief is re-validated, whenever another worktree of this repo holds a lane file or has uncommitted changes (a session mid-slice that is not yet a lane), or the repo has open PRs other than the ones this session opened and the branch step 4 stacks on. Fetch first (`git fetch`) and compare against `origin/<default>`, so already-merged work does not read as overlap. For each such worktree, list the files it changes, committed or not (`git -C "<worktree>" diff --name-only $(git -C "<worktree>" merge-base origin/<default> HEAD)` plus `git -C "<worktree>" ls-files -o --exclude-standard`), and the files its lane file, if any, says its current slice expects to change; for each such PR, list its files (`gh pr list --state open --json number,headRefName,files`). Leave out the spec and lane files, and compare the rest with the files this slice expects to change. Add to the brief:
-
-```
-Lane: <name>, lane file <path>  (include only when more than one lane is active)
-Files expected: <the files this slice expects to change, so other lanes can check against it>
-Overlap: <none, or each shared file with the lane or PR that changes it>
-Stack: <the instance claimed with the spec's Stack isolation command, or "shared, held by this lane"; include only when the slice runs migrations, end-to-end tests, or a suite that resets or seeds data>
-```
-
-Do not start a slice that shares files with another lane or open PR, or that is a wide refactor (renames or moves across many files) while another lane is active or another lane's current slice is one. Take the next runnable slice with no overlap instead; if there is none, report the overlap and end the turn asking the user which should wait. In a lane, every write this skill describes to the spec (the brief and statuses in steps 3 and 6, the stacking note in step 4, lessons and their corrections in step 8, the slice log, follow-ups, and draft done-conditions in step 9) goes to the lane file instead, and the stack rules in the core rules' "Parallel lanes" section apply to every check the slice runs.
-
 ## Until blocked
 
 Under `Run policy: until blocked`, after step 9 of a slice that verified PASS or PASS WITH FOLLOW-UPS: commit, push the branch, open a PR for it with `gh pr create` (summary, verification, follow-ups), arm auto-merge as the core rules' "Run policy" section says (`gh pr merge <n> --auto --merge`; `gh pr merge <n> --merge` only when GitHub refuses because every required check is already green; never past a red or missing required check; leave the PR open and say so when the repo has no required checks or disallows auto-merge, or when the spec or the user's instructions say merging is the user's), then go back to step 1 for the next slice in the same turn. Do not wait on the PR's CI, and do not end the turn to ask whether to continue or to announce the next slice; only the stop list below ends the run. Each slice gets its own branch, stacked on the previous one while that is unmerged (step 4), and its own PR. Keep a count of slices started in this run, including the first.
 
-At each milestone end (core rules, "Follow-ups and milestones": a group of done-conditions the spec names as one, or every fifth slice when it names none), run `/bosun-triage`, then a hygiene slice with its own PR for the open bugs, then a `/bosun-ci` audit against recent runs whose findings become follow-ups and whose fixes run as their own slice. When more than five bugs are open, make the next slice a hygiene slice.
+At each milestone end (core rules, "Follow-ups and milestones": a group of done-conditions the spec names as one, or every fifth slice when it names none), run `/bosun-triage` (which also finds merged, clean, idle worktrees and branches and removes them when applied; see its "Git cleanup"), then a hygiene slice with its own PR for the open bugs, then a `/bosun-ci` audit against recent runs whose findings become follow-ups and whose fixes run as their own slice. When more than five bugs are open, make the next slice a hygiene slice.
 
 Stop, and say in the report which condition stopped the run, at the first of:
 
@@ -90,7 +77,6 @@ Stop, and say in the report which condition stopped the run, at the first of:
 - every remaining runnable item needs a decision the lead may not make (core rules, "Decisions");
 - a verify produced two FAILs on the same finding, or three under `Decisions: take recommendations` (step 7);
 - the codex preflight failed (fable-crew mode);
-- the next runnable slice overlaps another lane or open PR and no other runnable slice is free of overlap ("Parallel lanes");
 - the count has reached `max N`.
 
 ## Exhausted roadmap
@@ -101,7 +87,7 @@ When no runnable done-condition remains, at the start or between slices, under e
 
 Staging (fable-crew or fable-opus mode, `until blocked`, count below `max N`): while the worker runs, identify the next slice from the spec. If none of its done-conditions depend on what the running slice creates or changes (files it adds or rewrites, interfaces it defines, behavior that must land first), scout that slice's dependencies, reading only, and write a staged brief in the step 3 template to `~/.claude/bosun/workers/<slug>/<next-slice>/brief.md`, with a first line `Based on: <sha>` naming the worktree's HEAD at staging time. If the next slice does depend on the running one, scout only and write what you learned to `notes.md` in that directory. Either way, never write to the worktree while the worker runs, and do not put the staged brief into the spec's current-slice section yet. Only the brief is staged; the worker prompt is written later from the final brief, because it must contain that brief verbatim.
 
-Re-validating: when a staged brief's slice comes up, compare its `Based on:` sha with the worktree's HEAD. If they differ, re-read the spec and `git diff <sha>..HEAD`, check every file path, line reference, and assumption in the brief against what landed, and fold in any follow-ups from the previous slice's verify that fall inside this slice's done-conditions. Only then run the "Parallel lanes" check when it applies, write the brief into the spec's current-slice section (the lane file, in a lane), and continue from step 4; in fable-crew or fable-opus mode the worker prompt is generated from this final brief. If the previous slice's verify FAILed, the staged brief waits for the fix loop. If that loop stopped the run, leave the staged brief on disk and name its path in the report.
+Re-validating: when a staged brief's slice comes up, compare its `Based on:` sha with the worktree's HEAD. If they differ, re-read the spec and `git diff <sha>..HEAD`, check every file path, line reference, and assumption in the brief against what landed, and fold in any follow-ups from the previous slice's verify that fall inside this slice's done-conditions. Only then write the brief into the spec's current-slice section and continue from step 4; in fable-crew or fable-opus mode the worker prompt is generated from this final brief. If the previous slice's verify FAILed, the staged brief waits for the fix loop. If that loop stopped the run, leave the staged brief on disk and name its path in the report.
 
 ## Fable-crew mode
 

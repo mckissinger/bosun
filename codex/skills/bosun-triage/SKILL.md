@@ -65,7 +65,7 @@ The report lists each removable worktree and branch with the evidence for it, an
 
 When triage runs at a milestone end under `Decisions: take recommendations`, the lead applies it itself instead of asking: the proposed removals and the status corrections, each with its evidence, and the draft slices built from open bugs, promoted to hygiene done-conditions, and the removable worktrees and branches "Git cleanup" found. Unclear items stay as they are, everything else stays a draft for the user, and no decision is reworded. The result is a bookkeeping commit on its own branch and PR, made as "Apply on approval" describes. Under `Decisions: ask`, triage reports and waits as above, at a milestone end too.
 
-At a milestone end under `until blocked`, the run's own last slice is finished, not active, so the active-slice check in "When to run" asks about other work only. When earlier slices' PRs are still unmerged, branch from the latest slice's branch instead of the default branch, so the bookkeeping is built on the spec the run left, and say so in the PR.
+At a milestone end under `until blocked`, the run's own last slice is finished, not active, so the active-slice check in "When to run" asks about other work only. Triage builds on the spec every slice of the run left, so it waits until the run's open PRs have merged, as the core rules' "Merge flow" waits: only for PRs that merge on their own. When one cannot, the run stops and names it. Then it branches from the latest default branch.
 
 ## Apply on approval
 

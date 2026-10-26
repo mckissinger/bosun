@@ -14,6 +14,8 @@ Third outcome (slice 4, 2026-09-04): the harness runs on either Claude Code or C
 
 ## Decisions, in the user's words
 
+- (2026-10-26) Merge flow. From the cre-list (Crelaunch) session: under `Run policy: until blocked`, with up-to-date branches required, no merge queue and 20–25 minute CI, five PRs piled up behind each other and one waited an hour. That session relayed what Michael agreed to there: build ahead only on independent slices, use a merge queue, and fix a red PR by pausing and fixing it in its own worktree. Asked here, Michael: "Yes, I would like to build it ... It'll be default for all my projects, really." The lead found GitHub's merge queue unavailable on all of his repos (amdg-org is on the Team plan with private repos; project-hearth is a private personal repo) and recommended turning off the up-to-date requirement, with CI on pushes to the default branch, over paying for GitHub Enterprise Cloud, revisiting a queue once an app has customers and main deploys to production. Michael: "proceed". The rule still names the queue as the recommended setup where GitHub offers one.
+
 - (2026-10-26) After the lead found no project uses lanes (no `Stack isolation:` or `Lane:` line and no `lanes/` directory in any spec) and that cre-list had 16 linked worktrees, 7 of them merged and clean. Michael: "Let's remove the parallel lanes. Maybe add the cleanup of git state to the hygiene slice if you think that'd be helpful. Let's defer the milestone gaps for now until we've started to use this and see if it affects our process at all as is, without those additional items you're mentioning. Make sure you take note of those." On the launch and operate plan the lead proposed (thin launch skill, docs, marketing plan, monitoring, agent-run support and debugging): "I agree with your recommendations." On the public page: "it doesn't have to be a landing page per se. It could be a full marketing page. I want you to keep that super vague, though. No specific design instructions or anything like that." After the lead offered to brief removal, cleanup, the deferrals and the plan: "proceed". The lead put cleanup in `bosun-triage`, which already runs first at each milestone end, rather than in the hygiene slice itself, because cleanup changes no file and a hygiene slice is a code slice with its own PR.
 
 - (2026-10-25) On the build-mode merge fallback (`gh pr merge <n> --merge` when GitHub refuses auto-merge because every required check is already green), the lead recommended keeping it and rewording the global CLAUDE.md line to "Never merge past a red or missing required check, and never bypass branch protection. If GitHub refuses auto-merge because every required check is already green, merge with `gh pr merge <n> --merge`." Michael: "Proceed with the recommendation."
@@ -143,7 +145,7 @@ The run policy is a line in the spec, `Run policy: one slice` or `Run policy: un
 
 Under `one slice`, `/bosun-brief` behaves as before: one slice, verify, report, stop.
 
-Under `until blocked`, after a slice verifies (PASS or PASS WITH FOLLOW-UPS), Fable records lessons, commits, pushes, opens a PR for the slice's branch, writes the slice's report, and then, in the same turn, briefs and runs the next slice. Each slice has its own branch (stacked on the previous slice's branch while that is unmerged, the existing rule) and its own PR; PRs are never merged by Fable. The run stops, with a report saying why, at the first of: no runnable done-condition remains; the next runnable done-condition depends on an undecided item; a verify produced two FAILs on the same finding; the codex preflight failed; N slices have been started in this run, counting the first.
+Under `until blocked`, after a slice verifies (PASS or PASS WITH FOLLOW-UPS), Fable records lessons, commits, pushes, opens a PR for the slice's branch, writes the slice's report, and then, in the same turn, briefs and runs the next slice. Each slice has its own branch (stacked on the previous slice's branch while that is unmerged, the rule until 2026-10-26; since then the core rules' "Merge flow" builds ahead only on independent slices and never stacks) and its own PR; PRs are never merged by Fable. The run stops, with a report saying why, at the first of: no runnable done-condition remains; the next runnable done-condition depends on an undecided item; a verify produced two FAILs on the same finding; the codex preflight failed; N slices have been started in this run, counting the first.
 
 A done-condition is runnable when its status is `todo` or `in progress`, it is not `human-check`, and nothing it needs is on the undecided list.
 
@@ -513,38 +515,7 @@ Verifier effort: high (no override at any scope).
 Checks: as in B9. No end-to-end suite; CI's `checks` job is the required check.
 Branch: build-mode, from main (be42956).
 
-## Undecided
-
-(none)
-
-## Out of scope
-
-- Any change to fable-mode behavior beyond inserting the mode branch.
-- A cost ledger, dashboard, or budget cap. Usage numbers go in the spec's slice log and the report only.
-- Porting the verifier or the brief to Codex. Both stay on Fable.
-- Codex hooks, guard scripts, or hook-trust flags. The worker is bounded by the sandbox and the prompt only.
-- `gpt-5.6-terra` or any model not in the table.
-- Parallel workers.
-- Parallel slices in separate worktrees (slice 3; covered 2026-10-20 by the parallel-lanes slice, removed 2026-10-26 by remove-lanes: Bosun does not coordinate parallel sessions; the core rules' "Other sessions" paragraph keeps their safety rules).
-- A skill to set the run policy; the line is edited by hand or by asking Fable (slice 3).
-- Staging while Fable itself implements in fable mode; there is nothing to wait on (slice 3).
-- Machine-checkable dependency syntax between done-conditions; Fable judges dependence from the text (slice 3).
-- Sharing one skills directory between the two plugins; the Codex plugin duplicates wording instead (slice 4).
-- Running Astra modes from Claude Code, or fable modes from Codex (slice 4).
-- A `usage.json` equivalent for Codex subagents; the app's own usage view is the record (slice 4).
-- Upgrading the user's codex CLI or desktop app from this harness (slice 4).
-- `gpt-5.6-terra` or `gpt-reserve` in any role (slice 4).
-- Renaming the local working directory or the user's global instruction files; those are the user's (slice 5).
-- Chrome DevTools MCP, the Claude-in-Chrome connector, or Codex Computer Use as harness-provided tools; leads may use what their session has (slice 6).
-- Exploratory browser walkthroughs by the verifier; it re-checks named done-conditions only (slice 6).
-- Bundling the Playwright package or browsers; the harness assumes `npx` can fetch or has cached them (slice 6).
-- Simulator MCP on the astra-crew worker TOMLs; those carry Playwright always, and a simulator server started in every project is not wanted. Follow-up (mobile-verify).
-- Android as a named surface in the rule text. `mobile-mcp` supports it, but no rule names it until a project needs it (mobile-verify).
-- Real devices, cloud devices, and the mobile MCP's location, clipboard, and recording tools (mobile-verify).
-- Granting the desktop app's own iOS Simulator tool to any agent (mobile-verify).
-- The design/prototyping skill discussed the same day; it is a separate skill, not part of Bosun (mobile-verify).
-
-## Current slice
+### Remove lanes slice (2026-10-26, verified)
 
 Name: remove-lanes (2026-10-26). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS 2026-10-26 (first verify FAIL: default branch and no-commit branches passed the ancestry test; ignored files such as `.env` were deleted; cleanup wording overstated under `ask`; fetch/prune ran before approval; all fixed; second PASS WITH FOLLOW-UPS: merged-PR test ignored the PR's base, README prune wording; fixed in-slice; third PASS).
 Decisions: see the 2026-10-26 entry under Decisions.
@@ -592,6 +563,78 @@ Effort assumed: the session's setting (not exposed to the lead).
 Verifier effort: high (no override at any scope).
 Checks: as in W6. No end-to-end suite; CI's `checks` job is the required check.
 Branch: remove-lanes, from main (8b1569a).
+
+## Undecided
+
+(none)
+
+## Out of scope
+
+- Any change to fable-mode behavior beyond inserting the mode branch.
+- A cost ledger, dashboard, or budget cap. Usage numbers go in the spec's slice log and the report only.
+- Porting the verifier or the brief to Codex. Both stay on Fable.
+- Codex hooks, guard scripts, or hook-trust flags. The worker is bounded by the sandbox and the prompt only.
+- `gpt-5.6-terra` or any model not in the table.
+- Parallel workers.
+- Parallel slices in separate worktrees (slice 3; covered 2026-10-20 by the parallel-lanes slice, removed 2026-10-26 by remove-lanes: Bosun does not coordinate parallel sessions; the core rules' "Other sessions" paragraph keeps their safety rules).
+- A skill to set the run policy; the line is edited by hand or by asking Fable (slice 3).
+- Staging while Fable itself implements in fable mode; there is nothing to wait on (slice 3).
+- Machine-checkable dependency syntax between done-conditions; Fable judges dependence from the text (slice 3).
+- Sharing one skills directory between the two plugins; the Codex plugin duplicates wording instead (slice 4).
+- Running Astra modes from Claude Code, or fable modes from Codex (slice 4).
+- A `usage.json` equivalent for Codex subagents; the app's own usage view is the record (slice 4).
+- Upgrading the user's codex CLI or desktop app from this harness (slice 4).
+- `gpt-5.6-terra` or `gpt-reserve` in any role (slice 4).
+- Renaming the local working directory or the user's global instruction files; those are the user's (slice 5).
+- Chrome DevTools MCP, the Claude-in-Chrome connector, or Codex Computer Use as harness-provided tools; leads may use what their session has (slice 6).
+- Exploratory browser walkthroughs by the verifier; it re-checks named done-conditions only (slice 6).
+- Bundling the Playwright package or browsers; the harness assumes `npx` can fetch or has cached them (slice 6).
+- Simulator MCP on the astra-crew worker TOMLs; those carry Playwright always, and a simulator server started in every project is not wanted. Follow-up (mobile-verify).
+- Android as a named surface in the rule text. `mobile-mcp` supports it, but no rule names it until a project needs it (mobile-verify).
+- Real devices, cloud devices, and the mobile MCP's location, clipboard, and recording tools (mobile-verify).
+- Granting the desktop app's own iOS Simulator tool to any agent (mobile-verify).
+- The design/prototyping skill discussed the same day; it is a separate skill, not part of Bosun (mobile-verify).
+
+## Current slice
+
+Name: merge-flow (2026-10-26). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS 2026-10-26 (first verify FAIL: a dependent slice could wait forever on a PR that never merges on its own; every slice writes the spec, so "independent" never held and spec edits conflicted; triage still stacked; red-PR fixes skipped verify; update-branch restarted every PR's CI; no check of the default branch's runs; no `one slice` rule; all fixed; second PASS WITH FOLLOW-UPS: triage could wait forever, the brief still said not to wait, required reviews block auto-merge, spec drift, the staged-brief diff ref, the flake rule; all fixed; third PASS).
+Decisions: see the 2026-10-26 "Merge flow" entry under Decisions.
+Outcome: Under `until blocked`, the lead builds ahead only on independent slices, never stacks on unmerged ones, fixes red PRs before going on, and works with a merge queue where one exists or keeps behind PRs moving where none does. `bosun-ci` reports a merge setup that piles PRs up.
+Done-conditions:
+M1. `verified 2026-10-26 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint d49d553` Both core rules files gain an identical "Merge flow" section after "Run policy", covering the following.
+   - **Build ahead.** Only slices that need nothing from an unmerged slice are built while a PR's checks run, each in its own worktree from the latest default branch. A dependent slice is briefed during CI and built after its base merges, with independent work taken meanwhile. Branches are never stacked on unmerged slices.
+   - **Red PRs.** The lead checks open PRs before each slice and after each verify. A red PR pauses the current slice, is fixed on its own branch in its own worktree, and then the lead resumes. Slices that depend on it wait for the fix to merge.
+   - **Merge setup.** A merge queue is recommended where GitHub offers one, with required checks on `merge_group` and a `merge_group` fallback for any job that reads a PR number. Without a queue, the up-to-date requirement is off and CI runs on pushes to the default branch. A repo that requires up-to-date branches without a queue gets the oldest behind PR updated with `gh pr update-branch`, one at a time, and a `bosun-ci` finding.
+   - **Waiting.** When only dependent slices remain, the lead waits for a base PR that merges on its own. If the base cannot merge on its own, the run stops: a new stop-list entry in both core rules files and both brief skills.
+   - **Spec edits.** The spec does not count toward independence. A built-ahead slice writes its brief as its own subsection and appends its log lines. Spec conflicts are resolved by keeping both sides.
+   - **Watching.** The lead checks open PRs and the default branch's latest run before each slice, after each verify, and while waiting. A red or conflicting PR is fixed in its worktree, and a code fix is verified. A red default branch is fixed first.
+   - **Updating behind PRs.** Without a queue, only the oldest behind PR is updated, one at a time.
+   - **Run policy.** Its CI sentence says the lead does not idle on CI and waits only where "Merge flow" says.
+   - **Worktree wording.** The fable-opus worker uses the slice's worktree (Claude core rules and brief).
+   - **Triage.** Both `bosun-triage` skills wait for the run's open PRs to merge before milestone-end triage, then branch from the latest default branch.
+M2. `verified 2026-10-26 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint d49d553` Both `bosun-brief` skills: step 4 starts from the latest default branch, builds a dependent slice only after its base merges, uses a new worktree while another slice's PR is open, and never stacks. Under `one slice`, a dependent slice is not started and the PR it waits for is reported. Staged briefs record and compare the default branch's HEAD. The "Until blocked" text drops stacking and adds the open-PR check: update behind PRs where required, and fix red PRs first. The pair still differs only as before.
+M3. `verified 2026-10-26 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint d49d553` Both `bosun-ci` skills' baseline reads the default branch's merge setup. Requiring up-to-date branches without a queue is a finding. Under a queue, a required workflow without `merge_group`, or a PR-number job without a fallback, is a blocking finding. The pair still differs only as before.
+M4. `verified 2026-10-26 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint d49d553` README gains a "Merge flow" paragraph under "Run policy", and its run-policy sentence points to it. Version 0.17.0 in all three manifests and the README version line.
+M5. `verified 2026-10-26 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint d49d553` Checks pass:
+   - `bash -n scripts/*.sh codex/scripts/*.sh`;
+   - JSON parse;
+   - `claude plugin validate .`;
+   - `git diff main --check`;
+   - the "Merge flow" section is byte-identical in both core rules files;
+   - no "stack on it" or "stacked on the previous" text remains in the brief or core rules;
+   - skill-pair diff counts are unchanged.
+Out of scope:
+- `bosun-preflight`. It audits launch readiness, not repository merge settings; it already lists unreadable branch protection as unknown.
+- Changing any project's repository settings. The lead does that outside this slice: for rv-rez, quillery and project-hearth, and for mom-ai once it has a repo; cre-list stays with its own session.
+- A third-party merge queue.
+Assumptions:
+- **Never stacking.** "Stacking is only for real dependencies" in the relayed request is read together with "a dependent slice is briefed during CI and built only after its base merges": a dependent slice waits for its base to merge, so nothing is stacked. Stacked PRs are what piled up in cre-list.
+- **When the lead looks at PRs.** Checking open PRs and the default branch's latest run before each slice, after each verify, and while waiting is how the lead notices a red PR without polling CI between those points.
+- **Versioning.** Minor bump, because this changes run behavior.
+Effort assumed: the session's setting (not exposed to the lead).
+Verifier effort: high (no override at any scope).
+Checks: as in M5. No end-to-end suite; CI's `checks` job is the required check.
+Branch: merge-flow, from main (6d2c26c).
 
 ## Launch and operate (drafts)
 
@@ -665,6 +708,7 @@ Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is
 
 ## Slice log
 
+- 2026-10-26, merge-flow, opus (implemented by lead), first verify FAIL (wait deadlock, spec edits broke independence, triage still stacked, unverified red-PR fixes, update-branch churn, no default-branch check, no `one slice` rule; all fixed), second PASS WITH FOLLOW-UPS (six wording and stall gaps; fixed), third PASS; all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0. Repos: rv-rez's up-to-date requirement turned off; quillery and project-hearth already matched; mom-ai (amdg-org/ruthie) has no CI yet.
 - 2026-10-26, remove-lanes, opus (implemented by lead), first verify FAIL (cleanup could delete the default branch and branches with no commits of their own, and ignored files such as `.env`; two wording nits; all fixed), second PASS WITH FOLLOW-UPS (merged-PR test now limited to PRs into the default branch; README nit; fixed), third PASS; all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.
 - 2026-10-25, build-mode, opus (implemented by lead), first verify FAIL (undecided items still stopped take-recommendations runs, plus six text findings; all fixed), second PASS WITH FOLLOW-UPS (two follow-ups recorded); both bosun-verifier on claude-opus-5-5 / high; B1–B9 verified; route-or-screen done-conditions: 0 of 0.
 - 2026-10-20, parallel-lanes, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (seven text findings, fixed), second FAIL (lane end lost statuses and slice log; L1 text stale; staged briefs and mid-slice sessions skipped the overlap check; stale local default branch; core stop list; all fixed), third PASS WITH FOLLOW-UPS (six follow-ups recorded); all bosun-verifier on claude-opus-5-5 / high; L1–L4 verified; route-or-screen done-conditions: 0 of 0.

@@ -14,6 +14,7 @@ Third outcome (slice 4, 2026-09-04): the harness runs on either Claude Code or C
 
 ## Decisions, in the user's words
 
+- (2026-10-30) Planning hub. Michael: "What are your thoughts on using the hub lane or the hub session as basically the one where we can continue to make decisions, plan out work, etc.? The other lanes that come off of that are the actual working lanes." Asked "What do you recommend?", the lead recommended a hub that never builds once lanes start, with the shape chosen per run (hub plus one lane, hub plus two, or one session for short or unattended runs) and approved once per run. On a third lane, the lead listed its hesitations (three independent areas at once, Michael's review time, red default branch from parallel merges, CI and machine load, spec conflicts). Michael: "Let's keep the hub plus two, and we'll defer the third area after we've continued to use this and explored it." Then "Yes" to briefing it.
 - (2026-10-30) Lanes. After reviewing the cre-list hub session and its two Lane B runs (10 slices merged while the hub built Build), Michael: "I would like to see how we can implement this in Bosun." On standard versus mode and sessions versus subagents, the lead recommended a standard rule gated by conditions, with the hub proposing and Michael approving once per run, lanes as sessions the hub starts, and subagents staying inside a slice. Michael: "I agree with the lanes running as sessions, which is now a Claude Code feature where the hub can initiate these other sessions. We don't even have to set it up for Codex." Then "Brief lanes". Supersedes the 2026-10-26 removal of parallel lanes; the old lane files and per-brief overlap check stay removed.
 - (2026-10-30) Remove the Codex side. After reviewing the cre-list hub-and-lane sessions, the lead recommended lanes as Claude Code sessions the hub starts, and noted that the matching Codex copy made the design awkward. Michael: "We don't even have to set it up for Codex. I'm not even really using Codex now, so I'm just using Claude." On keeping the plugin: "Yeah, let's just keep the plugin and maybe remove the Codex piece." On `fable-crew`: "I don't use Fable Crew. Right now, I'm just using Opus mode. That's my standard." Then "yes" to starting this slice. Supersedes the 2026-09-04 decision that the harness runs on both Claude Code and Codex, and the provider-modes, codex-port and astra decisions below for everything they say about `fable-crew`, `astra-crew`, `astra` and the Codex plugin. Lanes are the next, separate slice.
 - (2026-10-26) Merge flow. From the cre-list (Crelaunch) session: under `Run policy: until blocked`, with up-to-date branches required, no merge queue and 20–25 minute CI, five PRs piled up behind each other and one waited an hour. That session relayed what Michael agreed to there: build ahead only on independent slices, use a merge queue, and fix a red PR by pausing and fixing it in its own worktree. Asked here, Michael: "Yes, I would like to build it ... It'll be default for all my projects, really." The lead found GitHub's merge queue unavailable on all of his repos (amdg-org is on the Team plan with private repos; project-hearth is a private personal repo) and recommended turning off the up-to-date requirement, with CI on pushes to the default branch, over paying for GitHub Enterprise Cloud, revisiting a queue once an app has customers and main deploys to production. Michael: "proceed". The rule still names the queue as the recommended setup where GitHub offers one.
@@ -641,40 +642,7 @@ Verifier effort: high (no override at any scope).
 Checks: as in X5. No end-to-end suite; CI's `checks` job is the required check.
 Branch: remove-codex, from main (2a975fe).
 
-## Undecided
-
-(none)
-
-## Out of scope
-
-(2026-10-30, remove-codex) Lines below about Codex, Astra, crew workers, the worker script and Sol, Luna, Terra or Reserve models are moot: those pieces were removed in 0.18.0.
-
-- Any change to fable-mode behavior beyond inserting the mode branch.
-- A cost ledger, dashboard, or budget cap. Usage numbers go in the spec's slice log and the report only.
-- Porting the verifier or the brief to Codex. Both stay on Fable.
-- Codex hooks, guard scripts, or hook-trust flags. The worker is bounded by the sandbox and the prompt only.
-- `gpt-5.6-terra` or any model not in the table.
-- Parallel workers.
-- Parallel slices in separate worktrees (slice 3; covered 2026-10-20 by the parallel-lanes slice, removed 2026-10-26 by remove-lanes, covered again 2026-10-30 by the lanes slice as hub-started sessions; the core rules' "Lanes" section).
-- A skill to set the run policy; the line is edited by hand or by asking Fable (slice 3).
-- Staging while Fable itself implements in fable mode; there is nothing to wait on (slice 3).
-- Machine-checkable dependency syntax between done-conditions; Fable judges dependence from the text (slice 3).
-- Sharing one skills directory between the two plugins; the Codex plugin duplicates wording instead (slice 4).
-- Running Astra modes from Claude Code, or fable modes from Codex (slice 4).
-- A `usage.json` equivalent for Codex subagents; the app's own usage view is the record (slice 4).
-- Upgrading the user's codex CLI or desktop app from this harness (slice 4).
-- `gpt-5.6-terra` or `gpt-reserve` in any role (slice 4).
-- Renaming the local working directory or the user's global instruction files; those are the user's (slice 5).
-- Chrome DevTools MCP, the Claude-in-Chrome connector, or Codex Computer Use as harness-provided tools; leads may use what their session has (slice 6).
-- Exploratory browser walkthroughs by the verifier; it re-checks named done-conditions only (slice 6).
-- Bundling the Playwright package or browsers; the harness assumes `npx` can fetch or has cached them (slice 6).
-- Simulator MCP on the astra-crew worker TOMLs; those carry Playwright always, and a simulator server started in every project is not wanted. Follow-up (mobile-verify).
-- Android as a named surface in the rule text. `mobile-mcp` supports it, but no rule names it until a project needs it (mobile-verify).
-- Real devices, cloud devices, and the mobile MCP's location, clipboard, and recording tools (mobile-verify).
-- Granting the desktop app's own iOS Simulator tool to any agent (mobile-verify).
-- The design/prototyping skill discussed the same day; it is a separate skill, not part of Bosun (mobile-verify).
-
-## Current slice
+### Lanes slice (2026-10-30, verified)
 
 Name: lanes (2026-10-30). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS 2026-10-30 (first verify FAIL: the setup slice was unreachable, the no-start-session fallback contradicted itself, lane stops still went to the user, plus ten gaps on ownership, counting, milestones, model, proposal timing and wording; all fixed; second PASS WITH FOLLOW-UPS: red default branch, undecided items decided twice, hand-started lanes, hygiene vs lane areas, setup timing, woken hub, triage wording, spec text; all fixed; third PASS).
 Decisions: see the 2026-10-30 "Lanes" entry under Decisions.
@@ -739,6 +707,92 @@ Verifier effort: high (no override at any scope).
 Checks: as in N5. No end-to-end suite; CI's `checks` job is the required check.
 Branch: lanes, from main (60b259e).
 
+## Undecided
+
+(none)
+
+## Out of scope
+
+(2026-10-30, remove-codex) Lines below about Codex, Astra, crew workers, the worker script and Sol, Luna, Terra or Reserve models are moot: those pieces were removed in 0.18.0.
+
+- Any change to fable-mode behavior beyond inserting the mode branch.
+- A cost ledger, dashboard, or budget cap. Usage numbers go in the spec's slice log and the report only.
+- Porting the verifier or the brief to Codex. Both stay on Fable.
+- Codex hooks, guard scripts, or hook-trust flags. The worker is bounded by the sandbox and the prompt only.
+- `gpt-5.6-terra` or any model not in the table.
+- Parallel workers.
+- Parallel slices in separate worktrees (slice 3; covered 2026-10-20 by the parallel-lanes slice, removed 2026-10-26 by remove-lanes, covered again 2026-10-30 by the lanes slice as hub-started sessions; the core rules' "Lanes" section).
+- A skill to set the run policy; the line is edited by hand or by asking Fable (slice 3).
+- Staging while Fable itself implements in fable mode; there is nothing to wait on (slice 3).
+- Machine-checkable dependency syntax between done-conditions; Fable judges dependence from the text (slice 3).
+- Sharing one skills directory between the two plugins; the Codex plugin duplicates wording instead (slice 4).
+- Running Astra modes from Claude Code, or fable modes from Codex (slice 4).
+- A `usage.json` equivalent for Codex subagents; the app's own usage view is the record (slice 4).
+- Upgrading the user's codex CLI or desktop app from this harness (slice 4).
+- `gpt-5.6-terra` or `gpt-reserve` in any role (slice 4).
+- Renaming the local working directory or the user's global instruction files; those are the user's (slice 5).
+- Chrome DevTools MCP, the Claude-in-Chrome connector, or Codex Computer Use as harness-provided tools; leads may use what their session has (slice 6).
+- Exploratory browser walkthroughs by the verifier; it re-checks named done-conditions only (slice 6).
+- Bundling the Playwright package or browsers; the harness assumes `npx` can fetch or has cached them (slice 6).
+- Simulator MCP on the astra-crew worker TOMLs; those carry Playwright always, and a simulator server started in every project is not wanted. Follow-up (mobile-verify).
+- Android as a named surface in the rule text. `mobile-mcp` supports it, but no rule names it until a project needs it (mobile-verify).
+- Real devices, cloud devices, and the mobile MCP's location, clipboard, and recording tools (mobile-verify).
+- Granting the desktop app's own iOS Simulator tool to any agent (mobile-verify).
+- The design/prototyping skill discussed the same day; it is a separate skill, not part of Bosun (mobile-verify).
+
+## Current slice
+
+Name: planning-hub (2026-10-30). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS 2026-10-30 (first verify PASS WITH FOLLOW-UPS: a lane could fix a red default branch itself, no milestones once lanes started, the hub's spec edits had no path to main, lane end with work left, caps past `max N`, hygiene ownership, shape precedence, README; all fixed; second PASS WITH FOLLOW-UPS: unscoped "no code", re-pick of parked work, held files; fixed; third PASS).
+Decisions: see the 2026-10-30 "Planning hub" entry under Decisions.
+Outcome: Once lanes start, the hub stops building and becomes the session Michael plans and decides in. It keeps the spec, reviews with him, watches the default branch, and hands every code change to a lane. A run uses one of three shapes: hub plus one lane, hub plus two lanes, or one session.
+Done-conditions:
+H1. `verified 2026-10-30 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint f3806ae` `rules/core.md` "Lanes" is rewritten around a hub that does not build:
+   - **The hub's job.** While lanes run, the hub writes no code. It plans, decides with the user, keeps the spec, runs milestone triage and the CI audit, reviews screens with the user, watches the default branch, and relays between the user and the lanes.
+   - **Shapes.** One session as before: fewer than five runnable slices in the run, or the user says they won't be steering (takes precedence). Hub plus two lanes: two independent areas, each with at least three runnable slices; work fitting neither goes to the first lane to finish. Otherwise hub plus one lane, taking all the run's work. At most three sessions run.
+   - **Before the yes.** Until the user approves, the hub runs as one session as before. After the yes, it finishes its current slice and then stops building.
+   - **Code goes to lanes.** Every change goes to a lane as a slice the hub assigns, at the top of that lane's queue: a shared-file change (one lane at a time holds a shared file), a red default branch (assigned as the next slice of one lane; a lane that sees it red tells the hub and finishes its current slice), the milestone hygiene slice and CI-audit fixes (given to the lane whose area holds the files).
+   - **Count.** The run's `max N` bounds the slices the hub built before lanes started plus every lane's cap.
+   - **Idle hub.** With lanes running and no planning work, the hub ends its turn. This is a pause, not a stop. A lane's message, a lane's end or the user wakes it, and it continues the same run.
+   - Stack isolation, the user-only items, checks in a lane, lane end and hand-started lanes carry over.
+H2. `verified 2026-10-30 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint f3806ae` The "Run policy" stop list in `rules/core.md` and the "Until blocked" stop list in `skills/bosun-brief/SKILL.md` drop the "hub's own area has no runnable work while lanes still run" stop. Each instead says that a hub with lanes running and no planning work pauses as H1 says.
+H3. `verified 2026-10-30 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint f3806ae` `skills/bosun-brief/SKILL.md` "Lanes" follows H1:
+   - step 1 chooses the shape;
+   - step 2's proposal names the shape;
+   - the hub stops building after the yes;
+   - the template says the hub plans and does not build, that shared-file changes, red-default-branch fixes and hygiene come as hub-assigned slices at the top of the queue, and that a lane works only its own area and those assigned slices;
+   - the "While lanes run" paragraph describes the planning hub.
+H4. `verified 2026-10-30 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint f3806ae` README "Lanes" describes the planning hub and the three shapes. Version 0.20.0 in both manifests and the README version line.
+H5. `verified 2026-10-30 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint f3806ae` Checks pass:
+   - `bash -n scripts/*.sh`;
+   - JSON parses for both manifests and `hooks/hooks.json`;
+   - `python3 -m py_compile scripts/configure-claude-agents.py`;
+   - `claude plugin validate .`;
+   - `git diff origin/main --check`;
+   - `grep -n "own area has no runnable work" rules/core.md skills/bosun-brief/SKILL.md README.md` finds nothing.
+H6. `verified 2026-10-30 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint f3806ae` This spec:
+   - the decision entry;
+   - the lanes brief moved to history;
+   - the three lanes follow-up nits (stop vs pause, bugs outliving a milestone, waking the hub on a red default branch) removed as resolved by H1;
+   - a deferral follow-up for a third lane;
+   - the slice log line.
+Out of scope:
+- A third lane, or a `Lanes: max N` spec line (deferred by Michael).
+- Any project's spec or stack script.
+- Changes to agents or to other skills.
+- Running this on a project.
+Assumptions:
+- **"Short" means fewer than five runnable slices.** Below that, a lane's cold start and the extra session cost more than a planning hub saves.
+- **The hub still edits the spec.** Bookkeeping, decisions and triage are planning, not code. A slice's own brief and statuses stay with the lane that runs it.
+- **Shared files are held one lane at a time.** The hub assigns the change to one lane as a slice, so two lanes never edit a shared file at once.
+- **A red default branch goes to one lane.** It becomes that lane's next slice. The other lane finishes its current slice and keeps going; its PRs merge once the fix lands, as "Merge flow" says.
+- **From the first verify.** A lane that sees a red default branch never fixes it unassigned and keeps working its area. Without milestone groups, milestones count every fifth slice merged across the run. The hub lands its spec edits through short spec-only PRs. When lanes end with work left, the hub picks the shape again under the same yes, building again as one session if no lane shape fits. Caps are set at lane start within `max N`. Hygiene and CI work spanning areas or shared files goes to one lane, and a lane's own hygiene trigger counts only its area's bugs. From the second verify: "no code" applies while lanes run; the re-pick after the last lane leaves out work parked on two FAILs or a user-only item; the hub tells a lane which of its files another lane holds.
+- **Lane messages wake the hub.** In the cre-list run, Lane B's messages arrived as new turns in the hub, which resolves the third nit.
+- **Versioning.** Minor bump, because behavior changes.
+Effort assumed: the session's setting (not exposed to the lead).
+Verifier effort: high (no override at any scope).
+Checks: as in H5. No end-to-end suite; CI's `checks` job is the required check.
+Branch: planning-hub, from main (2422d2a).
+
 ## Launch and operate (drafts)
 
 Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is a done-condition until he says so.
@@ -796,13 +850,11 @@ Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is
 - build-mode, 2026-10-25, bug: `bosun-verify`'s PASS WITH FOLLOW-UPS path (fix slice-own bugs, then verify again) has no cap, so a run of re-verifies that each find a new slice-own bug never ends; give it the same limit as the FAIL path.
 - remove-lanes, 2026-10-26, deferral: "every fifth slice" (core rules, "Follow-ups and milestones") does not say whether the count is per run or across the project's history, so a spec without milestone groups can end milestones inconsistently. Michael deferred it until build mode has run a few real milestones; revisit then, or when a project names its milestone groups.
 - remove-lanes, 2026-10-26, deferral: `bosun-brief` step 9 appends each follow-up with a tag but does not make it name its home (the slice, hygiene slice or milestone it waits for), which the core rules' "Follow-ups and milestones" require. Deferred with the item above; revisit at the same time.
-
-- lanes, 2026-10-30, nit: the hub's "own area has no runnable work while lanes still run" item sits in stop lists that "end the run", while `rules/core.md` "Lane end" says the woken hub continues the same run; call it a pause.
-- lanes, 2026-10-30, nit: bugs the hub's hygiene slice leaves to a running lane can outlive a hub milestone, against "no bug outlives its milestone"; say the lane's end is their milestone.
-- lanes, 2026-10-30, nit: a lane that reports a red default branch while the hub has ended its turn has no way to wake it, and the template does not say whether the lane pauses meanwhile.
+- planning-hub, 2026-10-30, deferral: a third lane (hub plus three), or a `Lanes: max N` spec line. Michael deferred it "after we've continued to use this and explored it"; revisit after a real hub-plus-two-lanes run shows both lanes staying busy without waiting on him or on shared files.
 
 ## Slice log
 
+- 2026-10-30, planning-hub, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (8 gaps, fixed), second PASS WITH FOLLOW-UPS (3 gaps, fixed), third PASS; all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.
 - 2026-10-30, lanes, opus (implemented by lead), first verify FAIL (13 findings, fixed), second PASS WITH FOLLOW-UPS (8 gaps, fixed), third PASS; all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.
 - 2026-10-30, remove-codex, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (one README rendering bug and five wording nits; fixed), second PASS; both bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.
 - 2026-10-26, merge-flow, opus (implemented by lead), first verify FAIL (wait deadlock, spec edits broke independence, triage still stacked, unverified red-PR fixes, update-branch churn, no default-branch check, no `one slice` rule; all fixed), second PASS WITH FOLLOW-UPS (six wording and stall gaps; fixed), third PASS; all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0. Repos: rv-rez's up-to-date requirement turned off; quillery and project-hearth already matched; mom-ai (amdg-org/ruthie) has no CI yet.

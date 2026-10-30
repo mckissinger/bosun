@@ -1,8 +1,8 @@
 {
   "name": "bosun",
   "displayName": "Bosun",
-  "version": "0.17.0",
-  "description": "Spec-anchored workflow for autonomous coding runs on Claude Fable 5.1: brief, run, verify, checkpoint, with a fable-crew provider mode that routes implementation to gpt-5.6-sol or gpt-5.6-luna. The fable-opus mode uses an Opus implementer with a Fable lead; opus uses Opus in every role. Claude verifier effort is independently selectable. A sibling Codex plugin in codex/ runs the same spec on GPT-6 Astra. Built from Anthropic's Fable 5.1 docs.",
+  "version": "0.18.0",
+  "description": "Spec-anchored workflow for autonomous coding runs in Claude Code: brief, run, verify, checkpoint. Three provider modes: fable (Fable 5.1 in every role), fable-opus (Fable leads, an Opus 5.5 subagent implements) and opus (Opus 5.5 in every role). Verifier effort is independently selectable. Built from Anthropic's Fable 5.1 docs.",
   "author": {
     "name": "Michael Kissinger",
     "email": "mckissinger@gmail.com"

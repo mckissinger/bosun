@@ -14,6 +14,7 @@ Third outcome (slice 4, 2026-09-04): the harness runs on either Claude Code or C
 
 ## Decisions, in the user's words
 
+- (2026-10-30) Remove the Codex side. After reviewing the cre-list hub-and-lane sessions, the lead recommended lanes as Claude Code sessions the hub starts, and noted that the matching Codex copy made the design awkward. Michael: "We don't even have to set it up for Codex. I'm not even really using Codex now, so I'm just using Claude." On keeping the plugin: "Yeah, let's just keep the plugin and maybe remove the Codex piece." On `fable-crew`: "I don't use Fable Crew. Right now, I'm just using Opus mode. That's my standard." Then "yes" to starting this slice. Supersedes the 2026-09-04 decision that the harness runs on both Claude Code and Codex, and the provider-modes, codex-port and astra decisions below for everything they say about `fable-crew`, `astra-crew`, `astra` and the Codex plugin. Lanes are the next, separate slice.
 - (2026-10-26) Merge flow. From the cre-list (Crelaunch) session: under `Run policy: until blocked`, with up-to-date branches required, no merge queue and 20–25 minute CI, five PRs piled up behind each other and one waited an hour. That session relayed what Michael agreed to there: build ahead only on independent slices, use a merge queue, and fix a red PR by pausing and fixing it in its own worktree. Asked here, Michael: "Yes, I would like to build it ... It'll be default for all my projects, really." The lead found GitHub's merge queue unavailable on all of his repos (amdg-org is on the Team plan with private repos; project-hearth is a private personal repo) and recommended turning off the up-to-date requirement, with CI on pushes to the default branch, over paying for GitHub Enterprise Cloud, revisiting a queue once an app has customers and main deploys to production. Michael: "proceed". The rule still names the queue as the recommended setup where GitHub offers one.
 
 - (2026-10-26) After the lead found no project uses lanes (no `Stack isolation:` or `Lane:` line and no `lanes/` directory in any spec) and that cre-list had 16 linked worktrees, 7 of them merged and clean. Michael: "Let's remove the parallel lanes. Maybe add the cleanup of git state to the hygiene slice if you think that'd be helpful. Let's defer the milestone gaps for now until we've started to use this and see if it affects our process at all as is, without those additional items you're mentioning. Make sure you take note of those." On the launch and operate plan the lead proposed (thin launch skill, docs, marketing plan, monitoring, agent-run support and debugging): "I agree with your recommendations." On the public page: "it doesn't have to be a landing page per se. It could be a full marketing page. I want you to keep that super vague, though. No specific design instructions or anything like that." After the lead offered to brief removal, cleanup, the deferrals and the plan: "proceed". The lead put cleanup in `bosun-triage`, which already runs first at each milestone end, rather than in the hygiene slice itself, because cleanup changes no file and a hygiene slice is a code slice with its own PR.
@@ -67,6 +68,8 @@ Third outcome (slice 4, 2026-09-04): the harness runs on either Claude Code or C
 - Public benchmark shape (for routing only): Luna is close to Sol on short agentic coding but far behind on long-context recall, so Luna is for small, fully specified slices; Sol for everything else.
 
 ## Design
+
+(2026-10-30, remove-codex) Everything below about `fable-crew`, `astra-crew`, `astra`, the routing table, `scripts/codex-worker.sh` and the Codex plugin is superseded: those were removed in 0.18.0. The parts about the spec, the run policy and staging still hold, with staging now for `fable-opus` only.
 
 ### Where the mode lives
 
@@ -564,38 +567,7 @@ Verifier effort: high (no override at any scope).
 Checks: as in W6. No end-to-end suite; CI's `checks` job is the required check.
 Branch: remove-lanes, from main (8b1569a).
 
-## Undecided
-
-(none)
-
-## Out of scope
-
-- Any change to fable-mode behavior beyond inserting the mode branch.
-- A cost ledger, dashboard, or budget cap. Usage numbers go in the spec's slice log and the report only.
-- Porting the verifier or the brief to Codex. Both stay on Fable.
-- Codex hooks, guard scripts, or hook-trust flags. The worker is bounded by the sandbox and the prompt only.
-- `gpt-5.6-terra` or any model not in the table.
-- Parallel workers.
-- Parallel slices in separate worktrees (slice 3; covered 2026-10-20 by the parallel-lanes slice, removed 2026-10-26 by remove-lanes: Bosun does not coordinate parallel sessions; the core rules' "Other sessions" paragraph keeps their safety rules).
-- A skill to set the run policy; the line is edited by hand or by asking Fable (slice 3).
-- Staging while Fable itself implements in fable mode; there is nothing to wait on (slice 3).
-- Machine-checkable dependency syntax between done-conditions; Fable judges dependence from the text (slice 3).
-- Sharing one skills directory between the two plugins; the Codex plugin duplicates wording instead (slice 4).
-- Running Astra modes from Claude Code, or fable modes from Codex (slice 4).
-- A `usage.json` equivalent for Codex subagents; the app's own usage view is the record (slice 4).
-- Upgrading the user's codex CLI or desktop app from this harness (slice 4).
-- `gpt-5.6-terra` or `gpt-reserve` in any role (slice 4).
-- Renaming the local working directory or the user's global instruction files; those are the user's (slice 5).
-- Chrome DevTools MCP, the Claude-in-Chrome connector, or Codex Computer Use as harness-provided tools; leads may use what their session has (slice 6).
-- Exploratory browser walkthroughs by the verifier; it re-checks named done-conditions only (slice 6).
-- Bundling the Playwright package or browsers; the harness assumes `npx` can fetch or has cached them (slice 6).
-- Simulator MCP on the astra-crew worker TOMLs; those carry Playwright always, and a simulator server started in every project is not wanted. Follow-up (mobile-verify).
-- Android as a named surface in the rule text. `mobile-mcp` supports it, but no rule names it until a project needs it (mobile-verify).
-- Real devices, cloud devices, and the mobile MCP's location, clipboard, and recording tools (mobile-verify).
-- Granting the desktop app's own iOS Simulator tool to any agent (mobile-verify).
-- The design/prototyping skill discussed the same day; it is a separate skill, not part of Bosun (mobile-verify).
-
-## Current slice
+### Merge flow slice (2026-10-26, verified)
 
 Name: merge-flow (2026-10-26). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS 2026-10-26 (first verify FAIL: a dependent slice could wait forever on a PR that never merges on its own; every slice writes the spec, so "independent" never held and spec edits conflicted; triage still stacked; red-PR fixes skipped verify; update-branch restarted every PR's CI; no check of the default branch's runs; no `one slice` rule; all fixed; second PASS WITH FOLLOW-UPS: triage could wait forever, the brief still said not to wait, required reviews block auto-merge, spec drift, the staged-brief diff ref, the flake rule; all fixed; third PASS).
 Decisions: see the 2026-10-26 "Merge flow" entry under Decisions.
@@ -636,6 +608,71 @@ Verifier effort: high (no override at any scope).
 Checks: as in M5. No end-to-end suite; CI's `checks` job is the required check.
 Branch: merge-flow, from main (6d2c26c).
 
+## Undecided
+
+(none)
+
+## Out of scope
+
+(2026-10-30, remove-codex) Lines below about Codex, Astra, crew workers, the worker script and Sol, Luna, Terra or Reserve models are moot: those pieces were removed in 0.18.0.
+
+- Any change to fable-mode behavior beyond inserting the mode branch.
+- A cost ledger, dashboard, or budget cap. Usage numbers go in the spec's slice log and the report only.
+- Porting the verifier or the brief to Codex. Both stay on Fable.
+- Codex hooks, guard scripts, or hook-trust flags. The worker is bounded by the sandbox and the prompt only.
+- `gpt-5.6-terra` or any model not in the table.
+- Parallel workers.
+- Parallel slices in separate worktrees (slice 3; covered 2026-10-20 by the parallel-lanes slice, removed 2026-10-26 by remove-lanes: Bosun does not coordinate parallel sessions; the core rules' "Other sessions" paragraph keeps their safety rules).
+- A skill to set the run policy; the line is edited by hand or by asking Fable (slice 3).
+- Staging while Fable itself implements in fable mode; there is nothing to wait on (slice 3).
+- Machine-checkable dependency syntax between done-conditions; Fable judges dependence from the text (slice 3).
+- Sharing one skills directory between the two plugins; the Codex plugin duplicates wording instead (slice 4).
+- Running Astra modes from Claude Code, or fable modes from Codex (slice 4).
+- A `usage.json` equivalent for Codex subagents; the app's own usage view is the record (slice 4).
+- Upgrading the user's codex CLI or desktop app from this harness (slice 4).
+- `gpt-5.6-terra` or `gpt-reserve` in any role (slice 4).
+- Renaming the local working directory or the user's global instruction files; those are the user's (slice 5).
+- Chrome DevTools MCP, the Claude-in-Chrome connector, or Codex Computer Use as harness-provided tools; leads may use what their session has (slice 6).
+- Exploratory browser walkthroughs by the verifier; it re-checks named done-conditions only (slice 6).
+- Bundling the Playwright package or browsers; the harness assumes `npx` can fetch or has cached them (slice 6).
+- Simulator MCP on the astra-crew worker TOMLs; those carry Playwright always, and a simulator server started in every project is not wanted. Follow-up (mobile-verify).
+- Android as a named surface in the rule text. `mobile-mcp` supports it, but no rule names it until a project needs it (mobile-verify).
+- Real devices, cloud devices, and the mobile MCP's location, clipboard, and recording tools (mobile-verify).
+- Granting the desktop app's own iOS Simulator tool to any agent (mobile-verify).
+- The design/prototyping skill discussed the same day; it is a separate skill, not part of Bosun (mobile-verify).
+
+## Current slice
+
+Name: remove-codex (2026-10-30). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS 2026-10-30 (first verify PASS WITH FOLLOW-UPS: the README checkpoint line rendered inside the plugin table, a missing "and", `/bosun-mode --verifier-effort` on a stored removed mode hit an argparse error, plural worker-mode wording, stale follow-up wording, "task routing"; all fixed; second PASS).
+Decisions: see the 2026-10-30 entry under Decisions.
+Outcome: Bosun is a Claude Code plugin only, with three provider modes (`fable`, `fable-opus`, `opus`); the Codex plugin, the Codex worker and the `fable-crew`, `astra-crew` and `astra` modes are gone, and a spec still naming one of them gets a clear message instead of a half-working run.
+Done-conditions:
+X1. `verified 2026-10-30 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint e5f064c` Removed from the repo: `codex/` (the whole Codex plugin), `.agents/plugins/marketplace.json` (and the then-empty `.agents/`), and `scripts/codex-worker.sh`.
+X2. `verified 2026-10-30 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint e5f064c` `rules/core.md`: "Provider mode" lists three modes (`fable`, `fable-opus`, `opus`). The routing table, the `Route:` override, the `ultra` ban, the worker-never-commits and preflight text for crew workers, and the `astra*` and Codex sentences are gone. It says the values `codex`, `fable-crew`, `astra-crew` and `astra` were removed in 0.18.0 and that a spec naming one makes `/bosun-brief` and `/bosun-verify` stop and say to choose a mode with `/bosun-mode`. Staging under `until blocked` names `fable-opus` only. Nothing else in the file changes.
+X3. `verified 2026-10-30 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint e5f064c` Skills: `bosun-brief` loses the "Fable-crew mode" section, the fable-crew and astra handling in "Find the provider mode" (replaced by the removed-mode stop), fable-crew mentions in steps 3 and 6 and in staging, the No-spec step 2 mode list's removed values, and the codex-preflight stop. `bosun-verify` lists only the three modes, stops on a removed value with the same message, and loses its fable-crew worker bullets. `bosun-mode` (description, argument hint, table, steps and the routing table) offers only the three modes, refuses removed values naming the three, and has no Codex preflight. `scripts/configure-claude-agents.py` `MODES` has only the three. No other skill or agent mentions Codex, Astra, Sol, Luna or `fable-crew`.
+X4. `verified 2026-10-30 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint e5f064c` README, CONTRIBUTING, `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` describe a Claude Code plugin with three modes and no Codex install, worker, routing table or `$bosun-*` commands; README says in one sentence that the Codex plugin and crew modes were removed in 0.18.0. `.github/workflows/checks.yml` drops the `codex/` paths, the `.agents` manifest and the TOML step. Version 0.18.0 in both manifests and the README version line.
+X5. `verified 2026-10-30 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint e5f064c` Checks pass:
+   - `bash -n scripts/*.sh`; JSON parses for both manifests and `hooks/hooks.json`; `python3 -m py_compile scripts/configure-claude-agents.py`;
+   - `claude plugin validate .`;
+   - `git diff origin/main --check`;
+   - `grep -rniE 'codex|astra|fable-crew|gpt-5\.6|\bsol\b|luna|\$bosun' --exclude-dir=.git --exclude=SPEC.md .` prints only the removal notes X2–X4 call for;
+   - `python3 scripts/configure-claude-agents.py --help` lists the three modes, and a dry invocation with `fable-crew` is refused.
+X6. `verified 2026-10-30 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint e5f064c` This spec: the decision entry; the merge-flow brief moved to history; Design gets a one-line note that its fable-crew, astra and Codex-plugin parts are superseded; Out of scope lines about Codex and crew workers marked superseded; Codex-only lessons removed; follow-ups about the removed files dropped as resolved by removal; the slice log line.
+Out of scope:
+- Lanes (the next slice).
+- Editing other projects' specs. Four still name removed modes (`kurts-data`: astra; `Dev Projects/test`: astra-crew; `front-office` and `the-buildoff`: fable-crew); they get the stop message and Michael switches them when he next opens them.
+- Uninstalling the Codex plugin from `~/.codex` or the `codex` CLI.
+- Rewriting history sections of this spec beyond X6.
+- Removing `fable` or `fable-opus`.
+Assumptions:
+- **Removed values stop, they don't map.** Mapping `fable-crew` to `fable-opus` or `opus` silently would change who implements and on which model; a stop with the fix named is safer and costs one command.
+- **Staged briefs stay.** Staging exists for `fable-opus` too, so the rule stays with that mode only.
+- **Versioning.** Minor bump, because modes are removed.
+Effort assumed: the session's setting (not exposed to the lead).
+Verifier effort: high (no override at any scope).
+Checks: as in X5. No end-to-end suite; CI's `checks` job is the required check.
+Branch: remove-codex, from main (2a975fe).
+
 ## Launch and operate (drafts)
 
 Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is a done-condition until he says so.
@@ -667,32 +704,21 @@ Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is
 
 (noticed and not done; one line each with the slice, the date, and a tag: `bug`, `drift`, `nit`, or `deferral`; removed when promoted to a done-condition, dropped by the user, or shown resolved in an approved triage batch; lines before 2026-10-11 are untagged)
 
-- provider-modes, 2026-09-02: `scripts/codex-worker.sh` help text prints one line too many (now `2,17p`, should be `2,16p`; the range was bumped with the header in slice 6 and kept the off-by-one).
-- provider-modes, 2026-09-02: a value flag given last to `scripts/codex-worker.sh` (`--model` with no value) dies with bash's unbound-variable error instead of the script's own message; still non-zero.
-- provider-modes, 2026-09-02: `skills/bosun-brief/SKILL.md` "Find the provider mode" line understates which steps change (the "two lines" wording was fixed by the codex-port rename).
-- provider-modes, 2026-09-02: this spec's assumption text says `usage.json` comes from the "last token_count-style event"; the script sums every `turn.completed` usage event, which matches what codex emits.
-- provider-modes, 2026-09-02: a relative `--out-dir` could split outputs between codex's `-C` cwd and the shell cwd; the documented flow passes absolute paths.
 - provider-modes, 2026-09-02: `marketplace.json` `tags` array was reflowed one-per-line by the JSON rewrite; cosmetic.
 - run-policy, 2026-09-03: `skills/bosun-brief/SKILL.md` step 9 reports before "Until blocked" commits and opens the PR, while the rules, README, and design say commit, push, PR, then report; the per-slice report cannot name its PR. Pick one order.
-- run-policy, 2026-09-03: `skills/bosun-verify/SKILL.md:20` invites staging under `until blocked` without saying codex mode only, while the brief skill and design scope staging to codex mode. Say which applies.
+- run-policy, 2026-09-03: `skills/bosun-verify/SKILL.md:20` invites staging under `until blocked` without saying fable-opus mode only, while the brief skill and core rules scope staging to fable-opus mode (crew modes removed 2026-10-30). Say which applies.
 - run-policy, 2026-09-03: `README.md` "Version" line says 0.2.0; manifests are at 0.3.0 (already stale on main at 0.2.1).
-- codex-port, 2026-09-04: `Route:` override is not portable across harnesses: Claude side is `Route: <model> / <effort>`, Codex side is `Route: <agent>`. A spec moved between them with a Route line set would confuse the other brief. Add a one-line rule on each side to map or reject the foreign form.
-- codex-port, 2026-09-04: `README.md` "Why each piece exists" tail still says "The codex provider mode has not yet run a real slice" and "Version 0.2.0"; manifests are 0.4.0 and the mode is now `fable-crew`.
-- codex-port, 2026-09-04: `rules/core.md` run-policy section and this spec's design still say "applies in both provider modes"; there are four.
-- codex-port, 2026-09-04: `README.md` documents appending `rules/core.md` to `~/.claude/CLAUDE.md` but not the Codex equivalent (append `codex/rules/core.md` to `~/.codex/AGENTS.md`, which the Codex hook checks for). The checkpoints line under the plugin table names only the Claude path.
 - runtime-verify, 2026-09-05: `.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json` descriptions still say "Built from Anthropic's Fable 5.1 docs" while the README intro now also credits Claude Code guidance.
-- runtime-verify, 2026-09-05: `codex/rules/core.md`, `codex/skills/bosun-mode/SKILL.md`, `codex/skills/bosun-verify/SKILL.md`, and the verifier TOML description call `bosun_verifier` read-only without saying its sandbox is `workspace-write` with read-only behavior; only the README and the TOML's own rule explain it.
-- tests-ci-standard, 2026-09-25: the crew worker prompt's report format (`skills/bosun-brief/SKILL.md:100`, `codex/skills/bosun-brief/SKILL.md:88`) names changed files and checks but not the test and CI statements that `bosun-verify` now copies from the report; the included rules say to report them, so it works, but the format should name them.
 - tests-ci-standard, 2026-09-25: the worker's Tests and CI bullet says to report a test change but not to name the done-condition requiring it, which `bosun-verify` asks the lead for.
 - tests-ci-standard, 2026-09-25: `README.md:110` says bosun-ci's guidance references GitHub's documentation; it now also cites Blacksmith and Linear.
 - core-rules-rename, 2026-09-25: Blacksmith Testbox (agent-run CI environment, early beta, billed per minute with a 30-minute idle timeout) is deferred by the user. Try it by hand on one project with service-dependent tests before deciding whether the verifier uses it.
 - ci-research, 2026-10-07: two-tier CI (Phase 3 of the user's "CI & Testing for Agentic Development" research doc, 2026-10-07, not in this repo: affected-only tests on PRs, full suite on merge and nightly) is deferred by the user. Because PRs auto-merge when green, a design that runs affected-only tests on PRs and the full suite only after merge or nightly lets selection misses land on main; if revisited, run affected tests on PR pushes and the full suite as the required check in a GitHub merge queue (`merge_group`), keep e2e full or path-gated, and confirm merge-queue availability for the repo's plan first. Revisit only if a `bosun-ci` audit shows test execution, not setup, dominates PR time.
 - ci-research, 2026-10-07: scheduled `bosun-ci` runs are deferred by the user. If revisited: weekly per project, audit-only (slowest jobs and week-over-week change, runner minutes, flake candidates, setup vs. test time) reported as an issue, fixes through a normal slice, and a CODEOWNERS required review on `.github/workflows/` so CI changes never auto-merge; a nightly full-suite run can feed flake evidence to it. First confirm a scheduled cloud routine has the `gh` access the audit needs.
-- bosun-preflight, 2026-10-10: fix-mode header line (`SKILL.md:130`, both plugins) says every header fix is a route done-condition, but a host-config fix is proved by citing the file and line, and a preview route needs its URL supplied in the brief since the verifier starts apps only locally.
+- bosun-preflight, 2026-10-10: fix-mode header line (`skills/bosun-preflight/SKILL.md:130`) says every header fix is a route done-condition, but a host-config fix is proved by citing the file and line, and a preview route needs its URL supplied in the brief since the verifier starts apps only locally.
 - bosun-preflight, 2026-10-10: the beta severity rule (`SKILL.md:41`) does not classify native-mobile findings outside store policy (release debug flags, token storage, deep links, crash reporting); map each to access control or reliability.
-- bosun-triage, 2026-10-11, bug: the triage gate (`skills/bosun-triage/SKILL.md:12`, both plugins) cannot see a slice paused between `bosun-brief` step 6 and verify, since conditions are already `done` and no checkpoint is written; low impact, because the report still lists them for verify and nothing applies without approval.
+- bosun-triage, 2026-10-11, bug: the triage gate (`skills/bosun-triage/SKILL.md:12`) cannot see a slice paused between `bosun-brief` step 6 and verify, since conditions are already `done` and no checkpoint is written; low impact, because the report still lists them for verify and nothing applies without approval.
 - runtime-verify, 2026-09-05: whether Claude Code honors the `mcpServers` list-of-maps frontmatter in `agents/bosun-verifier.md` has not been probed; done-condition 46's fable-mode run shows it.
-- e2e-cadence, 2026-10-16, nit: both `bosun-verify` skills say the fingerprint command "writes nothing", but `git diff` refreshes the index stat cache (`.git/index` rewritten after a `touch`); no objects are written. A `GIT_OPTIONAL_LOCKS=0` prefix would make the claim exact.
+- e2e-cadence, 2026-10-16, nit: `bosun-verify` says the fingerprint command "writes nothing", but `git diff` refreshes the index stat cache (`.git/index` rewritten after a `touch`); no objects are written. A `GIT_OPTIONAL_LOCKS=0` prefix would make the claim exact.
 - e2e-cadence, 2026-10-16, nit: the worker Tests and CI bullet lacks the core rules' "at most once per slice", so a fresh worker in a fix round with no required CI e2e check could read its fix as the last change and rerun the full suite.
 - e2e-cadence, 2026-10-16, deferral: the fingerprint ignores gitignored files (for example `.env`) and untracked file modes, so an edit to one can leave end-to-end specs skipped on a stale green. Revisit if a project's e2e results depend on ignored files.
 - e2e-cadence, 2026-10-16, deferral: cre-list (and its fs3 copies) still carry "No regression" done-conditions and Checks lines that require the full local dev e2e suite; change them when their next slices are briefed. Pilot Blacksmith Testbox there by hand (see the core-rules-rename deferral) only for the slices that still need a pre-push full run, timed against a local run.
@@ -700,14 +726,14 @@ Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is
 - agents-gitignore, 2026-10-19, nit: the tracked-files note splits names on whitespace and prints them unquoted, and its paths are relative to the project, so the command works only from the project directory.
 - agents-gitignore, 2026-10-19, bug: a non-UTF-8 user `.claude/agents/.gitignore` makes the run exit 2 (UnicodeDecodeError) instead of being left alone with the note; nothing is written.
 - agents-gitignore, 2026-10-19, nit: a read-only marker-owned ignore with stale content fails after the agents are written, so the run applies partially.
-- build-mode, 2026-10-25, nit: both `bosun-triage` skills' "Apply on approval" still says "a new branch from the default branch" while "Milestone end" branches from the latest slice branch when earlier PRs are unmerged; add "(or the branch 'Milestone end' names)".
-- build-mode, 2026-10-25, bug: the verify skills' PASS WITH FOLLOW-UPS path (fix slice-own bugs, then verify again) has no cap, so a run of re-verifies that each find a new slice-own bug never ends; give it the same limit as the FAIL path.
-- build-mode, 2026-10-25, nit: `codex/rules/core.md` Run policy mixes "you" (existing paragraph) and "the lead" (new paragraph, kept byte-identical with the Claude file).
+- build-mode, 2026-10-25, nit: `bosun-triage`'s "Apply on approval" still says "a new branch from the default branch" while "Milestone end" branches from the latest slice branch when earlier PRs are unmerged; add "(or the branch 'Milestone end' names)".
+- build-mode, 2026-10-25, bug: `bosun-verify`'s PASS WITH FOLLOW-UPS path (fix slice-own bugs, then verify again) has no cap, so a run of re-verifies that each find a new slice-own bug never ends; give it the same limit as the FAIL path.
 - remove-lanes, 2026-10-26, deferral: "every fifth slice" (core rules, "Follow-ups and milestones") does not say whether the count is per run or across the project's history, so a spec without milestone groups can end milestones inconsistently. Michael deferred it until build mode has run a few real milestones; revisit then, or when a project names its milestone groups.
-- remove-lanes, 2026-10-26, deferral: `bosun-brief` step 9 (both plugins) appends each follow-up with a tag but does not make it name its home (the slice, hygiene slice or milestone it waits for), which the core rules' "Follow-ups and milestones" require. Deferred with the item above; revisit at the same time.
+- remove-lanes, 2026-10-26, deferral: `bosun-brief` step 9 appends each follow-up with a tag but does not make it name its home (the slice, hygiene slice or milestone it waits for), which the core rules' "Follow-ups and milestones" require. Deferred with the item above; revisit at the same time.
 
 ## Slice log
 
+- 2026-10-30, remove-codex, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (one README rendering bug and five wording nits; fixed), second PASS; both bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.
 - 2026-10-26, merge-flow, opus (implemented by lead), first verify FAIL (wait deadlock, spec edits broke independence, triage still stacked, unverified red-PR fixes, update-branch churn, no default-branch check, no `one slice` rule; all fixed), second PASS WITH FOLLOW-UPS (six wording and stall gaps; fixed), third PASS; all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0. Repos: rv-rez's up-to-date requirement turned off; quillery and project-hearth already matched; mom-ai (amdg-org/ruthie) has no CI yet.
 - 2026-10-26, remove-lanes, opus (implemented by lead), first verify FAIL (cleanup could delete the default branch and branches with no commits of their own, and ignored files such as `.env`; two wording nits; all fixed), second PASS WITH FOLLOW-UPS (merged-PR test now limited to PRs into the default branch; README nit; fixed), third PASS; all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.
 - 2026-10-25, build-mode, opus (implemented by lead), first verify FAIL (undecided items still stopped take-recommendations runs, plus six text findings; all fixed), second PASS WITH FOLLOW-UPS (two follow-ups recorded); both bosun-verifier on claude-opus-5-5 / high; B1–B9 verified; route-or-screen done-conditions: 0 of 0.
@@ -736,12 +762,7 @@ Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is
 
 ## Lessons
 
-- A `codex exec` worker started from a Claude Code background shell dies with the session: a session restart (or the app closing) kills it mid-run, leaving `events.jsonl` but no `last-message.md` or `usage.json`. The worktree edits survive. Seen 2026-09-16 on the mobile-verify slice, killed at the worker's self-review step after every edit had landed. On resume, check `git status`, run the slice's checks on the tree, and go straight to verify if the edits are complete; only re-run the worker with a continuation prompt if done-conditions are visibly unfinished. The slice log then records usage as not recorded.
-- Under `codex exec`, a Codex subagent's browser (Playwright MCP) call can be denied by the automatic approval reviewer (`codex-auto-review`) that `--approve-for-me` installs; observed twice with a `gpt-6-astra` agent and never with `gpt-5.6-luna` (2026-09-05, codex-cli 0.153.4). A second failure shape, "The requested module './index.js' does not provide an export named 'default'", appeared on Astra agents and on a read-only agent, and was never reproduced on Luna at workspace-write. CLI probes therefore prove an agent file's shape, not that the Astra-model agent will be allowed to browse; that is settled in the desktop app, where approvals are interactive.
-- Codex subagent spawns fail intermittently with "collab spawn failed: no thread with id: <the lead's own thread id>"; the lead then reports NOTSPAWNED. Seen 2026-09-04 on codex-cli 0.153.4 in five `codex exec --ephemeral` runs from Astra: three succeeded (all in git repos) and two failed (one bare temp dir, one git repo with a commit), while a run without `--ephemeral` succeeded. Neither the git repo nor `--ephemeral` is a proven cause. Treat one failure as inconclusive and retry once before concluding an agent file is broken; a parse check never proves usability.
-- Codex custom agent names accept only lowercase letters, digits, and underscores; a hyphen makes every spawn fail with "agent_name must use only lowercase letters, digits, and underscores", surfaced only in the lead's output, while the TOML still parses fine. File names may keep hyphens (`bosun-scout.toml` holds `name = "bosun_scout"`). Found 2026-09-04 by spawning from Astra in a temp project; a parse check of the agent files is not proof they are usable, so any new agent needs one real spawn.
-
-- `codex exec` rejects `-s <sandbox>` together with `--approve-for-me`; the latter already selects the workspace-write sandbox. Found by a real smoke run of `scripts/codex-worker.sh` (2026-09-02, codex-cli 0.149.0) after the dry-run looked fine, so a dry-run of the argv is not proof the argv is accepted. Any flag change to the script needs one real no-op run (Luna, low, "reply OK") before it ships.
+(none; the Codex-only lessons were removed with the Codex side on 2026-10-30)
 
 ## Public readiness slice — September 15, 2026
 

@@ -7,7 +7,7 @@ import re
 import subprocess
 import sys
 
-MODES = ("fable", "fable-crew", "fable-opus", "opus")
+MODES = ("fable", "fable-opus", "opus")
 OPUS_MODEL = "claude-opus-5-5"
 FABLE_MODEL = "claude-fable-5-1"
 
@@ -86,7 +86,7 @@ def configure(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project", required=True, help="Project root (contains the spec)")
-    parser.add_argument("--mode", choices=MODES, default="fable", help="Claude provider mode; selects scout and verifier models")
+    parser.add_argument("--mode", choices=MODES, default="fable", help="Provider mode; selects scout and verifier models")
     parser.add_argument("--verifier-effort", choices=EFFORTS, default="high")
     parser.add_argument("--include-worker", action="store_true", help="Also install the Opus worker (legacy; fable-opus includes it automatically)")
     parser.add_argument("--dry-run", action="store_true", help="Validate and print targets without writing")

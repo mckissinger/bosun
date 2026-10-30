@@ -9,7 +9,7 @@ Bring the spec back in line with what the code and history show, so the next ses
 
 ## When to run
 
-When the user asks, and at each milestone end under `Run policy: until blocked` (core rules, "Follow-ups and milestones"). First check for an active slice: a current-slice status of `in progress`, done-conditions marked implemented and awaiting verify (a plain `done` does not count), or a checkpoint for the project (`~/.claude/bosun/checkpoints/<slug>.md` in Claude Code, `~/.codex/bosun/checkpoints/<slug>.md` in Codex, with the slug `bosun-checkpoint` uses). If you find one, report it with its date and the date of the last commit that touched the spec, and ask the user whether that work is still active. Stop if it is, because the running slice owns the spec until it finishes. If the user says it is not, proceed and report the stale status or checkpoint as a finding; never delete a checkpoint yourself.
+When the user asks, and at each milestone end under `Run policy: until blocked` (core rules, "Follow-ups and milestones"). First check for an active slice: a current-slice status of `in progress`, done-conditions marked implemented and awaiting verify (a plain `done` does not count), or a checkpoint for the project (`~/.claude/bosun/checkpoints/<slug>.md`, with the slug `bosun-checkpoint` uses). If you find one, report it with its date and the date of the last commit that touched the spec, and ask the user whether that work is still active. Stop if it is, because the running slice owns the spec until it finishes. If the user says it is not, proceed and report the stale status or checkpoint as a finding; never delete a checkpoint yourself.
 
 ## Read the spec as it is
 

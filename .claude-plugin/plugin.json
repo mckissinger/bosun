@@ -1,7 +1,7 @@
 {
   "name": "bosun",
   "displayName": "Bosun",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "description": "Spec-anchored workflow for autonomous coding runs in Claude Code: brief, run, verify, checkpoint. Three provider modes: fable (Fable 5.1 in every role), fable-opus (Fable leads, an Opus 5.5 subagent implements) and opus (Opus 5.5 in every role). Verifier effort is independently selectable. Built from Anthropic's Fable 5.1 docs.",
   "author": {
     "name": "Michael Kissinger",

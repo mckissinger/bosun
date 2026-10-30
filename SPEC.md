@@ -14,6 +14,7 @@ Third outcome (slice 4, 2026-09-04): the harness runs on either Claude Code or C
 
 ## Decisions, in the user's words
 
+- (2026-10-30) Lanes. After reviewing the cre-list hub session and its two Lane B runs (10 slices merged while the hub built Build), Michael: "I would like to see how we can implement this in Bosun." On standard versus mode and sessions versus subagents, the lead recommended a standard rule gated by conditions, with the hub proposing and Michael approving once per run, lanes as sessions the hub starts, and subagents staying inside a slice. Michael: "I agree with the lanes running as sessions, which is now a Claude Code feature where the hub can initiate these other sessions. We don't even have to set it up for Codex." Then "Brief lanes". Supersedes the 2026-10-26 removal of parallel lanes; the old lane files and per-brief overlap check stay removed.
 - (2026-10-30) Remove the Codex side. After reviewing the cre-list hub-and-lane sessions, the lead recommended lanes as Claude Code sessions the hub starts, and noted that the matching Codex copy made the design awkward. Michael: "We don't even have to set it up for Codex. I'm not even really using Codex now, so I'm just using Claude." On keeping the plugin: "Yeah, let's just keep the plugin and maybe remove the Codex piece." On `fable-crew`: "I don't use Fable Crew. Right now, I'm just using Opus mode. That's my standard." Then "yes" to starting this slice. Supersedes the 2026-09-04 decision that the harness runs on both Claude Code and Codex, and the provider-modes, codex-port and astra decisions below for everything they say about `fable-crew`, `astra-crew`, `astra` and the Codex plugin. Lanes are the next, separate slice.
 - (2026-10-26) Merge flow. From the cre-list (Crelaunch) session: under `Run policy: until blocked`, with up-to-date branches required, no merge queue and 20–25 minute CI, five PRs piled up behind each other and one waited an hour. That session relayed what Michael agreed to there: build ahead only on independent slices, use a merge queue, and fix a red PR by pausing and fixing it in its own worktree. Asked here, Michael: "Yes, I would like to build it ... It'll be default for all my projects, really." The lead found GitHub's merge queue unavailable on all of his repos (amdg-org is on the Team plan with private repos; project-hearth is a private personal repo) and recommended turning off the up-to-date requirement, with CI on pushes to the default branch, over paying for GitHub Enterprise Cloud, revisiting a queue once an app has customers and main deploys to production. Michael: "proceed". The rule still names the queue as the recommended setup where GitHub offers one.
 
@@ -608,40 +609,7 @@ Verifier effort: high (no override at any scope).
 Checks: as in M5. No end-to-end suite; CI's `checks` job is the required check.
 Branch: merge-flow, from main (6d2c26c).
 
-## Undecided
-
-(none)
-
-## Out of scope
-
-(2026-10-30, remove-codex) Lines below about Codex, Astra, crew workers, the worker script and Sol, Luna, Terra or Reserve models are moot: those pieces were removed in 0.18.0.
-
-- Any change to fable-mode behavior beyond inserting the mode branch.
-- A cost ledger, dashboard, or budget cap. Usage numbers go in the spec's slice log and the report only.
-- Porting the verifier or the brief to Codex. Both stay on Fable.
-- Codex hooks, guard scripts, or hook-trust flags. The worker is bounded by the sandbox and the prompt only.
-- `gpt-5.6-terra` or any model not in the table.
-- Parallel workers.
-- Parallel slices in separate worktrees (slice 3; covered 2026-10-20 by the parallel-lanes slice, removed 2026-10-26 by remove-lanes: Bosun does not coordinate parallel sessions; the core rules' "Other sessions" paragraph keeps their safety rules).
-- A skill to set the run policy; the line is edited by hand or by asking Fable (slice 3).
-- Staging while Fable itself implements in fable mode; there is nothing to wait on (slice 3).
-- Machine-checkable dependency syntax between done-conditions; Fable judges dependence from the text (slice 3).
-- Sharing one skills directory between the two plugins; the Codex plugin duplicates wording instead (slice 4).
-- Running Astra modes from Claude Code, or fable modes from Codex (slice 4).
-- A `usage.json` equivalent for Codex subagents; the app's own usage view is the record (slice 4).
-- Upgrading the user's codex CLI or desktop app from this harness (slice 4).
-- `gpt-5.6-terra` or `gpt-reserve` in any role (slice 4).
-- Renaming the local working directory or the user's global instruction files; those are the user's (slice 5).
-- Chrome DevTools MCP, the Claude-in-Chrome connector, or Codex Computer Use as harness-provided tools; leads may use what their session has (slice 6).
-- Exploratory browser walkthroughs by the verifier; it re-checks named done-conditions only (slice 6).
-- Bundling the Playwright package or browsers; the harness assumes `npx` can fetch or has cached them (slice 6).
-- Simulator MCP on the astra-crew worker TOMLs; those carry Playwright always, and a simulator server started in every project is not wanted. Follow-up (mobile-verify).
-- Android as a named surface in the rule text. `mobile-mcp` supports it, but no rule names it until a project needs it (mobile-verify).
-- Real devices, cloud devices, and the mobile MCP's location, clipboard, and recording tools (mobile-verify).
-- Granting the desktop app's own iOS Simulator tool to any agent (mobile-verify).
-- The design/prototyping skill discussed the same day; it is a separate skill, not part of Bosun (mobile-verify).
-
-## Current slice
+### Remove Codex slice (2026-10-30, verified)
 
 Name: remove-codex (2026-10-30). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS 2026-10-30 (first verify PASS WITH FOLLOW-UPS: the README checkpoint line rendered inside the plugin table, a missing "and", `/bosun-mode --verifier-effort` on a stored removed mode hit an argparse error, plural worker-mode wording, stale follow-up wording, "task routing"; all fixed; second PASS).
 Decisions: see the 2026-10-30 entry under Decisions.
@@ -672,6 +640,104 @@ Effort assumed: the session's setting (not exposed to the lead).
 Verifier effort: high (no override at any scope).
 Checks: as in X5. No end-to-end suite; CI's `checks` job is the required check.
 Branch: remove-codex, from main (2a975fe).
+
+## Undecided
+
+(none)
+
+## Out of scope
+
+(2026-10-30, remove-codex) Lines below about Codex, Astra, crew workers, the worker script and Sol, Luna, Terra or Reserve models are moot: those pieces were removed in 0.18.0.
+
+- Any change to fable-mode behavior beyond inserting the mode branch.
+- A cost ledger, dashboard, or budget cap. Usage numbers go in the spec's slice log and the report only.
+- Porting the verifier or the brief to Codex. Both stay on Fable.
+- Codex hooks, guard scripts, or hook-trust flags. The worker is bounded by the sandbox and the prompt only.
+- `gpt-5.6-terra` or any model not in the table.
+- Parallel workers.
+- Parallel slices in separate worktrees (slice 3; covered 2026-10-20 by the parallel-lanes slice, removed 2026-10-26 by remove-lanes, covered again 2026-10-30 by the lanes slice as hub-started sessions; the core rules' "Lanes" section).
+- A skill to set the run policy; the line is edited by hand or by asking Fable (slice 3).
+- Staging while Fable itself implements in fable mode; there is nothing to wait on (slice 3).
+- Machine-checkable dependency syntax between done-conditions; Fable judges dependence from the text (slice 3).
+- Sharing one skills directory between the two plugins; the Codex plugin duplicates wording instead (slice 4).
+- Running Astra modes from Claude Code, or fable modes from Codex (slice 4).
+- A `usage.json` equivalent for Codex subagents; the app's own usage view is the record (slice 4).
+- Upgrading the user's codex CLI or desktop app from this harness (slice 4).
+- `gpt-5.6-terra` or `gpt-reserve` in any role (slice 4).
+- Renaming the local working directory or the user's global instruction files; those are the user's (slice 5).
+- Chrome DevTools MCP, the Claude-in-Chrome connector, or Codex Computer Use as harness-provided tools; leads may use what their session has (slice 6).
+- Exploratory browser walkthroughs by the verifier; it re-checks named done-conditions only (slice 6).
+- Bundling the Playwright package or browsers; the harness assumes `npx` can fetch or has cached them (slice 6).
+- Simulator MCP on the astra-crew worker TOMLs; those carry Playwright always, and a simulator server started in every project is not wanted. Follow-up (mobile-verify).
+- Android as a named surface in the rule text. `mobile-mcp` supports it, but no rule names it until a project needs it (mobile-verify).
+- Real devices, cloud devices, and the mobile MCP's location, clipboard, and recording tools (mobile-verify).
+- Granting the desktop app's own iOS Simulator tool to any agent (mobile-verify).
+- The design/prototyping skill discussed the same day; it is a separate skill, not part of Bosun (mobile-verify).
+
+## Current slice
+
+Name: lanes (2026-10-30). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS 2026-10-30 (first verify FAIL: the setup slice was unreachable, the no-start-session fallback contradicted itself, lane stops still went to the user, plus ten gaps on ownership, counting, milestones, model, proposal timing and wording; all fixed; second PASS WITH FOLLOW-UPS: red default branch, undecided items decided twice, hand-started lanes, hygiene vs lane areas, setup timing, woken hub, triage wording, spec text; all fixed; third PASS).
+Decisions: see the 2026-10-30 "Lanes" entry under Decisions.
+Outcome: Under `until blocked`, a lead whose spec has two or more independent areas can, with Michael's one approval per run, start lane sessions that each run their own Bosun loop in their own worktree on an isolated test stack, while the lead acts as the hub and the only channel to Michael, in the shape that worked in cre-list on 2026-10-29/30.
+Done-conditions:
+N1. `verified 2026-10-30 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint d3e6381` `rules/core.md` gains a "Lanes" section after "Merge flow", covering:
+   - **What a lane is.** A separate Claude Code session the hub (the session running the run) starts in its own worktree, running its own Bosun loop on one area of the spec. Lanes are sessions, never subagents; subagents stay inside a slice as before.
+   - **When.** All of: `Run policy: until blocked`; two or more areas, each with at least three runnable slices, that touch different files and tables and need nothing from each other; tests isolated or made so by the setup slice; and lane sessions can be started, by the hub or by the user from printed prompts. Otherwise there are no lanes.
+   - **Approval.** The hub proposes lanes (areas, the shared files it keeps, lane count and slice caps) and starts them only after Michael approves, once per run, under either `Decisions:` value.
+   - **Stack isolation.** When data-resetting checks share a stack and the spec has no `Stack isolation:` line, the first lane step is a setup slice that builds a per-lane stack command (own project id and port band generated from the committed config into an ignored folder, a holder record so one worktree holds a lane, refusal of plain data-resetting runs in a worktree that holds a lane, and a teardown that removes containers and volumes) and adds the line.
+   - **Area split and shared files.** Lanes are split by area, not slice. The hub names the shared files it owns; a lane that needs a change there messages the hub instead of making it.
+   - **Ceiling.** At most three sessions: the hub and one lane by default, a second lane only when a third independent area exists.
+   - **Branches, PRs and the spec.** Each lane slice branches from the latest default branch, gets its own PR and auto-merge as "Run policy" says, and "Merge flow" applies inside each lane. Lanes write the spec directly as "Merge flow" "Spec edits" says (own subsection, appended lines, keep both sides on conflict).
+   - **Michael goes through the hub.** A lane runs under the spec's `Decisions:` value. Anything only Michael can give is recorded in the slice and sent to the hub (what, why, where the screenshots are); the lane takes other runnable work. The hub batches these for Michael. Lanes never ask him directly.
+   - **Checks in a lane.** A lane claims its stack before any data-resetting check, runs those checks only through it, tells its verifiers to do the same, gives every screenshot and output path as an absolute path inside its worktree, and releases the stack when it ends.
+   - **Lane end.** At its slice cap, when its area has no runnable work, or at any "Run policy" stop, a lane releases its stack and reports to the hub: why it ended, each slice, PR, verify verdicts, follow-ups, and what waits on Michael. The hub checks those PRs before reporting them done.
+   The "Other sessions" paragraph stays as is.
+N2. `verified 2026-10-30 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint d3e6381` `skills/bosun-brief/SKILL.md` gains a "Lanes" section after "Until blocked", and "Until blocked" points to it at the start of a run and at each milestone end. The section holds:
+   - the hub's check of the core rules' conditions;
+   - the proposal it puts to Michael;
+   - the setup slice when needed;
+   - a fenced lane prompt template (area, done-conditions or spec rows, shared files the hub owns, the stack command and lane number, slice cap, protected paths, what goes to the hub, done and report);
+   - starting each lane with the app's start-session tool (fresh context, its own worktree, wake the hub when done) after approval;
+   - what the hub does while lanes run;
+   - what a lane session does differently (it reads its prompt, runs `/bosun-brief` under the spec's policies with its own cap, messages the hub, and does not ask Michael).
+   - Where the session cannot start sessions, the hub prints the lane prompt for Michael to start one by hand, and does not run lanes itself.
+N3. `verified 2026-10-30 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint d3e6381` `skills/bosun-verify/SKILL.md` step 1: in a lane, the prompt names the lane's stack command for data-resetting checks and requires absolute paths inside the lane's worktree for screenshots and output.
+N4. `verified 2026-10-30 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint d3e6381` README:
+   - gains a "Lanes" section;
+   - its "Not covered on purpose" first bullet no longer says parallel sessions are uncovered (parallel builders inside one slice stay uncovered);
+   - version 0.19.0 in both manifests and the README version line.
+N5. `verified 2026-10-30 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint d3e6381` Checks pass:
+   - `bash -n scripts/*.sh`;
+   - JSON parses for both manifests and `hooks/hooks.json`;
+   - `python3 -m py_compile scripts/configure-claude-agents.py`;
+   - `claude plugin validate .`;
+   - `git diff origin/main --check`;
+   - `grep -n '^## Lanes' rules/core.md skills/bosun-brief/SKILL.md README.md` finds one heading in each.
+N6. `verified 2026-10-30 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint d3e6381` This spec:
+   - the decision entry;
+   - the remove-codex brief moved to history;
+   - the Out of scope line on parallel slices updated to point here;
+   - the slice log line.
+Out of scope:
+- Any project's own stack script or spec. cre-list already has `scripts/lane.sh` and rv-rez has `scripts/instance.sh`; converting projects happens in their own sessions.
+- A lock or lease tool in Bosun, or a shared stack script; stack commands stay per project.
+- Changes to the agents, `bosun-triage`, `bosun-checkpoint`, `bosun-ci`, `bosun-preflight` or `bosun-mode`.
+- Lanes inside Codex (removed) or a lane mode.
+- Parallel builder agents inside one slice.
+Assumptions:
+- **Approval even under `take recommendations`.** Lanes cost tokens and add to Michael's review queue, and in cre-list he made the call himself; the chat agreed the hub proposes and he approves once per run.
+- **Lane runs keep the spec's policies.** In cre-list, Lane B ran under the spec's `until blocked`, `take recommendations` and design setting with its own cap of 5; the hub's prompt sets the cap.
+- **The tool is named by what it does.** The rules say "the app's start-session tool" rather than a tool id, since the id belongs to the host.
+- **The proposal is not a stop.** `until blocked` forbids stops between slices, so the hub states the proposal in its first slice report and at each milestone end and keeps working; a yes covers the rest of the run, a no stands until the next run.
+- **Ownership while lanes run** (from the first verify). A lane's area belongs to it; each session counts, watches and fixes only its own slices and PRs; milestone-end work is the hub's alone; a lane's every stop ends it with a report to the hub; and anything Bosun would ask or report to the user goes to the hub. When only lane work is left, the hub ends its turn and the app wakes it.
+- **Ownership, second verify.** A lane decides only its own area's undecided items; the default branch is the hub's to fix; the hub's hygiene slice skips a running lane's area; the setup slice runs only after Michael's yes; a woken hub continues the same run; hand-started lanes relay through Michael.
+- **"Several" means at least three** runnable slices per area: fewer does not repay a lane's setup and review overhead.
+- **No separate skill.** With the Codex copy gone, lanes live in the core rules and `/bosun-brief`, where the hub already is.
+- **Versioning.** Minor bump: new behavior.
+Effort assumed: the session's setting (not exposed to the lead).
+Verifier effort: high (no override at any scope).
+Checks: as in N5. No end-to-end suite; CI's `checks` job is the required check.
+Branch: lanes, from main (60b259e).
 
 ## Launch and operate (drafts)
 
@@ -731,8 +797,13 @@ Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is
 - remove-lanes, 2026-10-26, deferral: "every fifth slice" (core rules, "Follow-ups and milestones") does not say whether the count is per run or across the project's history, so a spec without milestone groups can end milestones inconsistently. Michael deferred it until build mode has run a few real milestones; revisit then, or when a project names its milestone groups.
 - remove-lanes, 2026-10-26, deferral: `bosun-brief` step 9 appends each follow-up with a tag but does not make it name its home (the slice, hygiene slice or milestone it waits for), which the core rules' "Follow-ups and milestones" require. Deferred with the item above; revisit at the same time.
 
+- lanes, 2026-10-30, nit: the hub's "own area has no runnable work while lanes still run" item sits in stop lists that "end the run", while `rules/core.md` "Lane end" says the woken hub continues the same run; call it a pause.
+- lanes, 2026-10-30, nit: bugs the hub's hygiene slice leaves to a running lane can outlive a hub milestone, against "no bug outlives its milestone"; say the lane's end is their milestone.
+- lanes, 2026-10-30, nit: a lane that reports a red default branch while the hub has ended its turn has no way to wake it, and the template does not say whether the lane pauses meanwhile.
+
 ## Slice log
 
+- 2026-10-30, lanes, opus (implemented by lead), first verify FAIL (13 findings, fixed), second PASS WITH FOLLOW-UPS (8 gaps, fixed), third PASS; all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.
 - 2026-10-30, remove-codex, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (one README rendering bug and five wording nits; fixed), second PASS; both bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.
 - 2026-10-26, merge-flow, opus (implemented by lead), first verify FAIL (wait deadlock, spec edits broke independence, triage still stacked, unverified red-PR fixes, update-branch churn, no default-branch check, no `one slice` rule; all fixed), second PASS WITH FOLLOW-UPS (six wording and stall gaps; fixed), third PASS; all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0. Repos: rv-rez's up-to-date requirement turned off; quillery and project-hearth already matched; mom-ai (amdg-org/ruthie) has no CI yet.
 - 2026-10-26, remove-lanes, opus (implemented by lead), first verify FAIL (cleanup could delete the default branch and branches with no commits of their own, and ignored files such as `.env`; two wording nits; all fixed), second PASS WITH FOLLOW-UPS (merged-PR test now limited to PRs into the default branch; README nit; fixed), third PASS; all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.

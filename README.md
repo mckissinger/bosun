@@ -197,14 +197,18 @@ Sources: [Overview](https://platform.claude.com/docs/en/models/fable-5-1/overvie
 
 **Continuity.** The guide's compaction instruction lists six things a summary must preserve. Claude Code does not expose custom compaction instructions, so the harness keeps expectations in the spec, fires a "re-read the spec" reminder from the SessionStart hook when compaction happens, and uses the checkpoint only for transient mid-slice state.
 
+## Lanes
+
+Under `Run policy: until blocked`, a spec with two or more independent areas can run as lanes: separate Claude Code sessions that the lead (the hub) starts, each in its own worktree, each running its own Bosun loop with its own slice cap. The hub proposes the split (areas, the shared files it keeps, lane count, caps) in its first slice report and at each milestone end, and starts lanes only after you say yes, once per run; until then it keeps working as one session. Lanes need isolated tests: when migrations or end-to-end runs share a local stack, the first step is a setup slice that gives each lane its own stack and ports through a command the spec names on a `Stack isolation:` line. Each lane slice branches from the latest default branch and gets its own PR, so nothing stacks; spec conflicts are resolved by keeping both sides. Lanes run under the spec's `Decisions:` setting and send anything that needs you to the hub, which batches it, so you hear from one session. The default is the hub plus one lane, and at most three sessions run. The hub starts lanes itself where the host can start sessions (the Claude Code desktop app); elsewhere it prints the lane prompts for you to start by hand. Milestone-end triage, hygiene and CI audits stay with the hub. The procedure is in `/bosun-brief` ("Lanes") and the rules in the core rules ("Lanes").
+
 ## Not covered on purpose
 
-- Parallel builder agents inside one slice, and coordination of parallel sessions on one project (the 0.14.0 parallel lanes were removed in 0.16.0; "Other sessions" keeps their safety rules). The docs credit the model's gains to long single-context runs; splitting work buys wall-clock at the cost of context and merge work, and there is no evidence yet that wall-clock is the constraint.
+- Parallel builder agents inside one slice. Parallel sessions on one project are covered by "Lanes"; inside a slice, the docs credit the model's gains to long single-context runs.
 - API-side migration concerns (beta headers, append-only message arrays, `tool_choice`, `input_transformations`, fallback middleware). Claude Code manages the conversation prefix itself. If you call the Messages API directly, read the migration guide's "Preserved thinking" section first.
 
 ## Status
 
-Version 0.18.0. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
+Version 0.19.0. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
 
 There is no controlled performance benchmark establishing cost, speed, or quality improvements. Those depend on the project, model access, provider mode, and verification workload.
 

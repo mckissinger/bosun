@@ -67,7 +67,7 @@ Branch: <name>
 
 ## Until blocked
 
-Under `Run policy: until blocked`, after step 9 of a slice that verified PASS or PASS WITH FOLLOW-UPS: commit, push the branch, open a PR for it with `gh pr create` (summary, verification, follow-ups), arm auto-merge as the core rules' "Run policy" section says (`gh pr merge <n> --auto --merge`; `gh pr merge <n> --merge` only when GitHub refuses because every required check is already green; never past a red or missing required check; leave the PR open and say so when the repo has no required checks or disallows auto-merge, or when the spec or the user's instructions say merging is the user's), then go back to step 1 for the next slice in the same turn. Do not idle on the PR's CI (wait only where the core rules' "Merge flow" says), and do not end the turn to ask whether to continue or to announce the next slice; only the stop list below ends the run. Each slice gets its own branch from the latest default branch (step 4) and its own PR. Before starting each slice, after each verify, and while waiting, check the run's open PRs and the default branch's latest CI run, and act on them as the core rules' "Merge flow" says: fix a red or conflicting PR (verifying a code fix) before going on, fix a red default branch first, and, where the repo requires up-to-date branches without a merge queue, update the oldest behind PR. A slice built while another of the run's PRs is open writes its brief as its own subsection under the current-slice section. Keep a count of slices started in this run, including the first.
+Under `Run policy: until blocked`, after step 9 of a slice that verified PASS or PASS WITH FOLLOW-UPS: commit, push the branch, open a PR for it with `gh pr create` (summary, verification, follow-ups), arm auto-merge as the core rules' "Run policy" section says (`gh pr merge <n> --auto --merge`; `gh pr merge <n> --merge` only when GitHub refuses because every required check is already green; never past a red or missing required check; leave the PR open and say so when the repo has no required checks or disallows auto-merge, or when the spec or the user's instructions say merging is the user's), then go back to step 1 for the next slice in the same turn. Do not idle on the PR's CI (wait only where the core rules' "Merge flow" says), and do not end the turn to ask whether to continue or to announce the next slice; only the stop list below ends the run. Each slice gets its own branch from the latest default branch (step 4) and its own PR. Before starting each slice, after each verify, and while waiting, check the run's open PRs and the default branch's latest CI run, and act on them as the core rules' "Merge flow" says: fix a red or conflicting PR (verifying a code fix) before going on, fix a red default branch first, and, where the repo requires up-to-date branches without a merge queue, update the oldest behind PR. A slice built while another of the run's PRs is open writes its brief as its own subsection under the current-slice section. Keep a count of slices started in this run, including the first. At the start of the run and at each milestone end, check whether lanes apply ("Lanes" below).
 
 At each milestone end (core rules, "Follow-ups and milestones": a group of done-conditions the spec names as one, or every fifth slice when it names none), run `/bosun-triage` (which also finds merged, clean, idle worktrees and branches and removes them when applied; see its "Git cleanup"), then a hygiene slice with its own PR for the open bugs, then a `/bosun-ci` audit against recent runs whose findings become follow-ups and whose fixes run as their own slice. When more than five bugs are open, make the next slice a hygiene slice.
 
@@ -77,7 +77,39 @@ Stop, and say in the report which condition stopped the run, at the first of:
 - every remaining runnable item needs a decision the lead may not make (core rules, "Decisions");
 - a verify produced two FAILs on the same finding, or three under `Decisions: take recommendations` (step 7);
 - every remaining runnable slice waits on an unmerged PR that cannot merge on its own (core rules, "Merge flow");
+- the hub's own area has no runnable work while lanes still run ("Lanes"); the app wakes the hub when a lane finishes;
 - the count has reached `max N`.
+
+## Lanes
+
+The core rules' "Lanes" section says when lanes run and what binds them. This is the procedure.
+
+As the hub, at the start of an `until blocked` run and at each milestone end:
+
+1. Check the conditions in the core rules. Group the runnable done-conditions into areas by the files and tables they touch. If fewer than two areas each hold at least three runnable slices, or any condition fails, run as one session and say nothing more about lanes. Shared test stacks with no `Stack isolation:` line do not fail the check; they add the setup slice (step 3).
+2. Propose. Name each area and the slices it holds, the shared files the hub keeps, the lane count (default: the hub plus one lane), each lane's slice cap, the stack each lane will claim, and what is likely to need the user. Under either `Decisions:` value, start lanes only on the user's yes. The proposal is not a stop: state it in the run's first slice report and again at each milestone end until the user answers, and keep running as one session meanwhile. A yes covers the rest of the run; a no stands until the next run.
+3. After the user's yes, if the setup slice is needed (core rules, "Stack isolation"), run it first as an ordinary slice. It verifies its isolation by running one lane's checks while the main stack stays untouched, compared before and after. Start lanes once its PR merges.
+4. Start each lane with the app's start-session tool: a fresh context, its own worktree, the hub woken when the lane finishes, and, where the tool can set them, the model the spec's mode needs and the hub's effort. The prompt follows this template:
+
+```
+You are Lane <X> of a <N>-lane Bosun run on <repo>. The hub (the session that started you) is working on <hub's area>.
+Your area: <spec rows or done-conditions>, in this order: <...>.
+Start: read the project instructions and the spec (decisions, current-slice, undecided, recent slices for format, lessons). Then run /bosun-brief for your first slice and continue under the spec's run policy, decisions and design settings, with your own cap: max <M> slices.
+Each slice: its own branch from the latest origin/<default>, its own PR with auto-merge as the core rules' "Run policy" says, a fresh verifier before the PR. Never stack on an unmerged branch. Watch and fix only your own PRs; if the default branch is red, tell the hub instead of fixing it. Decide only undecided items in your area; send others to the hub. Skip milestone-end work (triage, hygiene, CI audit); the hub does it.
+Model: confirm your session model matches the spec's mode before the first slice; if it does not, report that to the hub and stop.
+Stack: claim lane <K> with `<stack isolation command>` before any migration, end-to-end test, seed or data-resetting suite, run them only through it, and tell every verifier to do the same. Never touch the main stack or its ports. Release the lane when you finish.
+Paths: every screenshot and output path, yours and your verifiers', is absolute and inside your worktree.
+Shared files the hub keeps (do not edit; message the hub if you need a change): <list>.
+Protected paths and decisions that need the user: <list>. When you reach one, record it in the slice, send the hub one short message (what, why, where the screenshots are), and take other runnable work. Wherever Bosun says to ask, stop for or report to the user, send it to the hub instead. Do not ask the user directly.
+Spec: write your slice's brief as its own subsection under the current-slice section; on a merge conflict in the spec, keep both sides.
+Done: your area has no runnable work, you reach the cap, or the run policy's stop list stops you. Then release your stack and report to the hub: why you stopped, each slice, PR, verify verdicts, follow-ups, and everything waiting on the user.
+```
+
+While lanes run, the hub keeps working its own area under "Until blocked", never takes a lane's done-conditions, counts only its own slices toward `max N`, and watches only its own PRs. When its area has no runnable work while lanes still run, it ends its turn saying which lanes are running; the app wakes it when one finishes, and it continues the same run. It answers lane messages: a needed change to a shared file it makes itself or schedules, and an item for the user it holds and brings to the user batched with the others. It never forwards a lane's request as the user's approval; it quotes the user's own words when relaying an answer. When a lane reports, the hub reads its PRs and their checks before reporting them done, and removes anything a lane left outside its worktree only after checking what it is. If a lane is still working when the hub's own run stops, the hub says so in its report.
+
+In a lane session: follow the prompt as written. Run `/bosun-brief` under the spec's policies with the cap the prompt sets, without milestone-end work. Send the hub, not the user, the user-only items the core rules' "Lanes" section names and anything Bosun would otherwise ask or report to the user. Report to the hub when done or stopped.
+
+When the session cannot start other sessions, the hub prints each lane prompt in its proposal so the user can start the lanes by hand after saying yes, and then acts as the hub as above. Hand-started lanes cannot message or wake the hub, so each printed prompt says to put hub messages in the lane's own reports, and the user carries them to the hub.
 
 ## Exhausted roadmap
 

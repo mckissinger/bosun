@@ -14,6 +14,7 @@ Third outcome (slice 4, 2026-09-04): the harness runs on either Claude Code or C
 
 ## Decisions, in the user's words
 
+- (2026-11-05) CI practices. Michael: "Did we ever put in the updated CI practice that we're doing in RigRez ... to adopt it for future projects or existing projects?" The lead found they had not been adopted. Michael: "we set up the GitHub Enterprise Cloud, so that should also be part of Bosun and Factory. Now that we've set that up, new projects should be set up accordingly." This supersedes the 2026-10-26 finding that a queue was unavailable on his repos: `amdg-org` now reports the enterprise plan, and rv-rez runs a queue on a private repo. On migrations, Michael asked: "so they can choose to do production behind approval or production automatically, right?" The lead recommended both, with approval the recommendation once a project is live. On one brief per repo, with an API test first: "Yes, go ahead". Keel is retired and needs no move: "we're not even using Kill anymore". Rollouts go Skipline, Crelaunch, Ruthie; Quillery waits.
 - (2026-10-30) Planning hub. Michael: "What are your thoughts on using the hub lane or the hub session as basically the one where we can continue to make decisions, plan out work, etc.? The other lanes that come off of that are the actual working lanes." Asked "What do you recommend?", the lead recommended a hub that never builds once lanes start, with the shape chosen per run (hub plus one lane, hub plus two, or one session for short or unattended runs) and approved once per run. On a third lane, the lead listed its hesitations (three independent areas at once, Michael's review time, red default branch from parallel merges, CI and machine load, spec conflicts). Michael: "Let's keep the hub plus two, and we'll defer the third area after we've continued to use this and explored it." Then "Yes" to briefing it.
 - (2026-10-30) Lanes. After reviewing the cre-list hub session and its two Lane B runs (10 slices merged while the hub built Build), Michael: "I would like to see how we can implement this in Bosun." On standard versus mode and sessions versus subagents, the lead recommended a standard rule gated by conditions, with the hub proposing and Michael approving once per run, lanes as sessions the hub starts, and subagents staying inside a slice. Michael: "I agree with the lanes running as sessions, which is now a Claude Code feature where the hub can initiate these other sessions. We don't even have to set it up for Codex." Then "Brief lanes". Supersedes the 2026-10-26 removal of parallel lanes; the old lane files and per-brief overlap check stay removed.
 - (2026-10-30) Remove the Codex side. After reviewing the cre-list hub-and-lane sessions, the lead recommended lanes as Claude Code sessions the hub starts, and noted that the matching Codex copy made the design awkward. Michael: "We don't even have to set it up for Codex. I'm not even really using Codex now, so I'm just using Claude." On keeping the plugin: "Yeah, let's just keep the plugin and maybe remove the Codex piece." On `fable-crew`: "I don't use Fable Crew. Right now, I'm just using Opus mode. That's my standard." Then "yes" to starting this slice. Supersedes the 2026-09-04 decision that the harness runs on both Claude Code and Codex, and the provider-modes, codex-port and astra decisions below for everything they say about `fable-crew`, `astra-crew`, `astra` and the Codex plugin. Lanes are the next, separate slice.
@@ -707,40 +708,7 @@ Verifier effort: high (no override at any scope).
 Checks: as in N5. No end-to-end suite; CI's `checks` job is the required check.
 Branch: lanes, from main (60b259e).
 
-## Undecided
-
-(none)
-
-## Out of scope
-
-(2026-10-30, remove-codex) Lines below about Codex, Astra, crew workers, the worker script and Sol, Luna, Terra or Reserve models are moot: those pieces were removed in 0.18.0.
-
-- Any change to fable-mode behavior beyond inserting the mode branch.
-- A cost ledger, dashboard, or budget cap. Usage numbers go in the spec's slice log and the report only.
-- Porting the verifier or the brief to Codex. Both stay on Fable.
-- Codex hooks, guard scripts, or hook-trust flags. The worker is bounded by the sandbox and the prompt only.
-- `gpt-5.6-terra` or any model not in the table.
-- Parallel workers.
-- Parallel slices in separate worktrees (slice 3; covered 2026-10-20 by the parallel-lanes slice, removed 2026-10-26 by remove-lanes, covered again 2026-10-30 by the lanes slice as hub-started sessions; the core rules' "Lanes" section).
-- A skill to set the run policy; the line is edited by hand or by asking Fable (slice 3).
-- Staging while Fable itself implements in fable mode; there is nothing to wait on (slice 3).
-- Machine-checkable dependency syntax between done-conditions; Fable judges dependence from the text (slice 3).
-- Sharing one skills directory between the two plugins; the Codex plugin duplicates wording instead (slice 4).
-- Running Astra modes from Claude Code, or fable modes from Codex (slice 4).
-- A `usage.json` equivalent for Codex subagents; the app's own usage view is the record (slice 4).
-- Upgrading the user's codex CLI or desktop app from this harness (slice 4).
-- `gpt-5.6-terra` or `gpt-reserve` in any role (slice 4).
-- Renaming the local working directory or the user's global instruction files; those are the user's (slice 5).
-- Chrome DevTools MCP, the Claude-in-Chrome connector, or Codex Computer Use as harness-provided tools; leads may use what their session has (slice 6).
-- Exploratory browser walkthroughs by the verifier; it re-checks named done-conditions only (slice 6).
-- Bundling the Playwright package or browsers; the harness assumes `npx` can fetch or has cached them (slice 6).
-- Simulator MCP on the astra-crew worker TOMLs; those carry Playwright always, and a simulator server started in every project is not wanted. Follow-up (mobile-verify).
-- Android as a named surface in the rule text. `mobile-mcp` supports it, but no rule names it until a project needs it (mobile-verify).
-- Real devices, cloud devices, and the mobile MCP's location, clipboard, and recording tools (mobile-verify).
-- Granting the desktop app's own iOS Simulator tool to any agent (mobile-verify).
-- The design/prototyping skill discussed the same day; it is a separate skill, not part of Bosun (mobile-verify).
-
-## Current slice
+### Planning hub slice (2026-10-30, verified)
 
 Name: planning-hub (2026-10-30). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS 2026-10-30 (first verify PASS WITH FOLLOW-UPS: a lane could fix a red default branch itself, no milestones once lanes started, the hub's spec edits had no path to main, lane end with work left, caps past `max N`, hygiene ownership, shape precedence, README; all fixed; second PASS WITH FOLLOW-UPS: unscoped "no code", re-pick of parked work, held files; fixed; third PASS).
 Decisions: see the 2026-10-30 "Planning hub" entry under Decisions.
@@ -793,6 +761,70 @@ Verifier effort: high (no override at any scope).
 Checks: as in H5. No end-to-end suite; CI's `checks` job is the required check.
 Branch: planning-hub, from main (2422d2a).
 
+## Undecided
+
+(none)
+
+## Out of scope
+
+(2026-10-30, remove-codex) Lines below about Codex, Astra, crew workers, the worker script and Sol, Luna, Terra or Reserve models are moot: those pieces were removed in 0.18.0.
+
+- Any change to fable-mode behavior beyond inserting the mode branch.
+- A cost ledger, dashboard, or budget cap. Usage numbers go in the spec's slice log and the report only.
+- Porting the verifier or the brief to Codex. Both stay on Fable.
+- Codex hooks, guard scripts, or hook-trust flags. The worker is bounded by the sandbox and the prompt only.
+- `gpt-5.6-terra` or any model not in the table.
+- Parallel workers.
+- Parallel slices in separate worktrees (slice 3; covered 2026-10-20 by the parallel-lanes slice, removed 2026-10-26 by remove-lanes, covered again 2026-10-30 by the lanes slice as hub-started sessions; the core rules' "Lanes" section).
+- A skill to set the run policy; the line is edited by hand or by asking Fable (slice 3).
+- Staging while Fable itself implements in fable mode; there is nothing to wait on (slice 3).
+- Machine-checkable dependency syntax between done-conditions; Fable judges dependence from the text (slice 3).
+- Sharing one skills directory between the two plugins; the Codex plugin duplicates wording instead (slice 4).
+- Running Astra modes from Claude Code, or fable modes from Codex (slice 4).
+- A `usage.json` equivalent for Codex subagents; the app's own usage view is the record (slice 4).
+- Upgrading the user's codex CLI or desktop app from this harness (slice 4).
+- `gpt-5.6-terra` or `gpt-reserve` in any role (slice 4).
+- Renaming the local working directory or the user's global instruction files; those are the user's (slice 5).
+- Chrome DevTools MCP, the Claude-in-Chrome connector, or Codex Computer Use as harness-provided tools; leads may use what their session has (slice 6).
+- Exploratory browser walkthroughs by the verifier; it re-checks named done-conditions only (slice 6).
+- Bundling the Playwright package or browsers; the harness assumes `npx` can fetch or has cached them (slice 6).
+- Simulator MCP on the astra-crew worker TOMLs; those carry Playwright always, and a simulator server started in every project is not wanted. Follow-up (mobile-verify).
+- Android as a named surface in the rule text. `mobile-mcp` supports it, but no rule names it until a project needs it (mobile-verify).
+- Real devices, cloud devices, and the mobile MCP's location, clipboard, and recording tools (mobile-verify).
+- Granting the desktop app's own iOS Simulator tool to any agent (mobile-verify).
+- The design/prototyping skill discussed the same day; it is a separate skill, not part of Bosun (mobile-verify).
+
+## Current slice
+
+Name: ci-practices (2026-11-05). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS 2026-11-05 (first verify PASS WITH FOLLOW-UPS: migrations trigger and environments too loose, no actor for approval, automatic mode had no order, missing concurrency and red-on-error guards, undo reopened the path-gate gap, cost understated, stale runbook note; all fixed; second PASS WITH FOLLOW-UPS: five small gaps, including CI needing to run on `push`; fixed; third PASS).
+Decisions: see the 2026-11-05 "CI practices" entry under Decisions.
+Outcome: Bosun carries the CI practices proven in a real project on GitHub Enterprise Cloud as generic guidance, including tested steps for turning on a merge queue, so future and existing projects can adopt them.
+Done-conditions:
+Q1. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` `skills/bosun-ci/SKILL.md` gains "Turning on a merge queue": only on request and one repository at a time, with the order (workflows first and merged, then the queue, then one proving PR read back through GraphQL), the ruleset API and the classic setting, starting values, how a diff-only required check reports in the queue, and how to undo it. The baseline says a personal-account repository cannot have a queue.
+Q2. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` `skills/bosun-ci/SKILL.md` adds the flake quarantine (owner, reason, added, expiry of at most 14 days, non-blocking step, a required test that fails on bad entries) and the nightly hunt (repeat each test, one standing issue, says when reports are missing).
+Q3. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` `skills/bosun-ci/SKILL.md` adds the end-to-end path gate (scope map, full suite for anything unmapped, a test that keeps the map honest), the Playwright apt fixes (archive mirror, `.deb` cache that never fails a shard), and judging balancing or runner changes on real runs, recording what was not adopted.
+Q4. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` `skills/bosun-ci/SKILL.md` gains "Migrations deploy (opt-in)" with two modes, approval and automatic, approval recommended once a project has real users or money, automatic only by explicit choice. Both share the guards: a trigger limited to `push` on the default branch, environments limited to the default branch, sandbox before production, one push per database, dry runs, holds, ahead-of-main handling, and app and migration order. Approving is the user's, never a session's.
+Q5. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` `rules/core.md` "Merge setup" says turning a queue on comes last, only when asked, and points to `bosun-ci`; "Tests and CI" points to the quarantine and hunt. README's `bosun-ci` section names the new guidance. Version 0.21.0 in both manifests and the README version line.
+Q6. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` Checks pass: `bash -n scripts/*.sh`; JSON parses for both manifests and `hooks/hooks.json`; `python3 -m py_compile scripts/configure-claude-agents.py`; `claude plugin validate .`; `git diff origin/main --check`; `grep -n -i -E 'rigrez|rv-rez|amdg' rules/ skills/ README.md .claude-plugin/` (recursive) finds nothing.
+Q7. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` This spec: the decision entry, the planning-hub brief moved to history, the promoted two-tier follow-up removed, new follow-ups, the slice log line, and the queue test recorded as a lesson.
+Out of scope:
+- Any project's repository, workflows or settings, including Skipline, Crelaunch and Ruthie rollouts and correcting the source project's runbook.
+- Factory: the owner change, Blacksmith in generated workflows, a queue step, and teardown (its own brief in that repo).
+- Project-specific shard counts, thresholds, or the source project's scripts.
+- Scheduled `bosun-ci` audits and an agent routine that fixes nightly flakes.
+- Stacked PRs (`gh stack`).
+Assumptions:
+- **Public plugin.** The repo is public, so rules, skills and README name no organization or project; this spec keeps the evidence. This is the lead's reading, not Michael's decision.
+- **The migrations choice is prose, not a parsed line.** Nothing in Bosun reads it, so the project's spec records it in the user's words.
+- **Build concurrency.** The source project's runbook says 2 and its live setting is 5. The starting value is 2 for expensive suites, raised after measuring, because concurrency multiplies runner cost.
+- **A diff-only required check passes in the queue.** A PR enters only after its own required checks pass, so this drops no review.
+- **Versioning.** Minor bump, because new guidance changes what the skill recommends and does.
+Decisions setting: ask (default).
+Effort assumed: the session's setting (not exposed to the lead).
+Verifier effort: high (no override at any scope).
+Checks: as in Q6. No end-to-end suite; CI's `checks` job is the required check.
+Branch: ci-practices, from main (52783c2).
+
 ## Launch and operate (drafts)
 
 Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is a done-condition until he says so.
@@ -832,7 +864,6 @@ Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is
 - tests-ci-standard, 2026-09-25: the worker's Tests and CI bullet says to report a test change but not to name the done-condition requiring it, which `bosun-verify` asks the lead for.
 - tests-ci-standard, 2026-09-25: `README.md:110` says bosun-ci's guidance references GitHub's documentation; it now also cites Blacksmith and Linear.
 - core-rules-rename, 2026-09-25: Blacksmith Testbox (agent-run CI environment, early beta, billed per minute with a 30-minute idle timeout) is deferred by the user. Try it by hand on one project with service-dependent tests before deciding whether the verifier uses it.
-- ci-research, 2026-10-07: two-tier CI (Phase 3 of the user's "CI & Testing for Agentic Development" research doc, 2026-10-07, not in this repo: affected-only tests on PRs, full suite on merge and nightly) is deferred by the user. Because PRs auto-merge when green, a design that runs affected-only tests on PRs and the full suite only after merge or nightly lets selection misses land on main; if revisited, run affected tests on PR pushes and the full suite as the required check in a GitHub merge queue (`merge_group`), keep e2e full or path-gated, and confirm merge-queue availability for the repo's plan first. Revisit only if a `bosun-ci` audit shows test execution, not setup, dominates PR time.
 - ci-research, 2026-10-07: scheduled `bosun-ci` runs are deferred by the user. If revisited: weekly per project, audit-only (slowest jobs and week-over-week change, runner minutes, flake candidates, setup vs. test time) reported as an issue, fixes through a normal slice, and a CODEOWNERS required review on `.github/workflows/` so CI changes never auto-merge; a nightly full-suite run can feed flake evidence to it. First confirm a scheduled cloud routine has the `gh` access the audit needs.
 - bosun-preflight, 2026-10-10: fix-mode header line (`skills/bosun-preflight/SKILL.md:130`) says every header fix is a route done-condition, but a host-config fix is proved by citing the file and line, and a preview route needs its URL supplied in the brief since the verifier starts apps only locally.
 - bosun-preflight, 2026-10-10: the beta severity rule (`SKILL.md:41`) does not classify native-mobile findings outside store policy (release debug flags, token storage, deep links, crash reporting); map each to access control or reliability.
@@ -850,10 +881,14 @@ Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is
 - build-mode, 2026-10-25, bug: `bosun-verify`'s PASS WITH FOLLOW-UPS path (fix slice-own bugs, then verify again) has no cap, so a run of re-verifies that each find a new slice-own bug never ends; give it the same limit as the FAIL path.
 - remove-lanes, 2026-10-26, deferral: "every fifth slice" (core rules, "Follow-ups and milestones") does not say whether the count is per run or across the project's history, so a spec without milestone groups can end milestones inconsistently. Michael deferred it until build mode has run a few real milestones; revisit then, or when a project names its milestone groups.
 - remove-lanes, 2026-10-26, deferral: `bosun-brief` step 9 appends each follow-up with a tag but does not make it name its home (the slice, hygiene slice or milestone it waits for), which the core rules' "Follow-ups and milestones" require. Deferred with the item above; revisit at the same time.
+- ci-practices, 2026-11-05, drift: rv-rez's `docs/runbooks/merge-queue.md` now says classic protection with GitHub's default settings, but its setup list still shows build 2 and timeout 45 minutes against the live 5 and 60. Tidy it with the rollouts.
+- ci-practices, 2026-11-05, deferral: rollouts (Skipline, then Crelaunch after PR #595, then Ruthie) and Factory's owner, Blacksmith, queue and teardown changes are separate briefs in those repos. `amdg-org/queue-probe` needs deleting; the `gh` token lacks `delete_repo`.
+- ci-practices, 2026-11-05, deferral: an agent routine that fixes nightly flakes, as proposed in rv-rez's flaky-tests runbook but not set up there. Revisit once a project's nightly issue shows rows recurring faster than lanes clear them.
 - planning-hub, 2026-10-30, deferral: a third lane (hub plus three), or a `Lanes: max N` spec line. Michael deferred it "after we've continued to use this and explored it"; revisit after a real hub-plus-two-lanes run shows both lanes staying busy without waiting on him or on shared files.
 
 ## Slice log
 
+- 2026-11-05, ci-practices, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (9 findings and 7 lower-priority gaps, fixed), second PASS WITH FOLLOW-UPS (5 low gaps, fixed), third PASS; all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0. Queue API tested end to end on the throwaway `amdg-org/queue-probe`.
 - 2026-10-30, planning-hub, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (8 gaps, fixed), second PASS WITH FOLLOW-UPS (3 gaps, fixed), third PASS; all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.
 - 2026-10-30, lanes, opus (implemented by lead), first verify FAIL (13 findings, fixed), second PASS WITH FOLLOW-UPS (8 gaps, fixed), third PASS; all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.
 - 2026-10-30, remove-codex, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (one README rendering bug and five wording nits; fixed), second PASS; both bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.
@@ -885,7 +920,7 @@ Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is
 
 ## Lessons
 
-(none; the Codex-only lessons were removed with the Codex side on 2026-10-30)
+- (ci-practices, 2026-11-05) A merge queue can be created through the rulesets API on a private `amdg-org` repo, alongside classic branch protection holding the required checks, with a token that has `repo` scope and no `admin:org`. Tested end to end on the throwaway `amdg-org/queue-probe`: the rule read back through GraphQL, and PR #1 entered the queue with `gh pr merge --auto --merge`, which printed "The merge strategy for main is set by the merge queue". It ran `checks` on `merge_group` and merged. The token owner is also an org owner, so this does not isolate plain repository admin. Reading a queue's real settings takes GraphQL `mergeQueue(branch:) { configuration }`, in seconds: rv-rez's live queue, in classic protection by Michael's choice, is build 5 and 60 minutes, not the 2 and 45 its runbook's list shows.
 
 ## Public readiness slice — September 15, 2026
 

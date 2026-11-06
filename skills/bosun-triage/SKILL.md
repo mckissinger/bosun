@@ -43,6 +43,7 @@ Deliver, in this order:
 4. **Still valid**, by tag, and the draft slices built from them.
 5. **Missed items** and **waiting on the user**.
 6. **Spec health**, with the proposed reorder as a list of section moves, or the reason none is proposed.
+7. **Leftover stacks and servers**, as that section says, for the user or the owning session to act on.
 
 End by asking the user which parts to apply. Do not change the spec before they answer, except as "Milestone end" below says.
 
@@ -60,6 +61,10 @@ Triage also reports the repo's leftover worktrees and local branches. Run `git f
 A local branch with no worktree is removable when it is not the default branch, not the branch this session is on, and its work is merged by the same merged-PR test. Remove a worktree with `git worktree remove "<path>"`, never with `--force`, then delete its branch. Delete a branch with `git branch -D`, which the merged-PR test makes safe (`git branch -d` refuses squash-merged branches). Never delete a remote branch, and never remove anything that fails a test; when a command refuses, leave that item and report why.
 
 The report lists each removable worktree and branch with the evidence for it, and every other worktree with the reason it stays. Under `Decisions: ask`, removal waits for the user's approval like the rest of the report. At a milestone end under `Decisions: take recommendations`, the lead removes them itself, as "Milestone end" says. Cleanup changes no file in the repo, so it is never part of a commit.
+
+## Leftover stacks and servers
+
+Triage also reports what this project has left running or stored on the machine: its containers and volumes (`docker ps -a` and `docker volume ls`, matched by the stack's configured project id, exactly or with a lane suffix; anything else that resembles it is listed as unclear), with their state and age, and dev servers listening from a worktree that is gone or merged. For each, say whether the spec's `Stack isolation:` command accounts for it. Report only: stacks and volumes may hold data or belong to another running session, so triage stops and deletes none of them, at a milestone end or otherwise. The user or the owning session does that.
 
 ## Milestone end
 
@@ -80,4 +85,4 @@ Open a PR for the branch as the user's git instructions require. Report what cha
 
 ## Boundaries
 
-Triage never edits code, tests, or configuration, removes worktrees and branches only as "Git cleanup" says, never runs `/bosun-brief` or implements a follow-up, and never marks a done-condition verified. It does not decide what is worth doing: draft slices are proposals (apart from hygiene slices under "Milestone end"), and deferrals stay deferred until the user says otherwise.
+Triage never edits code, tests, or configuration, removes worktrees and branches only as "Git cleanup" says, stops or deletes no stack, volume or server, never runs `/bosun-brief` or implements a follow-up, and never marks a done-condition verified. It does not decide what is worth doing: draft slices are proposals (apart from hygiene slices under "Milestone end"), and deferrals stay deferred until the user says otherwise.

@@ -14,6 +14,7 @@ Third outcome (slice 4, 2026-09-04): the harness runs on either Claude Code or C
 
 ## Decisions, in the user's words
 
+- (2026-11-05) Machine load. Docker held seven Skipline stacks and swap was nearly full. Michael: "How do we then resolve this across all of our projects and in the future without getting overly specific, if you will?" The lead proposed five rules: light by default, stop what isn't used, find leftovers, check the load first, treat infrastructure failures separately. Asked about the first, Michael asked for the alternative, and the lead's pick was light by default with a service added for a run where a project needs it. On the others: "3. good 4. sounds good 5. good". Then: "so then should we brief these then add them?" The lead answered yes and started.
 - (2026-11-05) CI practices. Michael: "Did we ever put in the updated CI practice that we're doing in RigRez ... to adopt it for future projects or existing projects?" The lead found they had not been adopted. Michael: "we set up the GitHub Enterprise Cloud, so that should also be part of Bosun and Factory. Now that we've set that up, new projects should be set up accordingly." This supersedes the 2026-10-26 finding that a queue was unavailable on his repos: `amdg-org` now reports the enterprise plan, and rv-rez runs a queue on a private repo. On migrations, Michael asked: "so they can choose to do production behind approval or production automatically, right?" The lead recommended both, with approval the recommendation once a project is live. On one brief per repo, with an API test first: "Yes, go ahead". Keel is retired and needs no move: "we're not even using Kill anymore". Rollouts go Skipline, Crelaunch, Ruthie; Quillery waits.
 - (2026-10-30) Planning hub. Michael: "What are your thoughts on using the hub lane or the hub session as basically the one where we can continue to make decisions, plan out work, etc.? The other lanes that come off of that are the actual working lanes." Asked "What do you recommend?", the lead recommended a hub that never builds once lanes start, with the shape chosen per run (hub plus one lane, hub plus two, or one session for short or unattended runs) and approved once per run. On a third lane, the lead listed its hesitations (three independent areas at once, Michael's review time, red default branch from parallel merges, CI and machine load, spec conflicts). Michael: "Let's keep the hub plus two, and we'll defer the third area after we've continued to use this and explored it." Then "Yes" to briefing it.
 - (2026-10-30) Lanes. After reviewing the cre-list hub session and its two Lane B runs (10 slices merged while the hub built Build), Michael: "I would like to see how we can implement this in Bosun." On standard versus mode and sessions versus subagents, the lead recommended a standard rule gated by conditions, with the hub proposing and Michael approving once per run, lanes as sessions the hub starts, and subagents staying inside a slice. Michael: "I agree with the lanes running as sessions, which is now a Claude Code feature where the hub can initiate these other sessions. We don't even have to set it up for Codex." Then "Brief lanes". Supersedes the 2026-10-26 removal of parallel lanes; the old lane files and per-brief overlap check stay removed.
@@ -761,6 +762,37 @@ Verifier effort: high (no override at any scope).
 Checks: as in H5. No end-to-end suite; CI's `checks` job is the required check.
 Branch: planning-hub, from main (2422d2a).
 
+### CI practices slice (2026-11-05, verified)
+
+Name: ci-practices (2026-11-05). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS 2026-11-05 (first verify PASS WITH FOLLOW-UPS: migrations trigger and environments too loose, no actor for approval, automatic mode had no order, missing concurrency and red-on-error guards, undo reopened the path-gate gap, cost understated, stale runbook note; all fixed; second PASS WITH FOLLOW-UPS: five small gaps, including CI needing to run on `push`; fixed; third PASS).
+Decisions: see the 2026-11-05 "CI practices" entry under Decisions.
+Outcome: Bosun carries the CI practices proven in a real project on GitHub Enterprise Cloud as generic guidance, including tested steps for turning on a merge queue, so future and existing projects can adopt them.
+Done-conditions:
+Q1. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` `skills/bosun-ci/SKILL.md` gains "Turning on a merge queue": only on request and one repository at a time, with the order (workflows first and merged, then the queue, then one proving PR read back through GraphQL), the ruleset API and the classic setting, starting values, how a diff-only required check reports in the queue, and how to undo it. The baseline says a personal-account repository cannot have a queue.
+Q2. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` `skills/bosun-ci/SKILL.md` adds the flake quarantine (owner, reason, added, expiry of at most 14 days, non-blocking step, a required test that fails on bad entries) and the nightly hunt (repeat each test, one standing issue, says when reports are missing).
+Q3. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` `skills/bosun-ci/SKILL.md` adds the end-to-end path gate (scope map, full suite for anything unmapped, a test that keeps the map honest), the Playwright apt fixes (archive mirror, `.deb` cache that never fails a shard), and judging balancing or runner changes on real runs, recording what was not adopted.
+Q4. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` `skills/bosun-ci/SKILL.md` gains "Migrations deploy (opt-in)" with two modes, approval and automatic, approval recommended once a project has real users or money, automatic only by explicit choice. Both share the guards: a trigger limited to `push` on the default branch, environments limited to the default branch, sandbox before production, one push per database, dry runs, holds, ahead-of-main handling, and app and migration order. Approving is the user's, never a session's.
+Q5. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` `rules/core.md` "Merge setup" says turning a queue on comes last, only when asked, and points to `bosun-ci`; "Tests and CI" points to the quarantine and hunt. README's `bosun-ci` section names the new guidance. Version 0.21.0 in both manifests and the README version line.
+Q6. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` Checks pass: `bash -n scripts/*.sh`; JSON parses for both manifests and `hooks/hooks.json`; `python3 -m py_compile scripts/configure-claude-agents.py`; `claude plugin validate .`; `git diff origin/main --check`; `grep -n -i -E 'rigrez|rv-rez|amdg' rules/ skills/ README.md .claude-plugin/` (recursive) finds nothing.
+Q7. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` This spec: the decision entry, the planning-hub brief moved to history, the promoted two-tier follow-up removed, new follow-ups, the slice log line, and the queue test recorded as a lesson.
+Out of scope:
+- Any project's repository, workflows or settings, including Skipline, Crelaunch and Ruthie rollouts and correcting the source project's runbook.
+- Factory: the owner change, Blacksmith in generated workflows, a queue step, and teardown (its own brief in that repo).
+- Project-specific shard counts, thresholds, or the source project's scripts.
+- Scheduled `bosun-ci` audits and an agent routine that fixes nightly flakes.
+- Stacked PRs (`gh stack`).
+Assumptions:
+- **Public plugin.** The repo is public, so rules, skills and README name no organization or project; this spec keeps the evidence. This is the lead's reading, not Michael's decision.
+- **The migrations choice is prose, not a parsed line.** Nothing in Bosun reads it, so the project's spec records it in the user's words.
+- **Build concurrency.** The source project's runbook says 2 and its live setting is 5. The starting value is 2 for expensive suites, raised after measuring, because concurrency multiplies runner cost.
+- **A diff-only required check passes in the queue.** A PR enters only after its own required checks pass, so this drops no review.
+- **Versioning.** Minor bump, because new guidance changes what the skill recommends and does.
+Decisions setting: ask (default).
+Effort assumed: the session's setting (not exposed to the lead).
+Verifier effort: high (no override at any scope).
+Checks: as in Q6. No end-to-end suite; CI's `checks` job is the required check.
+Branch: ci-practices, from main (52783c2).
+
 ## Undecided
 
 (none)
@@ -796,34 +828,33 @@ Branch: planning-hub, from main (2422d2a).
 
 ## Current slice
 
-Name: ci-practices (2026-11-05). Mode: opus (Opus 5.5 leads and implements). Status: verified PASS 2026-11-05 (first verify PASS WITH FOLLOW-UPS: migrations trigger and environments too loose, no actor for approval, automatic mode had no order, missing concurrency and red-on-error guards, undo reopened the path-gate gap, cost understated, stale runbook note; all fixed; second PASS WITH FOLLOW-UPS: five small gaps, including CI needing to run on `push`; fixed; third PASS).
-Decisions: see the 2026-11-05 "CI practices" entry under Decisions.
-Outcome: Bosun carries the CI practices proven in a real project on GitHub Enterprise Cloud as generic guidance, including tested steps for turning on a merge queue, so future and existing projects can adopt them.
+Name: machine-load (2026-11-05). Mode: opus (Opus 5.5 leads and implements). Status: verified 2026-11-05 (first verify PASS WITH FOLLOW-UPS: an environment failure could hide a real bug and conflicted with "Merge flow", "owns" was ambiguous, no record of intermittent failures, no path after a failed retry, loose triage matching; all fixed; second FAIL: the open-PR path still said to fix the PR; fixed; third PASS WITH FOLLOW-UPS: summary wording in the brief and README, updated without a further verify).
+Decisions: see the 2026-11-05 "Machine load" entry under Decisions.
+Outcome: Parallel work stays within what one machine can hold: stacks start light and go away when done, sessions check the load before heavy work, leftovers get reported, and environment failures are named as such.
 Done-conditions:
-Q1. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` `skills/bosun-ci/SKILL.md` gains "Turning on a merge queue": only on request and one repository at a time, with the order (workflows first and merged, then the queue, then one proving PR read back through GraphQL), the ruleset API and the classic setting, starting values, how a diff-only required check reports in the queue, and how to undo it. The baseline says a personal-account repository cannot have a queue.
-Q2. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` `skills/bosun-ci/SKILL.md` adds the flake quarantine (owner, reason, added, expiry of at most 14 days, non-blocking step, a required test that fails on bad entries) and the nightly hunt (repeat each test, one standing issue, says when reports are missing).
-Q3. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` `skills/bosun-ci/SKILL.md` adds the end-to-end path gate (scope map, full suite for anything unmapped, a test that keeps the map honest), the Playwright apt fixes (archive mirror, `.deb` cache that never fails a shard), and judging balancing or runner changes on real runs, recording what was not adopted.
-Q4. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` `skills/bosun-ci/SKILL.md` gains "Migrations deploy (opt-in)" with two modes, approval and automatic, approval recommended once a project has real users or money, automatic only by explicit choice. Both share the guards: a trigger limited to `push` on the default branch, environments limited to the default branch, sandbox before production, one push per database, dry runs, holds, ahead-of-main handling, and app and migration order. Approving is the user's, never a session's.
-Q5. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` `rules/core.md` "Merge setup" says turning a queue on comes last, only when asked, and points to `bosun-ci`; "Tests and CI" points to the quarantine and hunt. README's `bosun-ci` section names the new guidance. Version 0.21.0 in both manifests and the README version line.
-Q6. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` Checks pass: `bash -n scripts/*.sh`; JSON parses for both manifests and `hooks/hooks.json`; `python3 -m py_compile scripts/configure-claude-agents.py`; `claude plugin validate .`; `git diff origin/main --check`; `grep -n -i -E 'rigrez|rv-rez|amdg' rules/ skills/ README.md .claude-plugin/` (recursive) finds nothing.
-Q7. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 65f663b` This spec: the decision entry, the planning-hub brief moved to history, the promoted two-tier follow-up removed, new follow-ups, the slice log line, and the queue test recorded as a lesson.
+K1. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), third verify; fingerprint 18b58d5, plus the summary wording` `rules/core.md` "Stack isolation": the command starts only the services the project's tests need, the list CI uses; a slice that needs another adds it for that run; lanes use the command rather than copying the stack by hand.
+K2. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), third verify; fingerprint 18b58d5, plus the summary wording` `rules/core.md` "While working" gains "Shared machine": a session stops the dev servers and stacks it started or holds when done, a lane removes its stack when it ends, the load is checked before a stack or full test run, under pressure a session stops only what it started and isn't using and reports the rest, including anything it's unsure of, and the check never blocks.
+K3. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), third verify; fingerprint 18b58d5, plus the summary wording` `rules/core.md` gains "Environment failures": check first whether the change could have caused it, which makes it a code failure; otherwise one retry, with the machine's state noted at the first failure and reported either way; never a test result, and nothing changes in the slice to get past it; a blocked step is recorded and other work continues; a run stops when it blocks everything. "Merge flow" and both stop lists agree. Flaky tests stay under "Tests and CI".
+K4. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), third verify; fingerprint 18b58d5, plus the summary wording` `skills/bosun-triage/SKILL.md` gains "Leftover stacks and servers": report only, including at a milestone end.
+K5. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), third verify; fingerprint 18b58d5, plus the summary wording` README names the rules. Version 0.22.0 in both manifests and the README version line.
+K6. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), third verify; fingerprint 18b58d5, plus the summary wording` Checks pass: `bash -n scripts/*.sh`; JSON parses for both manifests and `hooks/hooks.json`; `python3 -m py_compile scripts/configure-claude-agents.py`; `claude plugin validate .`; `git diff origin/main --check`; `grep -rn -i -E 'rigrez|rv-rez|amdg|skipline|cre-list|crelaunch' rules skills README.md .claude-plugin` finds nothing new.
+K7. `verified 2026-11-05 bosun-verifier (claude-opus-5-5/high), third verify; fingerprint 18b58d5, plus the summary wording` This spec: the decision entry, the ci-practices brief moved to history, new follow-ups, the slice log line.
 Out of scope:
-- Any project's repository, workflows or settings, including Skipline, Crelaunch and Ruthie rollouts and correcting the source project's runbook.
-- Factory: the owner change, Blacksmith in generated workflows, a queue step, and teardown (its own brief in that repo).
-- Project-specific shard counts, thresholds, or the source project's scripts.
-- Scheduled `bosun-ci` audits and an agent routine that fixes nightly flakes.
-- Stacked PRs (`gh stack`).
+- Changing any project's stack command, script or spec; projects change when their next slice touches them.
+- A `--full` option as a required script feature; Michael's pick adds a service for a run only where a project needs it.
+- Thresholds or numbers for memory or swap, and machine-specific commands.
+- Stopping any running stack today.
+- Agent definitions, and the migration and direct-push gaps in the follow-ups.
 Assumptions:
-- **Public plugin.** The repo is public, so rules, skills and README name no organization or project; this spec keeps the evidence. This is the lead's reading, not Michael's decision.
-- **The migrations choice is prose, not a parsed line.** Nothing in Bosun reads it, so the project's spec records it in the user's words.
-- **Build concurrency.** The source project's runbook says 2 and its live setting is 5. The starting value is 2 for expensive suites, raised after measuring, because concurrency multiplies runner cost.
-- **A diff-only required check passes in the queue.** A PR enters only after its own required checks pass, so this drops no review.
-- **Versioning.** Minor bump, because new guidance changes what the skill recommends and does.
+- **Cleanup is report-only in triage.** Volumes can hold data and stacks can belong to a running session, so even `Decisions: take recommendations` doesn't remove them.
+- **The rules go in "While working".** They apply to every session, with or without lanes.
+- **Not proven:** the intermittent `supabase start` error is unproven to be swap. These rules reduce load and record the machine's state, which would confirm or rule it out.
+- **Versioning.** Minor bump, because behavior changes.
 Decisions setting: ask (default).
 Effort assumed: the session's setting (not exposed to the lead).
 Verifier effort: high (no override at any scope).
-Checks: as in Q6. No end-to-end suite; CI's `checks` job is the required check.
-Branch: ci-practices, from main (52783c2).
+Checks: as in K6. No end-to-end suite; CI's `checks` job is the required check.
+Branch: machine-load, from main (37bce73).
 
 ## Launch and operate (drafts)
 
@@ -884,10 +915,15 @@ Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is
 - ci-practices, 2026-11-05, drift: rv-rez's `docs/runbooks/merge-queue.md` now says classic protection with GitHub's default settings, but its setup list still shows build 2 and timeout 45 minutes against the live 5 and 60. Tidy it with the rollouts.
 - ci-practices, 2026-11-05, deferral: rollouts (Skipline, then Crelaunch after PR #595, then Ruthie) and Factory's owner, Blacksmith, queue and teardown changes are separate briefs in those repos. `amdg-org/queue-probe` needs deleting; the `gh` token lacks `delete_repo`.
 - ci-practices, 2026-11-05, deferral: an agent routine that fixes nightly flakes, as proposed in rv-rez's flaky-tests runbook but not set up there. Revisit once a project's nightly issue shows rows recurring faster than lanes clear them.
+- machine-load, 2026-11-05, bug: `bosun-ci` "Migrations deploy" doesn't cover migrations merged out of timestamp order, which parallel lanes cause: plain `supabase db push` then refuses every push (seen in Crelaunch). The source project uses `--include-all`, with a dry run first. Fix in `bosun-ci`, and in Factory's generated workflow.
+- machine-load, 2026-11-05, drift: `bosun-ci` "Turning on a merge queue" doesn't warn that a queue refuses direct pushes even from admins (found in Factory's `smoke-org` run), so anything pushing to the default branch has to change first.
+- machine-load, 2026-11-05, drift: "Merge flow" "Watching" looks at the default branch's latest CI run, so a failing non-required workflow, such as migrations, can go unseen for days.
+- machine-load, 2026-11-05, nit: `rules/core.md` "Stack isolation" says plain data-resetting runs are refused, but a project can only guard its own commands, not plain `supabase db reset` (Skipline's verify).
 - planning-hub, 2026-10-30, deferral: a third lane (hub plus three), or a `Lanes: max N` spec line. Michael deferred it "after we've continued to use this and explored it"; revisit after a real hub-plus-two-lanes run shows both lanes staying busy without waiting on him or on shared files.
 
 ## Slice log
 
+- 2026-11-05, machine-load, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (seven wording gaps, fixed), second FAIL (open-PR path, fixed), third PASS WITH FOLLOW-UPS (summary wording, fixed without a further verify); all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.
 - 2026-11-05, ci-practices, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (9 findings and 7 lower-priority gaps, fixed), second PASS WITH FOLLOW-UPS (5 low gaps, fixed), third PASS; all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0. Queue API tested end to end on the throwaway `amdg-org/queue-probe`.
 - 2026-10-30, planning-hub, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (8 gaps, fixed), second PASS WITH FOLLOW-UPS (3 gaps, fixed), third PASS; all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.
 - 2026-10-30, lanes, opus (implemented by lead), first verify FAIL (13 findings, fixed), second PASS WITH FOLLOW-UPS (8 gaps, fixed), third PASS; all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.

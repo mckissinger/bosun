@@ -415,6 +415,12 @@ Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is
   - It files bugs as spec follow-ups and updates docs where AI support answered badly.
   - An on-call triage agent on the `anthropics/oncall-kit` pattern: read-only toward production, proposes PRs, keeps `lessons.md`, and runs in shadow mode until it clears a replay eval.
   - Agents that read logs never hold factory account tokens or write access to DNS, Doppler or production data, because logs can carry injected instructions ("GhostJacking", DEF CON 34).
+- D5 (draft, recorded 2026-11-15 at Michael's request): QA after merge on staging. Factory provisions a staging environment at launch (the question is recorded in Factory's spec, "Undecided"); Bosun uses it.
+  - The spec gains a `Staging:` line naming the staging URL and how it deploys.
+  - After a slice merges, a QA agent tests the merged change on staging: the flows it touched and the integrations it uses (payments, email, storage, scheduled jobs). It runs per milestone, or once a day on whatever merged, not per PR, to keep token use down.
+  - A failure becomes a `bug` follow-up or a fix slice, through the same verify as any change. QA never acts on production data or reaches real people.
+  - Why: the bugs that got past verify in Michael's projects were runtime and environment bugs (a production PDF failure, live-sitting finds) that a worktree and a local stack cannot see. It saves Michael finding them himself, not CI or verify time.
+  - First candidate: RigRez, once its staging exists.
 - Not planned: a custom in-app AI assistant by default. The support widget answers "how do I"; an assistant that acts on user data is a per-app product feature.
 
 ## Follow-ups

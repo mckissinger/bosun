@@ -29,9 +29,11 @@ Every conclusion cites evidence: a commit, a file and line, or a command and its
    - **obsolete**, because the code or feature it refers to is gone.
 
    Keep an existing tag unless the evidence contradicts it. Merge duplicates, keeping the earliest slice and date. Group still-valid items that touch the same files or behavior into draft slices, each written as a draft done-condition.
-3. **Missed items.** Find decisions in the user's words that no done-condition covers, and follow-ups named in PR descriptions, verify reports, or the slice log that never reached the follow-ups.
+3. **Missed items.** Find decisions in the user's words that no done-condition covers, and follow-ups named in PR descriptions, verify reports, or the slice log that never reached the follow-ups, leaving out nits, which are never written down (core rules, "Finishing").
 4. **Waiting on the user.** List open human-checks oldest first, each with the exact step the user must take; conditions marked done but not verified, for `/bosun-verify`; and deferrals whose revisit trigger has now happened.
 5. **Spec health.** Report the spec's length and whether live content (outcome, decisions, current slice, open done-conditions, human-checks, follow-ups, undecided and out-of-scope items, lessons) comes before finished work. Never condense, summarize, or reword the spec's text. Propose a reorder only as a pure move: live content first, and every finished slice under one history heading at the bottom. Do not propose a reorder when the spec cross-references its own numbered sections (for example "§4 Y"), since moving sections breaks those references. If finished work already lives in a separate history file, keep that arrangement.
+6. **Archive.** When finished work keeps the spec past one sitting, propose moving it, verbatim, to an archive file next to the spec (`SPEC-archive.md` beside `SPEC.md`, or the project's existing history file): the briefs of merged slices, and slice-log entries from before the latest milestone. Decisions, lessons, open items and anything a live item cross-references by number stay. Where the moved text was, one pointer line names the archive. A merged slice's brief still sitting in the current-slice section is a status correction: it moves under history first.
+7. **Recurring verify failures.** Read the blocking-finding kinds across the whole slice log, archived entries included, and the FAIL findings in recent verify reports. A kind seen in two or more slices gets a line in the spec's "Recurring verify failures" lesson, with one short example; a kind no blocking finding has shown in the last two milestones leaves it. Keep the entry to ten lines, merging near-duplicates, and create it empty if the spec lacks it.
 
 ## Report
 
@@ -42,8 +44,9 @@ Deliver, in this order:
 3. **Status corrections**, with evidence.
 4. **Still valid**, by tag, and the draft slices built from them.
 5. **Missed items** and **waiting on the user**.
-6. **Spec health**, with the proposed reorder as a list of section moves, or the reason none is proposed.
-7. **Leftover stacks and servers**, as that section says, for the user or the owning session to act on.
+6. **Spec health**, with the proposed reorder as a list of section moves, or the reason none is proposed, and the proposed archive moves.
+7. **Recurring verify failures:** the lesson's lines to add, keep and drop, each with the slices that showed it.
+8. **Leftover stacks and servers**, as that section says, for the user or the owning session to act on.
 
 End by asking the user which parts to apply. Do not change the spec before they answer, except as "Milestone end" below says.
 
@@ -68,20 +71,21 @@ Triage also reports what this project has left running or stored on the machine:
 
 ## Milestone end
 
-When triage runs at a milestone end under `Decisions: take recommendations`, the lead applies it itself instead of asking: the proposed removals and the status corrections, each with its evidence, and the draft slices built from open bugs, promoted to hygiene done-conditions, and the removable worktrees and branches "Git cleanup" found. Unclear items stay as they are, everything else stays a draft for the user, and no decision is reworded. The result is a bookkeeping commit on its own branch and PR, made as "Apply on approval" describes. Under `Decisions: ask`, triage reports and waits as above, at a milestone end too.
+When triage runs at a milestone end under `Decisions: take recommendations`, the lead applies it itself instead of asking: the proposed removals and the status corrections, each with its evidence, and the draft slices built from open bugs, promoted to hygiene done-conditions, the "Recurring verify failures" update, the archive moves, and the removable worktrees and branches "Git cleanup" found. Unclear items stay as they are, everything else stays a draft for the user, and no decision is reworded. The result is the commits "Apply on approval" describes, made on the branch of the hygiene slice that follows, or of the run's next slice, as the core rules' "Records ride along" says; only when no slice follows do they get their own PR. While lanes run, the hub instead commits them to its records branch and opens that branch's PR at this milestone end (core rules, "Lanes"). Under `Decisions: ask`, triage reports and waits as above, at a milestone end too.
 
-At a milestone end under `until blocked`, the run's own last slice is finished, not active, so the active-slice check in "When to run" asks about other work only. Triage builds on the spec every slice of the run left, so it waits until the run's open PRs have merged, as the core rules' "Merge flow" waits: only for PRs that merge on their own. When one cannot, the run stops and names it. Then it branches from the latest default branch.
+At a milestone end under `until blocked`, the run's own last slice is finished, not active, so the active-slice check in "When to run" asks about other work only. Triage builds on the spec every slice of the run left, so it waits until the run's open PRs have merged, as the core rules' "Merge flow" waits: only for PRs that merge on their own. When one cannot, the run stops and names it. Then it works on the branch the following hygiene or next slice will use, cut from the latest default branch, or on the hub's records branch while lanes run.
 
 ## Apply on approval
 
-Apply only what the user approved (or what "Milestone end" applies), on a new branch from the default branch, in two separate commits:
+Apply only what the user approved (or what "Milestone end" applies), on a new branch from the default branch (or the branch "Milestone end" names), in separate commits:
 
-1. **Bookkeeping:** remove the approved batch of follow-ups; correct the approved statuses; add tags to untagged follow-ups that stay, except items reported as unclear; add missed follow-ups; add draft slices clearly marked as drafts. Never promote a draft to a done-condition: the user does that, apart from the hygiene done-conditions "Milestone end" allows. Never change a decision's wording.
+1. **Bookkeeping:** remove the approved batch of follow-ups; correct the approved statuses; add tags to untagged follow-ups that stay, except items reported as unclear; add missed follow-ups; add draft slices clearly marked as drafts; apply the "Recurring verify failures" update. Never promote a draft to a done-condition: the user does that, apart from the hygiene done-conditions "Milestone end" allows. Never change a decision's wording.
 2. **Reorder**, when approved: move sections and nothing else. Existing headings keep their text and level. Prove it before committing by comparing the full sorted list of non-blank lines before and after the move, duplicates included (a plain sort and diff, never a unique sort); the lists must match exactly except for exactly one added line, the history heading. If they differ in any other way, undo the move and report the difference.
+3. **Archive**, when approved: move the approved text to the archive file and nothing else, leaving one pointer line where each block was. Prove it the same way, comparing the sorted non-blank lines of the spec and archive together before and after; they must match except for the added pointer lines and, for a new archive file, its one heading.
 
-Run any approved git cleanup as "Git cleanup" says; it is not part of either commit.
+Run any approved git cleanup as "Git cleanup" says; it is not part of any commit.
 
-Open a PR for the branch as the user's git instructions require. Report what changed and what was left as it was.
+Outside a run, open a PR for the branch as the user's git instructions require. During a run, open none: the slice's PR, the hub's records PR or, when no slice follows, the end-of-run records PR carries the commits (core rules, "Records ride along"). Report what changed and what was left as it was.
 
 ## Boundaries
 

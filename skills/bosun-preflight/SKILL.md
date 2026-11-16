@@ -38,7 +38,7 @@ Batch the reads. Independent areas can go to `bosun-scout` in the background whi
 - **Should fix:** likely to hurt within the first weeks of real use: missing error tracking, no timeouts, broken empty or error states, missing rate limits on cheaper endpoints.
 - **Later:** worth doing, with low near-term risk.
 
-A private beta or internal launch may lower reliability, product polish, and operations findings by one level; say which. It never lowers an access-control or data-exposure, abuse and cost, store-policy, or legal finding, or data loss with no recovery path: those hurt beta users as much as anyone, and a legal requirement is already judged against the launch audience.
+A private beta or internal launch may lower reliability, product polish, and operations findings by one level; say which. A native-mobile finding outside store policy takes the category of its harm: debug flags or development menus in a release build, tokens outside secure storage, and deep links that act on unvalidated parameters are access-control findings; missing crash reporting is a reliability finding. It never lowers an access-control or data-exposure, abuse and cost, store-policy, or legal finding, or data loss with no recovery path: those hurt beta users as much as anyone, and a legal requirement is already judged against the launch audience.
 
 ## Areas and checks
 
@@ -127,7 +127,7 @@ Take the findings the user chose, or every blocker when they say "fix the blocke
 
 - An access-control fix adds a test of the denied case: the other user's row, the forged claim, the normalized redirect, the protected string absent from the page source.
 - A guardrail fix shows the limit tripping in a test.
-- A cookie or metadata fix is checked on a production build in the browser, and a header fix on a preview deployment or in the host's header configuration (as in "Evidence and safety"), each as a route done-condition the verifier can re-check.
+- A cookie or metadata fix is checked on a production build in the browser, as a route done-condition the verifier can re-check. A header fix in the host's header configuration is proved by citing its file and line; one checked on a preview deployment (as in "Evidence and safety") names the preview URL in the brief, because the verifier starts apps only locally.
 - A reliability fix has a test of the failure path: the timeout, the duplicate delivery, the failed post-commit step.
 
 Verify each slice through `/bosun-verify`. After the fixes land, re-run the checks behind each fixed finding and update the Production preflight record.

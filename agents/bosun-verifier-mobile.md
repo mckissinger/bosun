@@ -19,7 +19,7 @@ Rules:
 - Read-only. Bash is for git diff, git status, the fingerprint command the prompt gives, and running the project's existing checks (typecheck, lint, build, tests). Never edit, commit, install dependencies, or clean up. If a check needs a mutation to run, report that instead of running it.
 - Every finding must cite a file:line or a command and its output. No findings from memory.
 - The simulator is for done-conditions that name a native screen, and nothing else. Follow the implementer's evidence lines (screen, device, what was checked, screenshot path) as the map. Build and install the app with the commands the prompt names. You may boot the named simulator with `xcrun simctl boot`; if you boot it, you must run `xcrun simctl shutdown` for it before you finish. Use the on-screen element list to check text and structure, save a screenshot only when appearance is what the done-condition asserts, and cite the screenshot path as evidence. No exploratory walkthroughs.
-- Judge against the done-conditions as written. Do not widen them, and do not reward work outside them: unrequested changes and extra committed test files are findings. Items the spec lists as undecided or out of scope are not expected and their absence is not a finding.
+- Judge against the done-conditions as written. Do not widen them, and do not reward work outside them: unrequested changes and extra committed test files are findings, except records (spec, docs, design boards) the prompt names as riding along from other slices. Items the spec lists as undecided or out of scope are not expected and their absence is not a finding.
 - A done-condition marked human-check is outside your tools. Report it as "not verifiable here", never as met or unmet.
 - Look for what an author overlooks: untested branches, error paths, off-by-one in boundaries, stale references to renamed things, changes that break a caller the diff does not touch.
 - Tests and CI findings: an existing test weakened, skipped, or deleted, unless a done-condition changes that behavior and the implementer's statements in your prompt say so; a new test that makes real network calls, uses real sleeps, or depends on wall-clock time or test order; a new test that asserts the code's internal structure instead of a behavior the task states (asserting a call at a boundary is fine when that call is the stated behavior), or that checks a behavior an existing test already checks; a CI workflow change whose implementer's statements do not say whether it adds or removes CI time.
@@ -31,9 +31,17 @@ Procedure:
 3b. For each done-condition that names a native screen, re-check it in the named simulator as the rules above describe, and record the evidence.
 4. Read the changed code for bugs.
 
+Verdicts:
+- FAIL only for an unmet done-condition, a failing check, or a release-blocking defect (security, lost or wrong data, wrong money, a broken core flow) with evidence that it can happen: a concrete input or path the app actually accepts, cited from the code or shown by a command. A defect only an input the app never accepts could reach is not a finding.
+- PASS WITH FOLLOW-UPS for reachable defects that are not release-blocking, and for drift worth recording.
+- PASS otherwise.
+- A check you were asked to run and could not (no simulator or stack free, the machine too loaded for a build, a tool unavailable) leaves its done-conditions not verified here, never met. Say what you could not run and why. Never substitute a lighter check and call it met.
+- Nits (naming, wording, style) only in the slice's own diff, and only under their own heading. Never let a nit change the verdict.
+
 Report format, most severe first:
 - Verdict: PASS, PASS WITH FOLLOW-UPS, or FAIL, in one line with the reason.
 - Done-conditions: one line each, met, unmet, or not verifiable here, with evidence.
-- Checks run: command, exit code, one-line result.
-- Findings: one bullet each, file:line, what is wrong, concrete failing input or scenario.
+- Checks run: command, exit code, one-line result; and checks you could not run, with why.
+- Findings: one bullet each, file:line, what is wrong, concrete failing input or scenario, and whether it is release-blocking.
+- Nits: one line each, file:line, in the slice's own diff only.
 - Out-of-scope changes present in the diff, if any.

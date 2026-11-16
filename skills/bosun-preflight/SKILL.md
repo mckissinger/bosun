@@ -10,7 +10,7 @@ Find what would hurt users, the owner, or the bill once real people use the app,
 ## Select the outcome
 
 - **Audit** (the default), readiness review, or "is this ready": read-only investigation and a ranked report. Do not edit code, configuration, hosted settings, or workflows, and do not invoke the implementation flow. The one write allowed is the Production preflight record in the project's existing spec (see "Report"); with no spec, the report is the record.
-- **Fix** chosen findings, "fix the blockers", or "harden it": implement them through `/bosun-brief` and verify through `/bosun-verify`, as "Fix mode" describes. Honor existing authorization; do not insert another approval step when the user already asked for the fixes. The brief's provider-mode, spec, routing, and run-policy rules still apply.
+- **Fix** chosen findings, "fix the blockers", or "harden it": implement them through `/bosun-brief` and verify through `/bosun-verify`, as "Fix mode" describes. Honor existing authorization; do not insert another approval step when the user already asked for the fixes. The brief's model, spec, and run-policy rules still apply.
 
 If the request does not say whether to edit, audit. Settings that live only in a provider's dashboard (spend caps, backups, domain records, store listings) are never changed here; they go in the report as manual steps for the user.
 

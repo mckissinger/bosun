@@ -2,16 +2,16 @@
 
 Bosun coordinates coding work through a durable spec, scoped implementation tasks, and verification in a fresh session. It is for developers who want their coding agents to keep track of the requirements and check the result before calling a task done.
 
-Bosun is a Claude Code plugin with three provider modes: `fable` (Fable 5.1 in every role), `fable-opus` (Fable 5.1 leads and verifies, an Opus 5.5 subagent implements) and `opus` (Opus 5.5 in every role). The Codex plugin and the `fable-crew`, `astra-crew` and `astra` modes were removed in 0.18.0.
+Bosun is a Claude Code plugin that runs on Opus 5.5 in every role: the lead briefs, implements and keeps the spec, and the scout and verifiers run on Opus 5.5 too. The `fable` and `fable-opus` modes were removed in 0.24.0, and the Codex plugin with the `fable-crew`, `astra-crew` and `astra` modes in 0.18.0.
 
 ## Start here
 
 1. Install the plugin below.
 2. In a new project, invoke `/bosun-brief <your task>`. Bosun creates a spec and stops for your review.
-3. Review the spec, then select a mode with `/bosun-mode opus` (or `fable`, `fable-opus`). With an existing spec, select the mode before briefing. Say go to start the slice.
+3. Review the spec, then run `/bosun-mode opus` once to write the project's local scout and verifier agents. Run the session on Opus 5.5 (`claude --model claude-opus-5-5`). Say go to start the slice.
 4. Review the result and verification evidence. A failed or unavailable check is not proof of completion.
 
-For example, ask Bosun to add a CSV export to an existing report, preserving its current filters. The spec defines the expected columns and behavior; the lead (or its worker) implements the scoped change; a separate verifier checks it against those requirements. This is an illustrative workflow, not a benchmark result.
+For example, ask Bosun to add a CSV export to an existing report, preserving its current filters. The spec defines the expected columns and behavior; the lead implements the scoped change; a separate verifier checks it against those requirements. This is an illustrative workflow, not a benchmark result.
 
 You need Claude Code installed, authenticated access to the configured models, and Git. Browser checks additionally use Node.js/npx and Playwright; native-screen checks require macOS with Xcode and an iOS simulator. Model availability depends on your host and account. Bosun does not bundle models or bypass usage limits. Start in a disposable project before using continuous runs on important work.
 
@@ -27,7 +27,7 @@ The plugin's core rules load automatically at session start through a hook. To m
 Optional, per the effort doc's "set effort explicitly": add to `~/.claude/settings.json`
 
 ```json
-{ "modelSettings": { "claude-fable-5-1": { "effortLevel": "high" } } }
+{ "modelSettings": { "claude-opus-5-5": { "effortLevel": "high" } } }
 ```
 
 ## The shape
@@ -52,13 +52,12 @@ launch session at the right effort
 | `/bosun-ci` | `skills/bosun-ci/SKILL.md` | Audit GitHub Actions bottlenecks or implement and verify a focused CI improvement |
 | `/bosun-preflight` | `skills/bosun-preflight/SKILL.md` | Audit a feature-complete app for production readiness, or fix chosen findings through verified slices |
 | `/bosun-triage` | `skills/bosun-triage/SKILL.md` | Review the spec against code and history: fix statuses, clear resolved follow-ups, surface what is waiting on you |
-| `/bosun-mode` | `skills/bosun-mode/SKILL.md` | Sets or reports the provider mode line in the spec and configures the project-local agents |
-| Claude agent setup | `scripts/configure-claude-agents.py` | Generates project-local worker/verifier definitions; applies verifier effort without changing lead or worker effort |
-| `bosun-worker-opus` agent | `agents/bosun-worker-opus.md` | Opus 5.5 implementation at high; no spec edits, commits, or delegation |
+| `/bosun-mode` | `skills/bosun-mode/SKILL.md` | Writes the project-local scout and verifier agents, sets or reports the verifier effort, and fixes a spec that names a removed mode |
+| Claude agent setup | `scripts/configure-claude-agents.py` | Generates project-local scout and verifier definitions on Opus 5.5; applies verifier effort without changing the lead's effort |
 | `bosun-scout` agent | `agents/bosun-scout.md` | Read-only background investigator, medium effort |
-| `bosun-verifier` agent | `agents/bosun-verifier.md` | Read-only Fable/Opus verifier selected by mode, selectable effort (default high), with Playwright for done-conditions that name a route or screen |
-| `bosun-verifier-mobile` agent | `agents/bosun-verifier-mobile.md` | Read-only Fable/Opus verifier selected by mode, selectable effort (default high), with a simulator MCP server for done-conditions that name a native iOS screen |
-| SessionStart hook | `scripts/session-start.sh` | Loads the rules if needed, points at the spec with its provider mode and run policy, prints any checkpoint; on compaction, tells the model to re-read the spec |
+| `bosun-verifier` agent | `agents/bosun-verifier.md` | Read-only Opus 5.5 verifier, selectable effort (default high), with Playwright for done-conditions that name a route or screen |
+| `bosun-verifier-mobile` agent | `agents/bosun-verifier-mobile.md` | Read-only Opus 5.5 verifier, selectable effort (default high), with a simulator MCP server for done-conditions that name a native iOS screen |
+| SessionStart hook | `scripts/session-start.sh` | Loads the rules if needed, points at the spec with its provider mode line (when present) and run policy, prints any checkpoint; on compaction, tells the model to re-read the spec |
 
 Checkpoints are written to `~/.claude/bosun/checkpoints/<project-slug>.md`.
 
@@ -101,43 +100,32 @@ Use `/bosun-preflight` when an app is feature-complete and before it launches. T
 
 Follow-ups pile up, statuses drift, and deferrals get lost as slices land. Use `/bosun-triage`, between slices, to review the spec against the code and git history. The report proposes removing follow-ups that are resolved, obsolete, or duplicated (each with its evidence), corrects statuses, tags the follow-ups that remain (`bug`, `drift`, `nit`, `deferral`), groups them into draft slices, finds decisions that never became done-conditions, and lists the human-checks and deferrals waiting on you. It also lists leftover worktrees and local branches, and marks as removable each one, never the default branch, whose PR merged into the default branch has its tip as head commit, with no uncommitted or untracked files, no ignored files beyond dependency and build output, and no process running inside it; worktrees the Claude desktop app made are left to the app, and remote branches are never touched. Nothing changes until you approve (apart from refreshing remote-tracking refs and dropping records of worktrees whose directory is already gone), except at a milestone end under `Decisions: take recommendations`, where the lead applies the evidence-backed removals and status corrections, promotes open bugs to a hygiene slice, and removes the removable worktrees and branches itself. Approved changes land as spec bookkeeping only; a reorder that puts live content ahead of finished work is a pure move, checked line by line, and nothing is condensed or reworded.
 
-## Provider modes
+## Model
 
-The mode is a line in the project's spec, `Provider mode: <mode>`. No line means `fable`. `/bosun-mode <mode>` sets it; `/bosun-mode` alone reports it.
+Bosun runs on Opus 5.5 (`claude-opus-5-5`) in every role. The lead briefs, implements directly, keeps the spec, and commits; the local scout and the fresh web and mobile verifiers also use Opus 5.5. Run the session on Opus 5.5 (`claude --model claude-opus-5-5` or `/model claude-opus-5-5`): a spec line cannot change the session's model, so confirm it before starting a slice. There is no model fallback.
 
-| Mode | Lead | Implementation |
-| --- | --- | --- |
-| `fable` | Fable 5.1 | Fable 5.1 |
-| `fable-opus` | Fable 5.1 | Opus 5.5 at high as a native subagent |
-| `opus` | Opus 5.5 | Opus 5.5 (also scout and verifier) |
+A spec may carry `Provider mode: opus`, the only value; no line means the same. `fable` and `fable-opus` were removed in 0.24.0, and `codex`, `fable-crew`, `astra-crew` and `astra` in 0.18.0. A spec that names one makes `/bosun-brief` and `/bosun-verify` stop and say to change the line to `Provider mode: opus` or delete it; `/bosun-mode opus` makes that change.
 
-The values `codex`, `fable-crew`, `astra-crew` and `astra` were removed in 0.18.0 with the Codex plugin and the Codex worker. A spec that still names one makes `/bosun-brief` and `/bosun-verify` stop and say to pick one of the three modes with `/bosun-mode`.
-
-**Opus throughout.** In Claude Code, select `/bosun-mode opus` and use an Opus 5.5 lead session (`claude --model claude-opus-5-5` or `/model claude-opus-5-5`). Opus briefs, implements directly, keeps the spec, and commits; the local scout and fresh web/mobile verifier also use Opus. Mode selection changes the spec and generated agents, not the active session model: confirm that model before starting a slice. Switching back to a Fable mode regenerates the local scout/verifiers on Fable and requires a Fable lead session. There is no model fallback. Live account/model access must be verified separately.
-
-**Fable with Opus implementation.** In Claude Code, select `/bosun-mode fable-opus`. Fable 5.1 briefs, keeps the spec, reviews, commits, and verifies; a native `bosun-worker-opus` subagent implements on `claude-opus-5-5` at `high`. FAIL findings return to Opus. The worker cannot delegate and never commits or edits the spec. This mode needs access to Opus 5.5 and Fable 5.1 in Claude Code. Worker or model failures stop the slice; there is no provider fallback. The route and verdict are recorded in the spec.
-
-**Verifier effort.** Set a project default while selecting a mode, or change it independently:
+**Verifier effort.** Set a project default, or override it for one verification:
 
 ```text
-/bosun-mode fable-opus --verifier-effort xhigh
-/bosun-mode --verifier-effort medium
+/bosun-mode --verifier-effort xhigh
 /bosun-verify --effort max
 ```
 
-The last command overrides effort for that verification and its retries only. Supported values are `low`, `medium`, `high`, `xhigh`, `max`; default is `high`. Resolution is invocation override, current-slice `Verifier effort:`, top-level `Verifier effort:`, then `high`. The mode command changes the top-level default, preserving a current-slice override if present. Effort is recorded per attempt. Both web and mobile verifiers use Opus 5.5 in `opus` and Fable 5.1 in the Fable modes, independently of the lead session and Opus worker. These controls work in all three modes.
+The last command overrides effort for that verification and its retries only. Supported values are `low`, `medium`, `high`, `xhigh`, `max`; default is `high`. Resolution is invocation override, current-slice `Verifier effort:`, top-level `Verifier effort:`, then `high`. `/bosun-mode --verifier-effort <level>` changes the top-level default, preserving a current-slice override if present. Effort is recorded per attempt, independently of the lead session's effort.
 
-Mode selection and verification run `scripts/configure-claude-agents.py` to write the effective settings into `.claude/agents/bosun-scout.md`, `bosun-verifier.md`, and `bosun-verifier-mobile.md`; `fable-opus` also installs `bosun-worker-opus.md`. These project-local copies take precedence over plugin definitions and retain their MCP servers. The next verification regenerates the copies from the current setting, so a one-run override cannot become the default. The generator refuses to overwrite unrelated user-owned files or symlinks. Keep the spec as the settings source. The generator also writes `.claude/agents/.gitignore` so git ignores the generated copies, and names any that a project still tracks with the `git rm --cached` command to stop; it leaves a `.gitignore` there that it did not write unchanged. Plugin installation alone does not generate these files.
+`/bosun-mode opus` (or with `--verifier-effort`) and every verification run `scripts/configure-claude-agents.py` to write the effective settings into `.claude/agents/bosun-scout.md`, `bosun-verifier.md`, and `bosun-verifier-mobile.md`. These project-local copies take precedence over plugin definitions and retain their MCP servers. The next verification regenerates the copies from the current setting, so a one-run override cannot become the default. The generator refuses to overwrite unrelated user-owned files or symlinks. Keep the spec as the settings source. The generator also writes `.claude/agents/.gitignore` so git ignores the generated copies, and names any that a project still tracks with the `git rm --cached` command to stop; it leaves a `.gitignore` there that it did not write unchanged. Plugin installation alone does not generate these files.
 
-Restart Claude Code if setup creates the project's first `.claude/agents/` directory, then confirm the local agents are loaded. Invoke those local names, not plugin-scoped `bosun:...` agents. Claude Code ignores MCP configuration on plugin-bundled agents; project-local definitions are used so the worker and verifier actually receive their browser/simulator tools. Existing generated files are refreshed by setup, including after a plugin update. A conflicting model environment override must be resolved before claiming a pinned model ran. See [Claude Code's subagent configuration](https://code.claude.com/docs/en/sub-agents) and [Opus 5.5 release and model identifier](https://www.anthropic.com/claude-opus-5-5).
+Restart Claude Code if setup creates the project's first `.claude/agents/` directory, then confirm the local agents are loaded. Invoke those local names, not plugin-scoped `bosun:...` agents. Claude Code ignores MCP configuration on plugin-bundled agents; project-local definitions are used so the verifiers actually receive their browser and simulator tools. Existing generated files are refreshed by setup, including after a plugin update. A conflicting model environment override must be resolved before claiming a pinned model ran. See [Claude Code's subagent configuration](https://code.claude.com/docs/en/sub-agents) and [Opus 5.5 release and model identifier](https://www.anthropic.com/claude-opus-5-5).
 
 ## Runtime verification
 
 A done-condition may name a route or screen ("`/settings` shows the new toggle") and still count as checkable, because both the implementer and the verifier have a browser.
 
-The implementer runs the app and looks before marking such a done-condition done, and records one evidence line per done-condition: the route, what was checked, and a screenshot path if one was taken. The lead uses the desktop browser pane or Playwright MCP, and the `bosun-worker-opus` worker gets Playwright MCP through its project-local definition. Screenshots are evidence when appearance matters; the accessibility snapshot is the cheaper check for text and structure. Nobody walks the whole app.
+The implementer runs the app and looks before marking such a done-condition done, and records one evidence line per done-condition: the route, what was checked, and a screenshot path if one was taken. The lead uses the desktop browser pane or Playwright MCP. Screenshots are evidence when appearance matters; the accessibility snapshot is the cheaper check for text and structure. Nobody walks the whole app.
 
-The verifier gets Playwright too (an inline `mcpServers` entry on `bosun-verifier`). It uses the browser only to re-check the route-or-screen done-conditions, following the implementer's evidence lines, may start the app with the launch command the brief names, stops it afterward, and reports screenshot paths as evidence. Each slice-log line records how many done-conditions named a route or screen and how many the verifier confirmed, so runtime verification can be compared across modes and projects.
+The verifier gets Playwright too (an inline `mcpServers` entry on `bosun-verifier`). It uses the browser only to re-check the route-or-screen done-conditions, following the implementer's evidence lines, may start the app with the launch command the brief names, stops it afterward, and reports screenshot paths as evidence. Each slice-log line records how many done-conditions named a route or screen and how many the verifier confirmed, so runtime verification can be compared across projects.
 
 For native iOS screens, the brief says `Surface: ios` and the evidence line records the screen, device, what was checked, and screenshot path. `bosun-verifier-mobile` uses the mobile simulator MCP server. The lead or verifier may boot the named device with `xcrun simctl boot` and must shut down any simulator it booted with `xcrun simctl shutdown`. Native-screen checks require macOS with Xcode and an iOS simulator.
 
@@ -147,15 +135,11 @@ Requires `npx` able to fetch or find `@playwright/mcp` and a Chromium; the first
 
 A Claude Code session is turn-based: when the model ends its turn, nothing happens until something wakes it. The default harness ends the turn after every slice, so the user waits between slices. The run policy removes most of that idle time without changing what gets built.
 
-The policy is a line in the spec next to the provider mode: `Run policy: one slice` (the default; no line means the same) or `Run policy: until blocked, max N slices` (`until blocked` alone means `max 10 slices`). Under `until blocked`, after a slice verifies, the lead commits, pushes, opens a PR for that slice's branch, arms auto-merge (`gh pr merge <n> --auto --merge`), reports, and briefs the next slice in the same turn, without idling on CI and without asking whether to go on (see "Merge flow" for which slices it builds while CI runs, and when it waits). Every slice keeps its own branch and PR. Auto-merge lands it once the required checks pass; if GitHub refuses auto-merge because every required check is already green, the lead merges it with `gh pr merge <n> --merge`. It never merges past a red or missing required check or bypasses branch protection, and it leaves the PR open and says so when the repo has no required checks, disallows auto-merge, or the spec or your instructions keep merging for you. The run stops, and the report says why, at the first of: no runnable done-condition left; every remaining runnable item needs a decision the lead may not make (see "Decisions"); two FAILs on one verify finding (three under `Decisions: take recommendations`); a slice whose third verify run FAILs; every remaining slice waiting on a PR that cannot merge on its own; an environment failure that blocks all remaining work; the slice cap. A done-condition is runnable when it is `todo` or `in progress`, not `human-check`, and needs nothing on the undecided list.
+The policy is a line near the top of the spec: `Run policy: one slice` (the default; no line means the same) or `Run policy: until blocked, max N slices` (`until blocked` alone means `max 10 slices`). Under `until blocked`, after a slice verifies, the lead commits, pushes, opens a PR for that slice's branch, arms auto-merge (`gh pr merge <n> --auto --merge`), reports, and briefs the next slice in the same turn, without idling on CI and without asking whether to go on (see "Merge flow" for which slices it builds while CI runs, and when it waits). Every slice keeps its own branch and PR. Auto-merge lands it once the required checks pass; if GitHub refuses auto-merge because every required check is already green, the lead merges it with `gh pr merge <n> --merge`. It never merges past a red or missing required check or bypasses branch protection, and it leaves the PR open and says so when the repo has no required checks, disallows auto-merge, or the spec or your instructions keep merging for you. The run stops, and the report says why, at the first of: no runnable done-condition left; every remaining runnable item needs a decision the lead may not make (see "Decisions"); two FAILs on one verify finding (three under `Decisions: take recommendations`); a slice whose third verify run FAILs; every remaining slice waiting on a PR that cannot merge on its own; an environment failure that blocks all remaining work; the slice cap. A done-condition is runnable when it is `todo` or `in progress`, not `human-check`, and needs nothing on the undecided list.
 
 **Merge flow.** While a PR's checks run, the lead builds ahead only on slices that need nothing from an unmerged slice, each in its own worktree cut from the latest default branch; a dependent slice is briefed then and built after its base merges, and branches are never stacked on unmerged ones. When only dependent work is left, the lead waits for the base PR, but only if it merges on its own; otherwise the run stops and names it. Every slice writes the spec, so each built-ahead slice adds its brief as its own subsection and appends to the log, and a spec conflict between two PRs is resolved by keeping both sides. Before each slice, after each verify, and while waiting, the lead checks its open PRs and the latest run of every workflow on the default branch: a red or conflicting PR pauses the current slice while the lead fixes it on that PR's branch (verifying a code fix), then it resumes, and a red default branch is fixed first, except that an environment failure is rerun once and reported, and a flake candidate or a red run of a workflow that only reports (such as the nightly flake hunt) is reported instead. The recommended setup is a GitHub merge queue (available on organization-owned public repositories and on GitHub Enterprise Cloud) with required checks also triggered on `merge_group`, and a `merge_group` fallback for any job that reads a PR number. Without a queue, turn off "require branches to be up to date" and run CI on every push to the default branch: PRs then merge as soon as their own checks pass, and a red run on the default branch is fixed like a red PR. If a repo keeps the up-to-date requirement without a queue, the lead updates the oldest behind PR, one at a time, and `/bosun-ci` reports the setting.
 
 **Exhausted roadmap.** When no runnable done-condition remains, under either policy, the lead does not invent work. It reports that the roadmap is exhausted, lists the open human-checks and the undecided questions, proposes next slices drawn from the spec's follow-ups section as clearly marked drafts, and asks what next. A proposal becomes a done-condition only when you say so; under `Decisions: take recommendations`, the lead first decides the undecided items it may decide, and a hygiene slice built from open bug follow-ups counts as runnable work.
-
-**Staging (fable-opus mode).** While the worker runs, under `until blocked` with the cap not reached, Fable scouts the next slice and, if it does not depend on the running one, writes a staged brief to `~/.claude/bosun/workers/<slug>/<next-slice>/brief.md` with a `Based on: <sha>` line. It never writes to the worktree while the worker owns it. If the next slice does depend on the running one, it scouts only.
-
-**Re-validation.** Before a staged brief runs, Fable compares its `Based on:` sha with HEAD. If the previous slice moved it, Fable re-reads the spec and the landed diff, checks every file reference and assumption in the brief, folds in the previous verify's follow-ups that belong to this slice, and only then writes the brief into the spec and generates the worker prompt from it. A staged brief waits on a FAIL, and stays on disk (named in the report) if the run stopped.
 
 **Milestones.** Every follow-up gets a home when it is written: bugs in the slice's own work are fixed in that slice, other bugs by the next slice that touches the file or a hygiene slice before the milestone closes, nits the verifier finds in the slice's own diff are fixed or dropped rather than written down, deferrals name their target, and anything that needs you goes to human-checks. A milestone is a group of done-conditions the spec names, or every fifth slice. At each milestone end under `until blocked`, the lead runs `/bosun-triage` (which also finds worktrees and local branches whose work is merged and that are clean and idle, and removes them when the triage is applied), a hygiene slice for the open bugs, and a `/bosun-ci` audit. More than five open bugs makes the next slice a hygiene slice. Triage also keeps the spec's "Recurring verify failures" lesson (at most ten kinds of defect verification has caught in two or more slices), which the implementer checks the diff against before every verify, and it moves finished slice briefs and old slice-log entries, verbatim, to an archive file when they push the spec past one sitting.
 
@@ -175,9 +159,11 @@ You can run more than one session on a project, but Bosun does not coordinate th
 
 ## Why each piece exists
 
+Bosun's rules were first built from Anthropic's Fable 5.1 guidance, cited below, and now run on Opus 5.5. Where Anthropic's [Opus 5.5 prompting guide](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-opus-5-5) differs, this section says so.
+
 Sources: [Overview](https://platform.claude.com/docs/en/models/fable-5-1/overview), [What's new](https://platform.claude.com/docs/en/models/fable-5-1/whats-new-fable-5-1), [Migration guide](https://platform.claude.com/docs/en/models/fable-5-1/migration-guide), [Prompting Claude Fable 5.1](https://platform.claude.com/docs/en/build-with-claude/prompt-engineering/prompting-claude-fable-5-1), [Effort](https://platform.claude.com/docs/en/build-with-claude/effort), [Refusals and fallback](https://platform.claude.com/docs/en/build-with-claude/refusals-and-fallback), [Claude Code effort controls](https://code.claude.com/docs/en/model-config).
 
-**Effort is the primary control.** Adaptive thinking is always on and cannot be turned off. Default is `high`. The prompting guide says start at `high`, step down to `medium` or `low` where quality holds, step up to `xhigh` or `max` only where measured. At `low` the model answers from memory instead of searching. At `xhigh` and `max` it may draft a long deliverable in thinking and again in the reply. Claude cannot change effort inside a session, and the effort doc says to hold it constant within a conversation, so effort is chosen at launch and the brief states the level it assumes.
+**Effort is the primary control.** Bosun's default is `high`. The Fable 5.1 guide says start at `high`, step down to `medium` or `low` where quality holds, and step up to `xhigh` or `max` only where measured. The Opus 5.5 guide defaults to `medium` and reports it matching Opus 5 at `high` on agentic coding in fewer steps and tokens; Bosun keeps `high` until a project measures a lower level on its own slices. At `xhigh` and `max` it may draft a long deliverable in thinking and again in the reply. Claude cannot change effort inside a session, and the effort doc says to hold it constant within a conversation, so effort is chosen at launch and the brief states the level it assumes.
 
 **Sizing.** The guide says Fable 5.1 "can execute very long tasks without much guidance on methodology, especially when the goal is clear," and pairs `xhigh` with runs over thirty minutes. The harness sizes work as outcomes with done-conditions, not step lists, and drains ambiguity once, in the spec, at the one planned stop.
 
@@ -212,15 +198,15 @@ The hub picks one of three shapes per run: one session as before when the run is
 
 ## Status
 
-Version 0.23.1. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and worker/browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks across all modes, host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
+Version 0.24.0. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks of host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
 
-There is no controlled performance benchmark establishing cost, speed, or quality improvements. Those depend on the project, model access, provider mode, and verification workload.
+There is no controlled performance benchmark establishing cost, speed, or quality improvements. Those depend on the project, model access and verification workload.
 
 ## Safety and local data
 
-Bosun delegates through your installed tools and their permissions. Workers can edit project files. Review the rules and SessionStart hooks before enabling them.
+Bosun delegates through your installed tools and their permissions. The lead can edit project files. Review the rules and SessionStart hooks before enabling them.
 
-Specs, checkpoints, and worker prompts can contain project information. Review them before sharing or committing them. Do not include credentials or customer records in a public example or issue. Continuous runs can commit, push, open pull requests, and arm auto-merge on them under the documented run policy; start with one slice.
+Specs and checkpoints can contain project information. Review them before sharing or committing them. Do not include credentials or customer records in a public example or issue. Continuous runs can commit, push, open pull requests, and arm auto-merge on them under the documented run policy; start with one slice.
 
 ## Contributing and license
 

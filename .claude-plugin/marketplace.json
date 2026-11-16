@@ -5,7 +5,7 @@
     "email": "mckissinger@gmail.com"
   },
   "metadata": {
-    "description": "Spec-anchored workflow for autonomous coding runs in Claude Code on Fable 5.1 or Opus 5.5."
+    "description": "Spec-anchored workflow for autonomous coding runs in Claude Code on Opus 5.5."
   },
   "plugins": [
     {
@@ -15,11 +15,11 @@
       "category": "development",
       "tags": [
         "workflow",
-        "fable",
+        "opus",
         "verification",
         "spec-driven"
       ],
-      "version": "0.23.1"
+      "version": "0.24.0"
     }
   ]
 }

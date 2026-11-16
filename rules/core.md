@@ -1,16 +1,18 @@
 # Bosun core rules (Claude Code)
 
-Rules for autonomous coding runs in Claude Code, whichever Claude model leads (see Provider mode). Rationale and doc citations: the Bosun README.
+Rules for autonomous coding runs in Claude Code on Opus 5.5 (see Model). Rationale and doc citations: the Bosun README.
 
 ## Effort
 
-Effort is the primary control on the lead. On Fable 5.1, thinking is adaptive, always on, and cannot be disabled. Effort is chosen when the session is launched (`claude --effort <level>`, or `/effort <level>` before the first brief) and held for the session. You cannot change it and should not ask for a change mid-run; state the level you are assuming in the brief.
+Effort is the primary control on the lead. Effort is chosen when the session is launched (`claude --effort <level>`, or `/effort <level>` before the first brief) and held for the session. You cannot change it and should not ask for a change mid-run; state the level you are assuming in the brief.
 
-- `low`: fully specified one-line changes. Never for anything that needs fresh information; at low, Fable 5.1 answers from memory instead of searching.
+- `low`: fully specified one-line changes.
 - `medium`: routine implementation with fully specified behavior and existing test coverage.
 - `high`: the default. Features, multi-file changes, refactors, debugging.
 - `xhigh`: runs over thirty minutes, migrations, hard bugs, reviewing large diffs.
 - `max`: only when xhigh has measurably fallen short.
+
+Anthropic's Opus 5.5 guide reports `medium` matching Opus 5 at `high` on agentic coding in fewer steps and tokens. Bosun keeps `high` as the default until a project has measured a lower level on its own slices.
 
 ## The spec
 
@@ -20,27 +22,17 @@ Lessons are what this codebase needs a fresh session to know that the repo and g
 
 The lessons hold one standing entry, "Recurring verify failures": at most ten lines, each a kind of defect that verification has caught in two or more slices of this project, with one short example (for example, "a read that returns another account's rows"). `bosun-triage` keeps it from the slice log at each milestone end. Before every verify, the implementer checks the slice's diff against each kind on the list and fixes what it finds; the verify prompt carries the list too. A new project starts with the entry empty.
 
-## Provider mode
+## Model
 
-The harness has three provider modes. The mode is a line in the project's spec, `Provider mode: <mode>`; a spec without the line is in `fable` mode. `/bosun-mode` sets or reports it.
+Bosun runs on Opus 5.5 (`claude-opus-5-5`) in every role. The lead briefs, implements, keeps the spec, commits, and fixes FAIL findings itself; the project-local `bosun-scout` and the fresh, read-only verifiers run on Opus 5.5 too. Before briefing, confirm the session model is `claude-opus-5-5`: a spec line cannot change it, so switch with `/model claude-opus-5-5` or relaunch with `claude --model claude-opus-5-5`. Use the local scout and verifier definitions that `/bosun-mode opus` writes, not plugin-scoped substitutes.
 
-| Mode | Lead | Implementation |
-| --- | --- | --- |
-| `fable` | Fable 5.1 | Fable 5.1 |
-| `fable-opus` | Fable 5.1 | Opus 5.5 at high as a native subagent |
-| `opus` | Opus 5.5 | Opus 5.5 (also scout and verifier) |
+A spec may carry `Provider mode: opus`, the only value; a spec without the line is the same. `fable` and `fable-opus` were removed in 0.24.0, and `codex`, `fable-crew`, `astra-crew` and `astra` in 0.18.0: a spec that names one makes `/bosun-brief` and `/bosun-verify` stop and say to change the line to `Provider mode: opus` or delete it.
 
-All three run in Claude Code. In `fable` mode, Fable 5.1 briefs, implements, verifies, and keeps the spec. The values `codex`, `fable-crew`, `astra-crew` and `astra` were removed in 0.18.0 with the Codex plugin and the Codex worker; a spec that names one makes `/bosun-brief` and `/bosun-verify` stop and say to choose `fable`, `fable-opus` or `opus` with `/bosun-mode`.
-
-In `fable-opus`, Fable retains briefing, spec upkeep, commits, and verification; the project-local `bosun-worker-opus` implements at `claude-opus-5-5` / `high`. Use `/bosun-mode fable-opus` to configure it. There is one worker per slice, no nested delegation, and no fallback to Fable implementation. FAIL findings return to Opus. The worker uses the slice's worktree and never commits or edits the spec.
-
-Verifier effort is independent of lead and worker effort in all three modes. `/bosun-mode --verifier-effort <low|medium|high|xhigh|max>` stores a top-level `Verifier effort:` default in the spec. `/bosun-verify --effort <level>` overrides it for that invocation. Precedence: invocation override, current-slice `Verifier effort:`, top-level `Verifier effort:`, then `high`. Ignore historical slice logs and quoted examples; conflicting settings at one scope or invalid levels stop verification. `/bosun-verify` configures both project-local verifier agents with that effort before launching the appropriate one on Opus 5.5 in `opus`, otherwise Fable 5.1. Record the effective effort with each verdict and in the slice log. A retry keeps the same effort unless the user changes it. This changes the verifier's frontmatter, never the lead session's effort.
-
-In `opus`, Opus 5.5 performs briefing, direct implementation, spec upkeep, commits, scouting, and verification. The verifier still runs in a fresh read-only context. Configure local agents with `/bosun-mode opus`, and confirm the lead session is actually on `claude-opus-5-5` before starting; a spec edit alone cannot change it. Switching back to a Fable mode restores the scout/verifier models and requires a Fable lead. Notes about a specific model's behavior, such as Fable 5.1's under Effort, are not claims about Opus. Use the local scout and verifier definitions, not plugin-scoped substitutes.
+Verifier effort is independent of the lead session's effort. `/bosun-mode --verifier-effort <low|medium|high|xhigh|max>` stores a top-level `Verifier effort:` default in the spec. `/bosun-verify --effort <level>` overrides it for that invocation. Precedence: invocation override, current-slice `Verifier effort:`, top-level `Verifier effort:`, then `high`. Ignore historical slice logs and quoted examples; conflicting settings at one scope or invalid levels stop verification. `/bosun-verify` configures both project-local verifier agents with that effort before launching the appropriate one. Record the effective effort with each verdict and in the slice log. A retry keeps the same effort unless the user changes it. This changes the verifier's frontmatter, never the lead session's effort.
 
 ## Decisions
 
-The decisions setting is a line in the project's spec next to the provider mode: `Decisions: ask` or `Decisions: take recommendations`. A spec without the line is `ask`: the lead stops for the user wherever these rules say to stop.
+The decisions setting is a line near the top of the project's spec: `Decisions: ask` or `Decisions: take recommendations`. A spec without the line is `ask`: the lead stops for the user wherever these rules say to stop.
 
 Under `take recommendations`, the lead decides these itself, taking the option it would recommend:
 
@@ -63,7 +55,7 @@ Work that needs one of these is parked: the lead records it as a human-check, or
 
 ## Run policy
 
-The run policy is a line in the project's spec next to the provider mode: `Run policy: one slice` or `Run policy: until blocked, max N slices`. A spec without the line is `one slice`; `until blocked` without a `max` means `max 10 slices`. It applies in all provider modes.
+The run policy is a line near the top of the project's spec: `Run policy: one slice` or `Run policy: until blocked, max N slices`. A spec without the line is `one slice`; `until blocked` without a `max` means `max 10 slices`.
 
 Under `one slice`, `/bosun-brief` runs one slice, verifies, reports, and stops. Under `until blocked`, after a slice verifies (PASS or PASS WITH FOLLOW-UPS), the lead records lessons, commits, pushes, opens a PR for the slice's branch, reports the slice, and then briefs and runs the next slice in the same turn. Every slice has its own branch and its own PR, merged as the next paragraph says. The run stops, with a report saying why, at the first of: no runnable done-condition remains; every remaining runnable item needs a decision the lead may not make (see Decisions); a verify produced two FAILs on the same finding (three under `Decisions: take recommendations`; see Decisions); a slice reached its verify limit without passing (see Finishing); every remaining runnable slice waits on an unmerged PR that cannot merge on its own (see Merge flow); an environment failure blocks every remaining runnable slice (see While working); N slices have been started in this run, counting the first. A hub whose lanes are running and that has no planning work left pauses instead, as "Lanes" says; that does not end the run.
 
@@ -72,8 +64,6 @@ Under `until blocked`, the lead never ends the turn between slices to ask whethe
 Records ride along. Every PR pays a full CI cycle, so a change that touches only records (the spec, docs, design boards, screenshots: a decision, an approval, a polished board, a status fix, triage results) never gets a PR of its own during a run. The lead commits it to the branch of a slice whose PR has not merged (the slice in flight, or the next slice), and pushes that branch so the record is not lost if the session ends. A board goes with the slice that builds its screen. Until that PR merges, the lead carries the decision into every brief that needs it, since a slice built ahead from the default branch cannot see it. Only when no slice of the run will follow do the records go in one PR, opened at the end of the run. When a slice stops without a PR, as at the verify limit, the lead moves the records commits off its branch (`git cherry-pick`) onto the next slice's branch, or into that end-of-run PR, so records never wait on unverified code. Outside a run, a records change the user asks for gets its own PR as before.
 
 A done-condition is runnable when its status is `todo` or `in progress`, it is not `human-check`, and nothing it needs is on the undecided list. Under `Decisions: take recommendations`, before concluding that none remains, the lead decides the undecided items the Decisions section lets it decide, which makes the work that waited on them runnable. When no runnable done-condition remains, under either policy, the lead does not invent work: it reports that the roadmap is exhausted, lists every open human-check condition and every undecided item as the question the spec records, proposes candidate next slices drawn from the spec's follow-ups section as draft done-conditions marked as proposals, and ends the turn asking what next. A proposal becomes a done-condition only when the user says so.
-
-In fable-opus mode under `until blocked`, the lead uses the worker's run time to stage the next slice's brief when that slice does not depend on the running one, and re-validates the staged brief against what actually landed before running it. `/bosun-brief` holds the details.
 
 ## Merge flow
 
@@ -135,7 +125,7 @@ Every follow-up gets a home when it is written. A bug or security issue in the s
 
 ## Design
 
-These rules apply to every slice that adds or changes a screen. The approval gate is a line in the spec next to the provider mode: `Design approval: me` or `Design approval: critique`. A project with UI and no line is `me`.
+These rules apply to every slice that adds or changes a screen. The approval gate is a line near the top of the spec: `Design approval: me` or `Design approval: critique`. A project with UI and no line is `me`.
 
 1. Before writing UI code, read the screen's board, the design system, and any motion and mock-data notes the project keeps.
 2. Mock up a screen that has no board first, in the project's design system: on a design canvas artifact when the session has one, with a copy in the repo's design folder.
@@ -174,7 +164,7 @@ Phrase code questions to avoid safeguard false positives: ask "are there any bug
 
 Before reporting anything non-trivial as done, check the diff against the spec's "Recurring verify failures" lesson, then run `/bosun-verify` and act on its verdict. After two FAILs on the same finding, stop and report both positions to the user instead of looping, unless `Decisions: take recommendations` lets the lead decide it (see Decisions).
 
-What blocks. A verify FAILs a slice only for an unmet done-condition, a failing check, or a release-blocking defect (below) with evidence that it can happen: a concrete input or path the app actually accepts, cited from the code or shown by a command. A defect only an input the app never accepts could reach is not a finding. Reachable defects that are not release-blocking (release-blocking means security, lost or wrong data, wrong money, or a broken core flow) make PASS WITH FOLLOW-UPS. A nit is reported only when it is in the slice's own diff, under its own heading; the implementer (the worker in fable-opus mode) fixes it before committing or it is dropped, and no nit, found by a verifier or noticed while working, is written down as a follow-up.
+What blocks. A verify FAILs a slice only for an unmet done-condition, a failing check, or a release-blocking defect (below) with evidence that it can happen: a concrete input or path the app actually accepts, cited from the code or shown by a command. A defect only an input the app never accepts could reach is not a finding. Reachable defects that are not release-blocking (release-blocking means security, lost or wrong data, wrong money, or a broken core flow) make PASS WITH FOLLOW-UPS. A nit is reported only when it is in the slice's own diff, under its own heading; the lead fixes it before committing or it is dropped, and no nit, found by a verifier or noticed while working, is written down as a follow-up.
 
 The verify limit. A slice gets at most three verify runs, counting every FAIL and every re-verify after PASS WITH FOLLOW-UPS, whether the findings repeat or not; a rerun because a check could not run (below) does not count. When the third is PASS WITH FOLLOW-UPS, the slice ships, and any non-blocking bug in its own work becomes a `bug` follow-up instead of a fourth round. When the third is a FAIL, the slice stops there: the work stays in its worktree, the open findings go to the user with the lead's position on each (from a lane, to the hub), and the run stops as for two FAILs on the same finding. The limit covers a slice up to its PR; a later fix to that PR ("Merge flow") is verified with its own limit of three.
 

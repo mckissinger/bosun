@@ -10,7 +10,7 @@ Shorten time to trustworthy CI results while preserving coverage. V1 supports Gi
 ## Select the outcome
 
 - **Audit CI**, review, or recommendations: read-only investigation and a ranked report. Do not edit the spec or workflows, launch runs, or invoke the implementation flow. A spec is useful context but not required for an audit.
-- **Speed up CI**, optimize, or fix an identified CI bottleneck: investigate, then implement a focused improvement through `/bosun-brief` and verify through `/bosun-verify`. Honor existing authorization; do not insert another approval step when implementation is already requested. The brief's provider-mode, spec, routing, and run-policy rules still apply.
+- **Speed up CI**, optimize, or fix an identified CI bottleneck: investigate, then implement a focused improvement through `/bosun-brief` and verify through `/bosun-verify`. Honor existing authorization; do not insert another approval step when implementation is already requested. The brief's model, spec, and run-policy rules still apply.
 - **Turn on a merge queue** or **set up migrations**: when the user asks by name, follow that section below, through `/bosun-brief` and `/bosun-verify` for its code.
 - If the request does not establish whether to edit, default to audit. Keep deployment changes and repository protection changes, including turning on a merge queue and the migrations flow below, outside a CI performance request unless separately requested. A move to Blacksmith runners is always a recommendation under "Runner standard"; implement it only when the user asked for the migration.
 

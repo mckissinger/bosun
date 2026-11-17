@@ -14,6 +14,7 @@ Third outcome (slice 4, 2026-09-04): the harness runs on either Claude Code or C
 
 ## Decisions, in the user's words
 
+- (2026-11-17) Design drift. Michael: "even when you define these things, sometimes the builders lose track of it as you continue to build. It might do it on the first few screens, but then it just includes the basics in terms of requirements. It really needs to be utilized for all frontend." A review of a recent app redesign found builders working from old image exports instead of the design tool's values, dropping drawn behaviors as listed departures, and a board compare no verifier checked. The lead proposed loading the project's design skill on every UI slice, a `Design:` brief line, recorded and approved departures, and verifying against boards exported in the slice. Michael: "yes".
 - (2026-11-15) Opus only. Michael: "the only mode we currently use is opus mode by the way". The lead proposed removing the `fable` and `fable-opus` modes as the Codex modes were removed in 0.18.0, since their text loads in every session and their branches keep producing cross-file contradictions in verify. Michael: "yes". Also asked: "did we include anything about the staging structure we discussed? do we plan to do that? will it be part of bosun or factory?" Not recorded yet; the lead's recommendation stands (Factory provisions staging, Bosun uses it), to be taken up after this slice.
 - (2026-11-15) Fewer PRs. Michael: "Do you think that we could expand a milestone or the amount of work being done in a session before reviewing and make it bigger (basically to where there are fewer PRs, fewer review sessions, and more work being done in a single slice, if you will)?" A survey of crelaunch, quillery, skipline and factory found code slices already sized at a median of 240–710 changed lines, while records-only PRs were 30–45% of PRs, each paying a full CI cycle, first verifies failed on 31–59% of slices, slices ran up to five verify rounds on shifting findings, specs had grown to 11.5k lines plus a 19k-line slice log, and verify ran reduced checks on a loaded machine without saying so. Michael: "Ok i like your recommendations". On sizing slices by risk he asked "Do you really think size slices by risk will make a difference, or should we just keep it as is for now?"; the lead recommended dropping it for lack of evidence. On the self-check he asked how the lead would know the recurring failures; the lead proposed a ten-line lesson triage keeps from the slice log. Michael: "Start." Adopted: records ride along on slice PRs, an archive file for finished work, a FAIL needs a reachable release-blocking defect and nits are not recorded, at most three verify runs per slice, the "Recurring verify failures" lesson checked before verify, and no verify passes on a check it could not run. Slices are not resized.
 - (2026-11-05) Machine load. Docker held seven Skipline stacks and swap was nearly full. Michael: "How do we then resolve this across all of our projects and in the future without getting overly specific, if you will?" The lead proposed five rules: light by default, stop what isn't used, find leftovers, check the load first, treat infrastructure failures separately. Asked about the first, Michael asked for the alternative, and the lead's pick was light by default with a service added for a run where a project needs it. On the others: "3. good 4. sounds good 5. good". Then: "so then should we brief these then add them?" The lead answered yes and started.
@@ -328,6 +329,35 @@ Verifier effort: high (no override at any scope).
 Checks: as in Y11. No end-to-end suite; CI's `checks` job is the required check.
 Branch: hygiene-1, from main (34b50d4), carrying the triage bookkeeping (eb27200) and archive (70a4156) commits.
 
+### Opus only slice (2026-11-15, verified)
+
+Name: opus-only (2026-11-15). Mode: opus (Opus 5.5 leads and implements). Status: verified 2026-11-15 (first FAIL: brief and README said a bare `/bosun-mode` writes the agents, but it only reports; plus worker and mode leftovers; fixed; second PASS WITH FOLLOW-UPS: two stale "provider-mode, routing" lines, where a missing `Verifier effort:` line goes, a false staging claim in the Design notes; fixed; third PASS).
+Decisions: see the 2026-11-15 "Opus only" entry under Decisions.
+Outcome: Bosun runs on Opus 5.5 in every role, with no `fable` or `fable-opus` mode, no Opus worker and no staged briefs, so every session reads less and the rules have fewer branches to keep consistent.
+Done-conditions:
+O1. `verified 2026-11-15 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 4d2f0c0` `rules/core.md`: "Provider mode" becomes "Model" (Opus 5.5 in every role, confirm the session model, local agents); `Provider mode: opus` is the only value and no line means the same; `fable` and `fable-opus` stop `/bosun-brief` and `/bosun-verify` with what to change; the Effort section drops Fable-only claims and notes the Opus 5.5 guide's `medium` finding while keeping `high`; the staging paragraph and every worker reference are gone; settings lines sit "near the top of the spec".
+O2. `verified 2026-11-15 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 4d2f0c0` `skills/bosun-brief/SKILL.md`: one "Model" section replaces the provider-mode and Opus-lead sections; "Staged briefs" and "Fable-opus mode" are removed with every pointer to them; spec creation adds no mode line; the lane prompt names `claude-opus-5-5`.
+O3. `verified 2026-11-15 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 4d2f0c0` `skills/bosun-verify/SKILL.md`: the verifier runs on Opus 5.5; a removed mode stops before writes; the setup command has no `--mode`; worker and fable-opus text is gone; while the verifier runs, the lead may brief the next slice without starting its work.
+O4. `verified 2026-11-15 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 4d2f0c0` `skills/bosun-mode/SKILL.md` writes the local agents, sets or reports verifier effort, accepts only `opus`, and rewrites a removed mode line to `Provider mode: opus` after setup succeeds.
+O5. `verified 2026-11-15 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 4d2f0c0` `scripts/configure-claude-agents.py` generates the scout and both verifiers on `claude-opus-5-5` only; `--mode` accepts only `opus` (default) for older callers; `--include-worker` is gone; the ignore still lists `bosun-worker-opus.md` so an old generated copy stays out of git. `agents/bosun-worker-opus.md` is deleted; both verifier templates default to `claude-opus-5-5`.
+O6. `verified 2026-11-15 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 4d2f0c0` `skills/bosun-checkpoint/SKILL.md` drops the staged-brief line. README ("Start here", "What is in the plugin", "Model", "Verifier effort", run policy, "Why each piece exists", safety), `CONTRIBUTING.md` and both manifests describe Opus-only Bosun; the Fable rationale stays, framed as where the rules came from. Version 0.24.0 in both manifests and the README version line.
+O7. `verified 2026-11-15 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 4d2f0c0` Checks pass: `bash -n scripts/*.sh`; JSON parses for both manifests and `hooks/hooks.json`; `python3 -m py_compile scripts/configure-claude-agents.py`; `claude plugin validate .`; `git diff origin/main --check`; the project-name grep over added lines in rules, skills, agents, scripts, README.md and .claude-plugin finds nothing; `grep -rn -i -E 'fable-opus|bosun-worker|staged brief|claude-fable'` over rules, skills and agents finds only the removal notices that tell a spec naming a removed mode what to change; the script runs in a throwaway project with no `--mode` and with `--mode opus`, writing three agents on `claude-opus-5-5`, and rejects `--mode fable`.
+O8. `done` This spec: the decision entry, the hygiene-1 brief moved to history, human-check 46 marked moot, the slice log line.
+Out of scope:
+- Changing the default effort from `high`; it waits for measured slices.
+- Project specs (all name `opus` already) and their generated agents, which refresh on their next `/bosun-verify`.
+- The staging setup and QA after merge; taken up after this slice.
+- Archived history and slice logs that mention the removed modes.
+Assumptions:
+- **The `Provider mode:` line stays valid** with one value, so existing specs need no edit.
+- **The README's Fable rationale stays** as the record of where the rules came from, with the Opus 5.5 guide's differences named.
+- **Versioning.** Minor bump, because modes are removed.
+Decisions setting: ask (default).
+Effort assumed: the session's setting (not exposed to the lead).
+Verifier effort: high (no override at any scope).
+Checks: as in O7. No end-to-end suite; CI's `checks` job is the required check.
+Branch: opus-only, from main (f1810ad).
+
 ## Undecided
 
 (none)
@@ -363,32 +393,29 @@ Branch: hygiene-1, from main (34b50d4), carrying the triage bookkeeping (eb27200
 
 ## Current slice
 
-Name: opus-only (2026-11-15). Mode: opus (Opus 5.5 leads and implements). Status: verified 2026-11-15 (first FAIL: brief and README said a bare `/bosun-mode` writes the agents, but it only reports; plus worker and mode leftovers; fixed; second PASS WITH FOLLOW-UPS: two stale "provider-mode, routing" lines, where a missing `Verifier effort:` line goes, a false staging claim in the Design notes; fixed; third PASS).
-Decisions: see the 2026-11-15 "Opus only" entry under Decisions.
-Outcome: Bosun runs on Opus 5.5 in every role, with no `fable` or `fable-opus` mode, no Opus worker and no staged briefs, so every session reads less and the rules have fewer branches to keep consistent.
+Name: design-drift (2026-11-17). Mode: opus (Opus 5.5 leads and implements). Status: verified 2026-11-17 (first PASS WITH FOLLOW-UPS: brief steps missing board-export paths, departure approval timing, forced departures with no approver, no-design-tool fallback; fixed; second PASS WITH FOLLOW-UPS: a parked departure could merge, a README clause missing; fixed without a further verify).
+Decisions: see the 2026-11-17 "Design drift" entry under Decisions.
+Outcome: A builder keeps to the approved design on every screen of a slice, not only the first: it loads the project's design skill and locked rules, takes values from the design tool, records departures for approval, and is checked against board images exported in the same slice.
 Done-conditions:
-O1. `verified 2026-11-15 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 4d2f0c0` `rules/core.md`: "Provider mode" becomes "Model" (Opus 5.5 in every role, confirm the session model, local agents); `Provider mode: opus` is the only value and no line means the same; `fable` and `fable-opus` stop `/bosun-brief` and `/bosun-verify` with what to change; the Effort section drops Fable-only claims and notes the Opus 5.5 guide's `medium` finding while keeping `high`; the staging paragraph and every worker reference are gone; settings lines sit "near the top of the spec".
-O2. `verified 2026-11-15 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 4d2f0c0` `skills/bosun-brief/SKILL.md`: one "Model" section replaces the provider-mode and Opus-lead sections; "Staged briefs" and "Fable-opus mode" are removed with every pointer to them; spec creation adds no mode line; the lane prompt names `claude-opus-5-5`.
-O3. `verified 2026-11-15 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 4d2f0c0` `skills/bosun-verify/SKILL.md`: the verifier runs on Opus 5.5; a removed mode stops before writes; the setup command has no `--mode`; worker and fable-opus text is gone; while the verifier runs, the lead may brief the next slice without starting its work.
-O4. `verified 2026-11-15 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 4d2f0c0` `skills/bosun-mode/SKILL.md` writes the local agents, sets or reports verifier effort, accepts only `opus`, and rewrites a removed mode line to `Provider mode: opus` after setup succeeds.
-O5. `verified 2026-11-15 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 4d2f0c0` `scripts/configure-claude-agents.py` generates the scout and both verifiers on `claude-opus-5-5` only; `--mode` accepts only `opus` (default) for older callers; `--include-worker` is gone; the ignore still lists `bosun-worker-opus.md` so an old generated copy stays out of git. `agents/bosun-worker-opus.md` is deleted; both verifier templates default to `claude-opus-5-5`.
-O6. `verified 2026-11-15 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 4d2f0c0` `skills/bosun-checkpoint/SKILL.md` drops the staged-brief line. README ("Start here", "What is in the plugin", "Model", "Verifier effort", run policy, "Why each piece exists", safety), `CONTRIBUTING.md` and both manifests describe Opus-only Bosun; the Fable rationale stays, framed as where the rules came from. Version 0.24.0 in both manifests and the README version line.
-O7. `verified 2026-11-15 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS; fingerprint 4d2f0c0` Checks pass: `bash -n scripts/*.sh`; JSON parses for both manifests and `hooks/hooks.json`; `python3 -m py_compile scripts/configure-claude-agents.py`; `claude plugin validate .`; `git diff origin/main --check`; the project-name grep over added lines in rules, skills, agents, scripts, README.md and .claude-plugin finds nothing; `grep -rn -i -E 'fable-opus|bosun-worker|staged brief|claude-fable'` over rules, skills and agents finds only the removal notices that tell a spec naming a removed mode what to change; the script runs in a throwaway project with no `--mode` and with `--mode opus`, writing three agents on `claude-opus-5-5`, and rejects `--mode fable`.
-O8. `done` This spec: the decision entry, the hygiene-1 brief moved to history, human-check 46 marked moot, the slice log line.
+G1. `verified 2026-11-17 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS; fingerprint 000e19f` `rules/core.md` "Design": step 1 loads the design skill the project names and its locked design rules, reads each screen's approved board (not only the first) and takes values from the design tool, never from an exported image; step 2 mocks up in the design tool the project names, a canvas artifact only when it names none; step 4 builds every state and motion the board shows and records departures, with forced departures approved by their record and design-changing departures approved before the first verify (user under `me`, a fresh agent under `critique`) and never merged unapproved; step 6 compares against board images exported in this slice, and any difference that is not an approved departure blocks.
+G2. `verified 2026-11-17 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS; fingerprint 000e19f` `skills/bosun-brief/SKILL.md`: the brief template has a `Design:` line for slices that add or change a screen, naming the design skill, the locked-rules file, each screen's approved board and its approved departures, or "no board yet".
+G3. `verified 2026-11-17 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS; fingerprint 000e19f` `skills/bosun-verify/SKILL.md`: for a screen with a board, the verifier gets the board images exported in this slice, the locked design rules and the approved departures, and reports every other difference and every broken locked rule.
+G4. `verified 2026-11-17 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS; fingerprint 000e19f` README "Design" agrees with G1–G3. Version 0.25.0 in both manifests and the README version line.
+G5. `verified 2026-11-17 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS WITH FOLLOW-UPS; fingerprint 000e19f` Checks pass: `bash -n scripts/*.sh`; JSON parses for both manifests and `hooks/hooks.json`; `claude plugin validate .`; `git diff origin/main --check`; the project-name grep over added lines in rules, skills, agents, scripts, README.md and .claude-plugin finds nothing; `grep -rn -i "design canvas"` over rules, skills and README finds only the fallback for a project that names no design tool.
+G6. `done` This spec: the decision entry, the opus-only brief moved to history, the slice log line.
 Out of scope:
-- Changing the default effort from `high`; it waits for measured slices.
-- Project specs (all name `opus` already) and their generated agents, which refresh on their next `/bosun-verify`.
-- The staging setup and QA after merge; taken up after this slice.
-- Archived history and slice logs that mention the removed modes.
+- The user's own design skill outside this repo (updated alongside, not part of this PR).
+- Giving verifiers design-tool access; they work from exported images.
+- The second pass of design-skill changes (references, redesign process, characters).
 Assumptions:
-- **The `Provider mode:` line stays valid** with one value, so existing specs need no edit.
-- **The README's Fable rationale stays** as the record of where the rules came from, with the Opus 5.5 guide's differences named.
-- **Versioning.** Minor bump, because modes are removed.
+- **Generic wording.** Bosun names no design tool or skill; the project's design doc names them, so the rules work for any tool.
+- **Departure approval under `critique`** is a fresh agent's judgment, matching how `critique` already approves mockups.
+- **Versioning.** Minor bump: new required brief line and a stricter verify input.
 Decisions setting: ask (default).
 Effort assumed: the session's setting (not exposed to the lead).
 Verifier effort: high (no override at any scope).
-Checks: as in O7. No end-to-end suite; CI's `checks` job is the required check.
-Branch: opus-only, from main (f1810ad).
+Checks: as in G5. No end-to-end suite; CI's `checks` job is the required check.
+Branch: design-drift, from main (5d763cf).
 
 ## Launch and operate (drafts)
 
@@ -443,6 +470,7 @@ Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is
 
 ## Slice log
 
+- 2026-11-17, design-drift, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (kinds: a copy of a core rule missing its new clause; a rule contradicting another section on approval timing; fixed), second PASS WITH FOLLOW-UPS (a parked approval with no merge guard; a README copy missing a clause; fixed); all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.
 - 2026-11-15, opus-only, opus (implemented by lead), first verify FAIL (kind: a dangling instruction left by a removal, a bare `/bosun-mode` that only reports), second PASS WITH FOLLOW-UPS (stale references to removed sections; fixed), third PASS; all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.
 - 2026-11-15, hygiene-1, opus (implemented by lead; carries the 2026-11-15 triage bookkeeping and archive), first verify PASS WITH FOLLOW-UPS (kinds: a copy of a core rule missing its new clause; a step order losing spec appends; fixed), second PASS WITH FOLLOW-UPS (copies missing carve-outs again; fixed), third PASS WITH FOLLOW-UPS (two drift items recorded); all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.
 - 2026-11-15, fewer-prs, opus (implemented by lead), first verify FAIL (blocking kind: rules contradicting across files, lane records sent to the wrong branch; ten gaps, all fixed), second PASS WITH FOLLOW-UPS (four wording gaps, fixed), third PASS WITH FOLLOW-UPS (one drift, recorded as a follow-up under the new verify limit); all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.

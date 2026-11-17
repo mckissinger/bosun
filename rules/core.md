@@ -48,7 +48,7 @@ The lead never decides these itself, under either setting:
 - prices, fees, and any live spend;
 - production data, and anything sent to real people;
 - legal, naming, and trademark questions;
-- approval of a new design when `Design approval: me` (see Design);
+- approval of a new design, or of a departure that changes an approved design, when `Design approval: me` (see Design);
 - anything the spec lists as the user's.
 
 Work that needs one of these is parked: the lead records it as a human-check, or as an undecided item phrased as a question with the lead's recommendation, and takes the next runnable work. Under `ask`, two FAILs on the same finding stop the run; under `take recommendations`, a third FAIL on the same finding stops it. Under either value, a slice that reaches its verify limit without passing stops the run the same way (see Finishing).
@@ -127,14 +127,14 @@ Every follow-up gets a home when it is written. A bug or security issue in the s
 
 These rules apply to every slice that adds or changes a screen. The approval gate is a line near the top of the spec: `Design approval: me` or `Design approval: critique`. A project with UI and no line is `me`.
 
-1. Before writing UI code, read the screen's board, the design system, and any motion and mock-data notes the project keeps.
-2. Mock up a screen that has no board first, in the project's design system: on a design canvas artifact when the session has one, with a copy in the repo's design folder.
+1. Before writing UI code, load the design skill the project names (in its design doc, such as `design/DESIGN.md`, or its project instructions) and read the project's locked design rules. Then, for each screen in the slice, not only the first, read its approved board in the design tool, the design system, and any motion and mock-data notes the project keeps. Take sizes, colors and spacing from the design tool's own values (its code or computed-style export), never from an exported image. An image is only for comparing. In a project that names no design tool, the mockup's own source (the canvas artifact and its repo copy) stands in for the design tool here and in step 6.
+2. Mock up a screen that has no board first, in the project's design system and in the design tool its design doc names, with a copy in the repo's design folder. Use a design canvas artifact only when the project names no design tool.
 3. Get the mockup approved before writing product UI. Under `me`, the user approves it, and a new design direction or a new interaction pattern always waits for that approval (parked as Decisions describes). Under `critique`, a fresh agent critiques the mockup, the board is revised, and it gains an "After critique" note.
-4. Build the screen.
+4. Build the screen, every state and the motion its board shows. A difference from the board that the build needs is a departure: record it in the slice with its reason. A forced departure (the platform or the data cannot do what the board shows, and what the user sees or does is unchanged) is approved by that record. A departure that changes the design is approved before the first verify: under `me` by the user, shown beside the board (parked as Decisions describes while it waits); under `critique` by a fresh agent. While a departure waits, its code stays off the slice's PR, or the PR stays open without auto-merge; it never merges unapproved.
 5. Before the first verify, check it at 390, 768, 1024, 1280, and 1440 pixels wide, or the widths the project names, in its empty, loading, error, hover, and focus states, with the board's motion, including exits and reduced motion.
-6. A fresh agent compares the screenshots with the board. Open differences block the done-condition.
+6. Export the current board images from the design tool in this slice, not from an older export folder, and put them in the slice's evidence. A fresh agent compares the screenshots with them. Any difference that is not an approved departure blocks the done-condition.
 
-A new direction starts fresh: several new options, not variations on an older approved mockup. Screenshot paths go in the evidence lines.
+A new direction starts fresh: several new options, not variations on an older approved mockup. Screenshot and board-export paths go in the evidence lines.
 
 ## Starting substantial work
 

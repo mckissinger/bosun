@@ -90,7 +90,7 @@ Use `/bosun-ci audit CI` for a read-only review of GitHub Actions workflows and 
 
 Use `/bosun-ci speed up CI` to investigate and implement a focused improvement through the existing brief and independent verification workflow. It compares elapsed time, total runner minutes, and reliability, preserving required checks and explaining every removed or conditional check. Warm/cold caches and differences between runs are reported; local validation alone never establishes a hosted speedup. Findings and evidence go in the existing spec.
 
-V1 supports GitHub Actions. Blacksmith runners are the standard: the skill recommends moving GitHub-hosted jobs to them and makes the move only when asked. Deployment changes and repository protection changes need their own scope. On request, it also holds the steps for turning on a merge queue, a time-limited flake quarantine with a nightly hunt, a path gate for end-to-end tests, and an opt-in migrations flow with production behind approval or automatic. This skill is an engineering extension to Bosun; its CI-specific guidance references GitHub's official documentation.
+V1 supports GitHub Actions. Blacksmith runners are the standard: the skill recommends moving GitHub-hosted jobs to them and makes the move only when asked. Deployment changes and repository protection changes need their own scope. On request, it also holds the steps for turning on a merge queue, a time-limited flake quarantine with a nightly hunt, a path gate for end-to-end tests, and an opt-in migrations flow with production behind approval or automatic. A daily flake-fix loop, also on request, takes the worst flakes from the nightly hunt, fixes each in its own verified slice (a longer timeout, more retries or a weaker assertion does not count), and quarantines the ones whose cause it cannot find; a weekly report-only routine tracks CI time against the spec's `CI budget:` line. End-to-end retries in CI stay at most one, so a test that passes only on a retry is reported as a flake, and an audit flags a higher setting. Audits time runs from job timestamps on the last attempt and read rulesets as well as classic branch protection. This skill is an engineering extension to Bosun; its CI-specific guidance references GitHub's official documentation.
 
 ## Production preflight
 
@@ -198,7 +198,7 @@ The hub picks one of three shapes per run: one session as before when the run is
 
 ## Status
 
-Version 0.25.0. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks of host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
+Version 0.26.0. The [spec](SPEC.md) records implemented slices, verification evidence, and outstanding human checks. Static validation and browser smoke checks are recorded there, along with verified development slices. Full end-to-end checks of host hook behavior remain partially unverified. Do not interpret the version number as a guarantee that every host/model combination has been exercised.
 
 There is no controlled performance benchmark establishing cost, speed, or quality improvements. Those depend on the project, model access and verification workload.
 

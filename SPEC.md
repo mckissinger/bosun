@@ -449,6 +449,35 @@ Verifier effort: high (no override at any scope).
 Checks: as in M8. No end-to-end suite; CI's `checks` job is the required check.
 Branch: ci-measure, from main (56711c3).
 
+### Cross-repo CI slice (2026-11-20, verified)
+
+Name: ci-crossrepo (2026-11-20). Mode: opus (Opus 5.5 leads and implements). Status: verified 2026-11-20 (first PASS WITH FOLLOW-UPS: the branch rule's unscoped "left as it is" beside the no-queue update rule, the path gate still saying pushes run full, quarantine defined only for end-to-end tests, an aggregate gate or missing `actions: read` defeating the push skip, an empty Blacksmith cache list read as no default-branch entry; fixed; second PASS).
+Decisions: see the 2026-11-20 "Cross-repo CI fixes" entry under Decisions.
+Outcome: Every project stops paying for CI that proves nothing new: sessions stop updating PR branches that don't need it, and `bosun-ci` finds push runs that repeat what the merge queue proved, test suites the flake hunt misses, and cache data that reads empty on Blacksmith.
+Done-conditions:
+X1. `verified 2026-11-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint cfe620f` `rules/core.md` "While working" gains a "Branch updates." paragraph that applies under every run policy: a session merges or rebases the default branch into a PR's branch only to resolve a merge conflict, when a required check needs a change that landed on the default branch, or where the repository requires up-to-date branches without a merge queue ("Merge setup"); a green PR that is only behind is left as it is, because the queue or CI on the default branch tests it against newer code. It agrees with "Spec edits" (merging to resolve a spec conflict) and "Merge setup" (the no-queue update rule).
+X2. `verified 2026-11-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint cfe620f` `skills/bosun-ci/SKILL.md` baseline counts push runs on the default branch whose head commit already passed a `merge_group` run, with their share of runner minutes, as a finding; "Choose a change" gains the fix: an early job looks up a successful `merge_group` run for the same head commit and, when one exists and that run did not scope any suite down, the other jobs skip and the required checks report success, while the run still concludes success so a `workflow_run`-triggered migrations deploy fires; a failed lookup runs everything; scheduled and other events are unchanged. It agrees with "Migrations deploy" (CI still runs on push to the default branch under a queue).
+X3. `verified 2026-11-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint cfe620f` `skills/bosun-ci/SKILL.md`: the nightly flake hunt repeats every test suite a required check runs (unit, database and end-to-end), not only end-to-end, using the runner's repeat option or a second run where it has none; the baseline lists each such suite and whether the hunt covers it, and a suite outside it is a finding.
+X4. `verified 2026-11-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint cfe620f` `skills/bosun-ci/SKILL.md` cache health and the weekly report: on runners that send `actions/cache` to their own store (Blacksmith does), GitHub's cache usage API reads empty, so the audit reads usage from the provider where it can and hits from restore-step logs or from steps a cache hit skips, and does not report an empty API as healthy.
+X5. `verified 2026-11-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint cfe620f` README's `/bosun-ci` paragraph names the new checks; version 0.28.0 in both manifests and the README version line.
+X6. `verified 2026-11-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint cfe620f` Checks pass: `bash -n scripts/*.sh`; JSON parses for both manifests and `hooks/hooks.json`; `python3 -m py_compile scripts/*.py`; `claude plugin validate .`; `git diff origin/main --check`; the project-name grep over added lines in rules, skills, agents, scripts, README.md and .claude-plugin finds nothing.
+X7. `done` This spec: the decision entry with the cross-repo evidence, the ci-measure brief moved to history, the slice log line.
+Out of scope:
+- Any change in rv-rez, Ruthie or CRE Launch; each takes these through `/bosun-ci` in its own session.
+- Runner upsizing.
+- Finding which sessions made the catch-up merges; next week's measurement shows whether the rule moved the number.
+- The open "Tests and CI" retry-clause follow-up (this slice adds a paragraph beside it and does not edit it).
+Assumptions:
+- **Where the branch rule lives.** "While working", not "Merge flow", because "Merge flow" applies only under `until blocked` and the catch-ups happen under both policies.
+- **Same commit.** Under a merge queue the default branch moves to the commit the queue tested, so a push run's head commit matches the `merge_group` run's; in rv-rez all 198 push runs in the sample did.
+- **Generic wording.** No project is named in rules, skills or README; the evidence lives in this spec.
+- **Versioning.** Minor bump: a new core rule and new audit checks.
+Decisions setting: ask (default).
+Effort assumed: the session's setting (not exposed to the lead).
+Verifier effort: high (no override at any scope).
+Checks: as in X6. No end-to-end suite; CI's `checks` job is the required check.
+Branch: ci-crossrepo, from main (89d0b7b).
+
 ## Undecided
 
 (none)
@@ -484,32 +513,26 @@ Branch: ci-measure, from main (56711c3).
 
 ## Current slice
 
-Name: ci-crossrepo (2026-11-20). Mode: opus (Opus 5.5 leads and implements). Status: verified 2026-11-20 (first PASS WITH FOLLOW-UPS: the branch rule's unscoped "left as it is" beside the no-queue update rule, the path gate still saying pushes run full, quarantine defined only for end-to-end tests, an aggregate gate or missing `actions: read` defeating the push skip, an empty Blacksmith cache list read as no default-branch entry; fixed; second PASS).
-Decisions: see the 2026-11-20 "Cross-repo CI fixes" entry under Decisions.
-Outcome: Every project stops paying for CI that proves nothing new: sessions stop updating PR branches that don't need it, and `bosun-ci` finds push runs that repeat what the merge queue proved, test suites the flake hunt misses, and cache data that reads empty on Blacksmith.
+Name: ci-push-skip-guards (2026-11-20). Mode: opus (Opus 5.5 leads and implements). Status: verified 2026-11-20 (first PASS WITH FOLLOW-UPS: a skipped job reports success to a required check, so the trap is silent green as well as red; the `if:` polarity for an empty output; fixed; second PASS).
+Decisions: Michael, after the two traps were reported from rv-rez's push-skip slice: "add that to the next Bosun slice", then "brief the next Bosun slice from bosun-next".
+Outcome: A project following `bosun-ci`'s push-run skip does not break its required checks or its migrations deploy, because the skill names the two traps rv-rez's verifiers caught.
 Done-conditions:
-X1. `verified 2026-11-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint cfe620f` `rules/core.md` "While working" gains a "Branch updates." paragraph that applies under every run policy: a session merges or rebases the default branch into a PR's branch only to resolve a merge conflict, when a required check needs a change that landed on the default branch, or where the repository requires up-to-date branches without a merge queue ("Merge setup"); a green PR that is only behind is left as it is, because the queue or CI on the default branch tests it against newer code. It agrees with "Spec edits" (merging to resolve a spec conflict) and "Merge setup" (the no-queue update rule).
-X2. `verified 2026-11-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint cfe620f` `skills/bosun-ci/SKILL.md` baseline counts push runs on the default branch whose head commit already passed a `merge_group` run, with their share of runner minutes, as a finding; "Choose a change" gains the fix: an early job looks up a successful `merge_group` run for the same head commit and, when one exists and that run did not scope any suite down, the other jobs skip and the required checks report success, while the run still concludes success so a `workflow_run`-triggered migrations deploy fires; a failed lookup runs everything; scheduled and other events are unchanged. It agrees with "Migrations deploy" (CI still runs on push to the default branch under a queue).
-X3. `verified 2026-11-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint cfe620f` `skills/bosun-ci/SKILL.md`: the nightly flake hunt repeats every test suite a required check runs (unit, database and end-to-end), not only end-to-end, using the runner's repeat option or a second run where it has none; the baseline lists each such suite and whether the hunt covers it, and a suite outside it is a finding.
-X4. `verified 2026-11-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint cfe620f` `skills/bosun-ci/SKILL.md` cache health and the weekly report: on runners that send `actions/cache` to their own store (Blacksmith does), GitHub's cache usage API reads empty, so the audit reads usage from the provider where it can and hits from restore-step logs or from steps a cache hit skips, and does not report an empty API as healthy.
-X5. `verified 2026-11-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint cfe620f` README's `/bosun-ci` paragraph names the new checks; version 0.28.0 in both manifests and the README version line.
-X6. `verified 2026-11-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint cfe620f` Checks pass: `bash -n scripts/*.sh`; JSON parses for both manifests and `hooks/hooks.json`; `python3 -m py_compile scripts/*.py`; `claude plugin validate .`; `git diff origin/main --check`; the project-name grep over added lines in rules, skills, agents, scripts, README.md and .claude-plugin finds nothing.
-X7. `done` This spec: the decision entry with the cross-repo evidence, the ci-measure brief moved to history, the slice log line.
+P1. `verified 2026-11-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint 88ff1d7` `skills/bosun-ci/SKILL.md` "Push runs the queue already proved" says that a job whose `needs` includes the lookup job is skipped whenever the lookup is skipped (every pull request, queue and scheduled run), because a job's implicit `success()` covers its whole `needs` chain, so each such job gets an explicit `if:` (for example `!cancelled()` together with the lookup's output, where an empty output runs everything) or the jobs behind it never run on a PR: their required checks report success without tests, or an aggregate gate fails.
+P2. `verified 2026-11-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint 88ff1d7` The same bullet says the lookup job carries job-level `continue-on-error: true`, because a failed lookup (checkout, setup or timeout) otherwise makes the push run conclude failure even though the tests ran, and a `workflow_run` migrations deploy never fires.
+P3. `verified 2026-11-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint 88ff1d7` Version 0.28.1 in both manifests and the README version line.
+P4. `verified 2026-11-20 bosun-verifier (claude-opus-5-5/high), first PASS WITH FOLLOW-UPS, second PASS; fingerprint 88ff1d7` Checks pass: `bash -n scripts/*.sh`; JSON parses for both manifests and `hooks/hooks.json`; `python3 -m py_compile scripts/*.py`; `claude plugin validate .`; `git diff origin/main --check`; the project-name grep over added lines in rules, skills, agents, scripts, README.md and .claude-plugin finds nothing.
+P5. `done` This spec: the ci-crossrepo brief moved to history, the promoted follow-up removed, the slice log line.
 Out of scope:
-- Any change in rv-rez, Ruthie or CRE Launch; each takes these through `/bosun-ci` in its own session.
-- Runner upsizing.
-- Finding which sessions made the catch-up merges; next week's measurement shows whether the rule moved the number.
-- The open "Tests and CI" retry-clause follow-up (this slice adds a paragraph beside it and does not edit it).
+- Other open follow-ups, including the flake-fix loop and "Tests and CI" ones.
+- Any project repository.
 Assumptions:
-- **Where the branch rule lives.** "While working", not "Merge flow", because "Merge flow" applies only under `until blocked` and the catch-ups happen under both policies.
-- **Same commit.** Under a merge queue the default branch moves to the commit the queue tested, so a push run's head commit matches the `merge_group` run's; in rv-rez all 198 push runs in the sample did.
-- **Generic wording.** No project is named in rules, skills or README; the evidence lives in this spec.
-- **Versioning.** Minor bump: a new core rule and new audit checks.
+- **Evidence.** Both traps were found by verifiers on amdg-org/rv-rez#1173 (2026-11-20) and fixed there; the skill stays generic and names no project.
+- **Versioning.** Patch bump: a correction to an existing recipe.
 Decisions setting: ask (default).
 Effort assumed: the session's setting (not exposed to the lead).
 Verifier effort: high (no override at any scope).
-Checks: as in X6. No end-to-end suite; CI's `checks` job is the required check.
-Branch: ci-crossrepo, from main (89d0b7b).
+Checks: as in P4. No end-to-end suite; CI's `checks` job is the required check.
+Branch: ci-push-skip-guards, from main (7a95c1f); the two records commits ride on it.
 
 ## Launch and operate (drafts)
 
@@ -564,10 +587,9 @@ Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is
 - hygiene-1, 2026-11-15, drift: `skills/bosun-brief/SKILL.md` "Until blocked" says a red report-only workflow "is reported instead" but leaves out core's "its findings become follow-ups".
 - planning-hub, 2026-10-30, deferral: a third lane (hub plus three), or a `Lanes: max N` spec line. Michael deferred it "after we've continued to use this and explored it"; revisit after a real hub-plus-two-lanes run shows both lanes staying busy without waiting on him or on shared files.
 
-- ci-crossrepo, 2026-11-20, drift: `skills/bosun-ci/SKILL.md` "Push runs the queue already proved" does not warn that a job whose `needs` includes the lookup job is skipped whenever the lookup is skipped (every PR, queue and scheduled run), because a job's implicit `success()` covers its whole `needs` chain; dependent jobs such as the build and e2e shards need an explicit `if:` (for example `!cancelled()` plus the lookup's output), or the required checks behind them fail. Also: a failed lookup job (checkout, setup or timeout) still lets the tests run but makes the push run conclude failure, so a `workflow_run` migrations deploy never fires; the lookup job needs job-level `continue-on-error: true`. Both found by rv-rez's verifiers on its push-skip slice (2026-11-20). Add them in the next slice that touches `bosun-ci`.
-
 ## Slice log
 
+- 2026-11-20, ci-push-skip-guards, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (kinds: a consequence stated as red where GitHub reports a skipped required check as green; an example condition with no stated polarity), second PASS; both bosun-verifier on claude-opus-5-5 / high; P1–P4 verified, P5 done; route-or-screen done-conditions: 0 of 0.
 - 2026-11-20, ci-crossrepo, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (kinds: a new rule unscoped against an existing exception; an older bullet not updated for the new skip; a section left end-to-end-only after the hunt widened), second PASS; both bosun-verifier on claude-opus-5-5 / high; X1–X6 verified, X7 done; route-or-screen done-conditions: 0 of 0.
 - 2026-11-20, ci-measure, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (an exception and a reader stated only in the skill, not in core or the brief; draft PRs skipping CI), second PASS WITH FOLLOW-UPS (a green proof PR left open; spec and lane-template wording), third PASS; all bosun-verifier on claude-opus-5-5 / high; M1–M8 verified, M9 done; route-or-screen done-conditions: 0 of 0.
 - 2026-11-19, ci-flake-loop, opus (implemented by lead), first verify FAIL (kinds: a rule exception the done-condition forbids; a "the verifier fails" rule its FAIL bar cannot apply; a copy of a core rule missing its new clause in the hub bullet; fixed), second PASS WITH FOLLOW-UPS (gaps in the loop's own branches: quarantine tag left on a fixed test, an unbriefed quarantine PR; fixed), third PASS WITH FOLLOW-UPS (four drifts recorded); all bosun-verifier on claude-opus-5-5 / high; route-or-screen done-conditions: 0 of 0.

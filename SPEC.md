@@ -564,6 +564,8 @@ Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is
 - hygiene-1, 2026-11-15, drift: `skills/bosun-brief/SKILL.md` "Until blocked" says a red report-only workflow "is reported instead" but leaves out core's "its findings become follow-ups".
 - planning-hub, 2026-10-30, deferral: a third lane (hub plus three), or a `Lanes: max N` spec line. Michael deferred it "after we've continued to use this and explored it"; revisit after a real hub-plus-two-lanes run shows both lanes staying busy without waiting on him or on shared files.
 
+- ci-crossrepo, 2026-11-20, drift: `skills/bosun-ci/SKILL.md` "Push runs the queue already proved" does not warn that a job whose `needs` includes the lookup job is skipped whenever the lookup is skipped (every PR, queue and scheduled run), because a job's implicit `success()` covers its whole `needs` chain; dependent jobs such as the build and e2e shards need an explicit `if:` (for example `!cancelled()` plus the lookup's output), or the required checks behind them fail. Found by rv-rez's verifier on its push-skip slice (2026-11-20). Add it in the next slice that touches `bosun-ci`.
+
 ## Slice log
 
 - 2026-11-20, ci-crossrepo, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (kinds: a new rule unscoped against an existing exception; an older bullet not updated for the new skip; a section left end-to-end-only after the hunt widened), second PASS; both bosun-verifier on claude-opus-5-5 / high; X1–X6 verified, X7 done; route-or-screen done-conditions: 0 of 0.

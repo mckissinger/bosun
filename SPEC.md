@@ -539,6 +539,33 @@ Verifier effort: high (no override at any scope).
 Checks: as in T9. No end-to-end suite; CI's `checks` job is the required check.
 Branch: throughput-rules, from main (69e504a).
 
+### CI conformance slice (2026-11-23, verified)
+
+Name: ci-conformance (2026-11-23). Mode: opus (Opus 5.5 leads and implements). Status: verified 2026-11-23 (first FAIL: the Ruby fallback lost `on:` triggers, plus nine smaller findings; fixed; second PASS WITH FOLLOW-UPS: split queue workflows, curl retries, vite config, failure() jobs, a protection-change FAIL the slice cannot clear; fixed; third PASS WITH FOLLOW-UPS: six script bugs recorded as follow-ups).
+Decisions: see the 2026-11-23 "CI standard by skill" entry under Decisions.
+Outcome: `bosun-ci` can check any project's GitHub Actions setup against its standard mechanically, whatever the stack, so per-project CI work ends in a passing check instead of hand-reading workflows, and drift shows up in the audit and the weekly report.
+Done-conditions:
+K1. `verified 2026-11-23 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS WITH FOLLOW-UPS; fingerprint 54640e2` `scripts/ci-conformance.py` reads a repository's `.github/workflows/`, its test-runner configs and, through `gh`, the default branch's protection, rulesets and merge queue (GraphQL `mergeQueue`), and reports each finding as FAIL, WARN or INFO with its evidence: up-to-date branches required without a queue (FAIL); a required check that maps to no workflow job (WARN) or whose workflow lacks a `pull_request` trigger, or under a queue a `merge_group` trigger (FAIL); jobs off Blacksmith in an organization repository (WARN; INFO for a personal one); end-to-end or unit retries above one (FAIL); no change-based selection detected on PR workflows (WARN); under a queue, push runs on the default branch without the repeat-run skip (WARN), or a skip missing `actions: read` or job-level `continue-on-error` (FAIL); no scheduled flake hunt that repeats tests (WARN); a PR workflow without `concurrency` cancellation (WARN); no `CI budget:` line in the spec (WARN). It exits 1 when any FAIL is found, prints a table or `--json`, runs offline with `--offline` (repository settings reported as unknown), and parses YAML with PyYAML or, without it, Ruby's standard library.
+K2. `verified 2026-11-23 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS WITH FOLLOW-UPS; fingerprint 54640e2` `skills/bosun-ci/SKILL.md` gains a "Conformance check" section: what it checks and that its detections of selection, skips and hunts are heuristics a reader confirms; the audit runs it and lists its findings; every CI improvement slice ends with it reporting no FAIL and each remaining WARN fixed or justified in the spec (wording widened in verify: two recorded FAIL kinds may stay, retries the hunt has not cleared and a FAIL whose fix is a protection change); the weekly report includes its result. "Establish the baseline" points to it.
+K3. `verified 2026-11-23 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS WITH FOLLOW-UPS; fingerprint 54640e2` README's `/bosun-ci` paragraph names the check; version 0.30.0 in both manifests and the README version line.
+K4. `verified 2026-11-23 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS WITH FOLLOW-UPS; fingerprint 54640e2` Evidence, read-only: the script runs against rv-rez (merge queue on) and crelaunch (no queue) checkouts and this repository, and its findings match what `gh api` and the workflow files show, recorded in the slice report.
+K5. `verified 2026-11-23 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS WITH FOLLOW-UPS; fingerprint 54640e2` This spec: the 2026-11-23 decision entries (CI standard by skill; AX102 instead of AX162), the throughput-rules brief moved to history, the slice log line.
+K6. `verified 2026-11-23 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS WITH FOLLOW-UPS; fingerprint 54640e2` Checks pass: `bash -n scripts/*.sh`; JSON parses for both manifests and `hooks/hooks.json`; `python3 -m py_compile scripts/*.py`; `claude plugin validate .`; `git diff origin/main --check`; the project-name grep over added lines in rules, skills, agents, scripts, README.md and .claude-plugin finds nothing.
+Out of scope:
+- Any change in a project repository; each project's CI cuts run through `bosun-ci` in its own session after this merges.
+- A shared reusable-workflow repository (decided against; revisit at five or more repos running the same steps).
+- Run-history measurements (minutes, medians, cache health); the audit already covers them.
+- The two throughput-rules bug follow-ups and per-slice record files.
+Assumptions:
+- **Heuristics.** Change-based selection, the push-run skip and the flake hunt are detected from workflow text, so a WARN can be a false alarm; the skill says so and asks for confirmation instead of treating WARN as proof.
+- **Required-check mapping.** A required context maps to a job by its `name:` or id, with any matrix suffix ignored; checks posted by apps (for example a security review app) may not map, which is a WARN, not a FAIL.
+- **Versioning.** Minor bump: a new script and skill section.
+Decisions setting: ask (default).
+Effort assumed: high.
+Verifier effort: high (no override at any scope).
+Checks: as in K6, plus the script's runs in K4. No end-to-end suite; CI's `checks` job is the required check.
+Branch: ci-conformance, from main (f846155).
+
 ## Undecided
 
 (none)
@@ -574,30 +601,7 @@ Branch: throughput-rules, from main (69e504a).
 
 ## Current slice
 
-Name: ci-conformance (2026-11-23). Mode: opus (Opus 5.5 leads and implements). Status: verified 2026-11-23 (first FAIL: the Ruby fallback lost `on:` triggers, plus nine smaller findings; fixed; second PASS WITH FOLLOW-UPS: split queue workflows, curl retries, vite config, failure() jobs, a protection-change FAIL the slice cannot clear; fixed; third PASS WITH FOLLOW-UPS: six script bugs recorded as follow-ups).
-Decisions: see the 2026-11-23 "CI standard by skill" entry under Decisions.
-Outcome: `bosun-ci` can check any project's GitHub Actions setup against its standard mechanically, whatever the stack, so per-project CI work ends in a passing check instead of hand-reading workflows, and drift shows up in the audit and the weekly report.
-Done-conditions:
-K1. `verified 2026-11-23 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS WITH FOLLOW-UPS; fingerprint 54640e2` `scripts/ci-conformance.py` reads a repository's `.github/workflows/`, its test-runner configs and, through `gh`, the default branch's protection, rulesets and merge queue (GraphQL `mergeQueue`), and reports each finding as FAIL, WARN or INFO with its evidence: up-to-date branches required without a queue (FAIL); a required check that maps to no workflow job (WARN) or whose workflow lacks a `pull_request` trigger, or under a queue a `merge_group` trigger (FAIL); jobs off Blacksmith in an organization repository (WARN; INFO for a personal one); end-to-end or unit retries above one (FAIL); no change-based selection detected on PR workflows (WARN); under a queue, push runs on the default branch without the repeat-run skip (WARN), or a skip missing `actions: read` or job-level `continue-on-error` (FAIL); no scheduled flake hunt that repeats tests (WARN); a PR workflow without `concurrency` cancellation (WARN); no `CI budget:` line in the spec (WARN). It exits 1 when any FAIL is found, prints a table or `--json`, runs offline with `--offline` (repository settings reported as unknown), and parses YAML with PyYAML or, without it, Ruby's standard library.
-K2. `verified 2026-11-23 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS WITH FOLLOW-UPS; fingerprint 54640e2` `skills/bosun-ci/SKILL.md` gains a "Conformance check" section: what it checks and that its detections of selection, skips and hunts are heuristics a reader confirms; the audit runs it and lists its findings; every CI improvement slice ends with it reporting no FAIL and each remaining WARN fixed or justified in the spec (wording widened in verify: two recorded FAIL kinds may stay, retries the hunt has not cleared and a FAIL whose fix is a protection change); the weekly report includes its result. "Establish the baseline" points to it.
-K3. `verified 2026-11-23 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS WITH FOLLOW-UPS; fingerprint 54640e2` README's `/bosun-ci` paragraph names the check; version 0.30.0 in both manifests and the README version line.
-K4. `verified 2026-11-23 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS WITH FOLLOW-UPS; fingerprint 54640e2` Evidence, read-only: the script runs against rv-rez (merge queue on) and crelaunch (no queue) checkouts and this repository, and its findings match what `gh api` and the workflow files show, recorded in the slice report.
-K5. `verified 2026-11-23 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS WITH FOLLOW-UPS; fingerprint 54640e2` This spec: the 2026-11-23 decision entries (CI standard by skill; AX102 instead of AX162), the throughput-rules brief moved to history, the slice log line.
-K6. `verified 2026-11-23 bosun-verifier (claude-opus-5-5/high), first FAIL, second PASS WITH FOLLOW-UPS, third PASS WITH FOLLOW-UPS; fingerprint 54640e2` Checks pass: `bash -n scripts/*.sh`; JSON parses for both manifests and `hooks/hooks.json`; `python3 -m py_compile scripts/*.py`; `claude plugin validate .`; `git diff origin/main --check`; the project-name grep over added lines in rules, skills, agents, scripts, README.md and .claude-plugin finds nothing.
-Out of scope:
-- Any change in a project repository; each project's CI cuts run through `bosun-ci` in its own session after this merges.
-- A shared reusable-workflow repository (decided against; revisit at five or more repos running the same steps).
-- Run-history measurements (minutes, medians, cache health); the audit already covers them.
-- The two throughput-rules bug follow-ups and per-slice record files.
-Assumptions:
-- **Heuristics.** Change-based selection, the push-run skip and the flake hunt are detected from workflow text, so a WARN can be a false alarm; the skill says so and asks for confirmation instead of treating WARN as proof.
-- **Required-check mapping.** A required context maps to a job by its `name:` or id, with any matrix suffix ignored; checks posted by apps (for example a security review app) may not map, which is a WARN, not a FAIL.
-- **Versioning.** Minor bump: a new script and skill section.
-Decisions setting: ask (default).
-Effort assumed: high.
-Verifier effort: high (no override at any scope).
-Checks: as in K6, plus the script's runs in K4. No end-to-end suite; CI's `checks` job is the required check.
-Branch: ci-conformance, from main (f846155).
+Slice records live in [slices/](slices/), one file per slice (core rules, "Slice records"). The current slices are the records an open branch or PR adds; briefs of slices before slice-records (2026-11-23) are under history below.
 
 ## Launch and operate (drafts)
 
@@ -634,6 +638,8 @@ Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is
 
 ## Follow-ups
 
+Open follow-ups are this list together with the Follow-ups section of each record under [slices/](slices/).
+
 (noticed and not done; one line each with the slice, the date, and a tag: `bug`, `drift`, `nit`, or `deferral`; removed when promoted to a done-condition, dropped by the user, or shown resolved in an approved triage batch; lines before 2026-10-11 are untagged)
 
 - core-rules-rename, 2026-09-25, deferral: Blacksmith Testbox (agent-run CI environment, early beta, billed per minute with a 30-minute idle timeout) is deferred by the user. Try it by hand on one project with service-dependent tests before deciding whether the verifier uses it.
@@ -649,19 +655,13 @@ Proposals from the 2026-10-26 discussion, recorded at Michael's request; none is
 - hygiene-1, 2026-11-15, deferral: the seven projects' root `.gitignore` lines from 2026-10-19 still use the `bosun-*.md` glob that hides user-written agents; Bosun's own nested ignore now lists only the generated names. Change each when its next slice touches it.
 - hygiene-1, 2026-11-15, drift: `skills/bosun-brief/SKILL.md` hub bullet assigns "a red default branch's fix to one lane" excluding only report-only workflows; core "Watching" also reports a flake candidate or an environment failure instead. Add both.
 - hygiene-1, 2026-11-15, drift: `skills/bosun-brief/SKILL.md` "Until blocked" says a red report-only workflow "is reported instead" but leaves out core's "its findings become follow-ups".
-- throughput-rules, 2026-11-23, deferral: per-slice record files (lane lesson 3, 2026-11-17). Every slice writes its log, decisions and evidence into one spec section, so each merge left every other open PR conflicting; one PR merged main three times, each time only for SPEC.md. Proposal: each slice writes its brief and log to its own file next to the spec, and the spec links to it with one status line per slice. That changes the layout `bosun-brief`, `bosun-verify`, `bosun-triage` and `bosun-checkpoint` read, so it is the next Bosun slice, before Phase 3 of the 2026-11-23 throughput plan raises lanes per project.
 - throughput-rules, 2026-11-23, deferral: Bosun's part of Phase 2 of the throughput plan. After the dev box pilot (an AX102, see the 2026-11-23 "Dev box" decision) on rv-rez lanes gives numbers against the 2026-11-23 baseline, a slice documents remote lanes: how a hub starts and drives lanes on the remote box, stacks there, and the "At most three sessions" cap together with the planning-hub third-lane deferral.
 - throughput-rules, 2026-11-23, deferral: environment notes from the 2026-11-17 lane run, for the machine clean-up and the dev box setup. Docker ran out of network address space from abandoned stacks (`docker network prune` fixed it). Xcode build caches, Docker images and package caches filled the disk to 20 GB free. CI hit "address already in use" when starting the Supabase stack three times in about 75 minutes on different runners, more often since the stack started in two parallel jobs; take it to that project's `bosun-ci`.
-- throughput-rules, 2026-11-23, bug: `rules/core.md` "Lane end" and the lane template's "Done" line make a lane report once each of its PRs "has merged or closed or cannot merge on its own (see Waiting)", but "Waiting" does not count a PR left open and red after its fix reached the verify limit, or after an environment failure's one rerun, so that lane's end report never reaches the hub. Count a PR parked on a red check the lane has stopped fixing as one that cannot merge on its own, in the next slice that touches "Lanes".
-- throughput-rules, 2026-11-23, bug: `skills/bosun-brief/SKILL.md` "In a lane session" still says "Report to the hub when done or stopped" without core's "once each of its PRs has merged or closed" clause; add it in the same slice as the item above.
-- ci-conformance, 2026-11-23, bug: `scripts/ci-conformance.py` treats any job whose `if:` mentions "push" and whose outputs another job reads as the push-run skip gate, so a PR-only change-scope job (`if: github.event_name != 'push' ...`) gets two false FAILs and hides the no-skip WARN; identify the gate by a push-only condition (`== 'push'`).
-- ci-conformance, 2026-11-23, bug: `scripts/ci-conformance.py` reads a 404 from classic branch protection as "no protection", but a non-admin `gh` login also gets 404 on a protected branch (shown on cli/cli), so settings print as known and the up-to-date and required-check checks pass silently; read `branches/{b}` (`protected`, `protection.required_status_checks`) or the token's admin permission before trusting a 404, and fix the same assumption in `skills/bosun-ci/SKILL.md` "Establish the baseline".
-- ci-conformance, 2026-11-23, bug: the Ruby fallback's `YAML.safe_load` rejects unquoted dates (`Psych::DisallowedClass`), so a valid workflow becomes a parse FAIL plus a second "no workflows" FAIL; permit `Date` and `Time` and drop the second FAIL when a parse FAIL was reported.
-- ci-conformance, 2026-11-23, bug: `scripts/ci-conformance.py` retries detection reports the same file twice when it matches two globs (`jest.setup.ts`), and reads a number in a trailing comment (`retries: 1 // see #1234`) as the setting; dedupe by file and line, and strip comments before taking the number.
-- ci-conformance, 2026-11-23, bug: retries detection knows only Playwright, Vitest and Jest while the skill and README say "whatever its stack"; add pytest `--reruns` and RSpec retry, or say in both which runners it reads.
 - planning-hub, 2026-10-30, deferral: a third lane (hub plus three), or a `Lanes: max N` spec line. Michael deferred it "after we've continued to use this and explored it"; revisit after a real hub-plus-two-lanes run shows both lanes staying busy without waiting on him or on shared files.
 
 ## Slice log
+
+Slices from slice-records (2026-11-23) on log in their own records under [slices/](slices/) (the `Log:` line); the entries below are older.
 
 - 2026-11-23, ci-conformance, opus (implemented by lead), first verify FAIL (kinds: a parser fallback reading keys differently; a check failing on any match instead of any passing match; a dependency chain checked one level deep; a slice-end rule contradicting a held exception; a README copy missing clauses), second PASS WITH FOLLOW-UPS (heuristic false FAILs and passes; a rule needing a change another section keeps out), third PASS WITH FOLLOW-UPS (six script bugs recorded); all bosun-verifier on claude-opus-5-5 / high; K1–K6 verified; route-or-screen done-conditions: 0 of 0.
 - 2026-11-23, throughput-rules, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (kinds: a README copy of a core rule missing its new clauses; a new rule's action list missing a case another section handles; an idle hub left without a wake), second PASS WITH FOLLOW-UPS (a lane report condition narrower than the hub's archive condition), third PASS WITH FOLLOW-UPS (two bugs recorded); all bosun-verifier on claude-opus-5-5 / high; T1–T9 verified; route-or-screen done-conditions: 0 of 0.

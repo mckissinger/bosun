@@ -5,7 +5,7 @@ description: Save transient session state when stopping mid-slice so the next Cl
 
 # Bosun checkpoint
 
-The spec is the durable record and must already be current: done-condition statuses, decisions, and the current slice. Update it first if it is not. The checkpoint holds only what the spec does not.
+The spec is the durable record and must already be current: done-condition statuses, decisions, and the current slice's record (core rules, "Slice records"). Update it first if it is not. The checkpoint holds only what the spec does not.
 
 Write to `~/.claude/bosun/checkpoints/<slug>.md`, where `<slug>` is the current working directory with the leading slash removed and every `/` or space replaced by `-`. The SessionStart hook computes the same slug and prints the file at the start of the next session in this directory. Create the directory if it does not exist and overwrite any existing file.
 

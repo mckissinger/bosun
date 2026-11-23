@@ -16,7 +16,7 @@ done
 
 if [ "$source_kind" = "compact" ]; then
   if [ -n "$spec" ]; then
-    echo "Context was just compacted. Before continuing, re-read the spec at $spec and pick up the current slice from it."
+    echo "Context was just compacted. Before continuing, re-read the spec at $spec and the open slice record under slices/ beside it, and pick up the current slice from them."
   else
     echo "Context was just compacted. No spec file was found in $dir; if a task is in progress, restate its done-conditions before continuing."
   fi

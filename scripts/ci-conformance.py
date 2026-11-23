@@ -32,7 +32,8 @@ def load_yaml(path):
         print("needs PyYAML or ruby to parse YAML", file=sys.stderr)
         sys.exit(2)
     out = subprocess.run(
-        ["ruby", "-ryaml", "-rjson", "-e", "puts JSON.generate(YAML.safe_load(STDIN.read, aliases: true))"],
+        ["ruby", "-ryaml", "-rjson", "-rdate", "-e",
+         "puts JSON.generate(YAML.safe_load(STDIN.read, permitted_classes: [Date, Time], aliases: true))"],
         input=text, capture_output=True, text=True, check=True,
     ).stdout
     return json.loads(out)
@@ -83,7 +84,9 @@ def merge_setup(repo, branch):
     info["branch"] = branch or "main"
     required, strict = set(), False
     prot = gh_json([f"repos/{repo}/branches/{info['branch']}/protection"], want_404=True)
-    readable = prot is not None  # "404" means no classic protection, not unknown
+    # A 404 means "no classic protection" only for an admin; others get 404 on protected branches too.
+    admin = bool(((meta or {}).get("permissions") or {}).get("admin"))
+    readable = isinstance(prot, dict) or (prot == "404" and admin)
     if isinstance(prot, dict) and prot.get("required_status_checks"):
         rsc = prot["required_status_checks"]
         required |= set(rsc.get("contexts") or [])
@@ -138,17 +141,30 @@ def retry_settings(repo_dir):
             ("*setup*.*", r"retryTimes\(\s*(\d+)"),
             # Only test runners' flags: curl and other tools also take --retry.
             (".github/workflows/*", r"(?:playwright|vitest|jest)\b[^\n]*?--retr(?:ies|y)[= ](\d+)"),
-            ("package.json", r"(?:playwright|vitest|jest)\b[^\n\"]*?--retr(?:ies|y)[= ](\d+)")]
+            ("package.json", r"(?:playwright|vitest|jest)\b[^\n\"]*?--retr(?:ies|y)[= ](\d+)"),
+            # pytest-rerunfailures and rspec-retry.
+            (".github/workflows/*", r"pytest\b[^\n]*?--reruns[= ](\d+)"),
+            ("pytest.ini", r"--reruns[= ](\d+)"),
+            ("setup.cfg", r"--reruns[= ](\d+)"),
+            ("pyproject.toml", r"--reruns[= ](\d+)"),
+            ("tox.ini", r"--reruns[= ](\d+)"),
+            ("*spec_helper.rb", r"default_retry_count\s*=\s*(\d+)")]
     tracked = tracked_files(repo_dir)
     for glob, pat in pats:
         for rel in tracked:
             f = repo_dir / rel
             if not f.match(glob) or "node_modules" in f.parts or not f.is_file():
                 continue
-            for m in re.finditer(pat, f.read_text(encoding="utf-8", errors="ignore"), re.M):
-                v = max_number(m.group(1))
-                if v is not None:
-                    found.append((str(f.relative_to(repo_dir)), m.group(0).strip(), v))
+            text = f.read_text(encoding="utf-8", errors="ignore")
+            for m in re.finditer(pat, text, re.M):
+                line = text[text.rfind("\n", 0, m.start()) + 1:m.start()].lstrip()
+                if line.startswith(("//", "#", "*", "/*")):
+                    continue  # the match sits on a commented-out line
+                value = re.split(r"\s//|\s#|/\*", " " + m.group(1))[0]  # drop a trailing comment
+                v = max_number(value)
+                item = (str(f.relative_to(repo_dir)), m.group(0).strip(), v)
+                if v is not None and item not in found:
+                    found.append(item)
     return found
 
 
@@ -173,7 +189,8 @@ def check(repo_dir, repo, branch, spec, offline):
             continue
         workflows[f.name] = (wf, f.read_text(encoding="utf-8"))
     if not workflows:
-        add(FAIL, "workflows", "no workflows in .github/workflows")
+        if not findings:
+            add(FAIL, "workflows", "no workflows in .github/workflows")
         return findings, {}
 
     setup = {"owner_type": None, "required": None, "strict": None, "queue": None, "branch": branch or "main"}
@@ -183,7 +200,7 @@ def check(repo_dir, repo, branch, spec, offline):
 
     # Merge setup.
     if setup["queue"] is None:
-        add(INFO, "merge-setup", "repository settings unknown (offline, or gh could not read them)")
+        add(INFO, "merge-setup", "repository settings unknown (offline, gh could not read them, or the login is not a repository admin)")
     else:
         q = "on" if setup["queue"] else "off"
         add(INFO, "merge-setup", f"merge queue {q}; up-to-date branches {'required' if setup['strict'] else 'not required'}; "
@@ -239,7 +256,7 @@ def check(repo_dir, repo, branch, spec, offline):
         if v > 1:
             add(FAIL, "retries", f"{f}: '{line}' allows {v} retries (the standard is at most one)")
     if not retries:
-        add(INFO, "retries", "no Playwright/Vitest/Jest retry setting found")
+        add(INFO, "retries", "no Playwright, Vitest, Jest, pytest or RSpec retry setting found")
     elif any(v > 1 for _, _, v in retries):
         add(INFO, "retries", "lower retries once the flake hunt shows the flakes they absorb are fixed or quarantined; "
             "until then the FAIL stays, justified in the spec")
@@ -280,7 +297,7 @@ def check(repo_dir, repo, branch, spec, offline):
 
             # A skip gate: a push-only job whose outputs other jobs read in their `if:`.
             gates = [g for g, job in jobs.items()
-                     if "push" in str(job.get("if", ""))
+                     if re.search(r"github\.event_name\s*==\s*'push'", str(job.get("if", "")))
                      and any(g in needs(k) and f"needs.{g}.outputs" in str(k.get("if", "")) for k in jobs.values())]
             if not gates:
                 add(WARN, "push-skip", f"{fname}: push runs on {default} repeat what the queue proved; no repeat-run skip detected (heuristic)")

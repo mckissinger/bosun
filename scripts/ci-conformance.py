@@ -52,6 +52,60 @@ def triggers(wf):
     return {}
 
 
+def branch_matches(pattern, branch):
+    """GitHub filter-pattern match: `*` stops at `/`, `**` does not, `?` is zero or one and `+` one or more
+    of the preceding character, and `[...]` is a character set."""
+    rx, i = "", 0
+    while i < len(pattern):
+        ch = pattern[i]
+        if pattern.startswith("**", i):
+            rx, i = rx + ".*", i + 2
+            continue
+        if ch == "*":
+            rx += "[^/]*"
+        elif ch in "?+":
+            rx += ch
+        elif ch == "[" and "]" in pattern[i + 1:]:
+            end = pattern.index("]", i + 1)
+            rx, i = rx + pattern[i:end + 1], end + 1
+            continue
+        else:
+            rx += re.escape(ch)
+        i += 1
+    try:
+        return re.fullmatch(rx, branch) is not None
+    except re.error:
+        return pattern == branch
+
+
+def push_covers(trig, branch):
+    """True when a workflow's triggers run it on every push to `branch`."""
+    if "push" not in trig:
+        return False
+    push = trig.get("push") or {}
+    if not isinstance(push, dict):
+        return True
+    if push.get("paths") or push.get("paths-ignore"):
+        return False  # a path filter skips pushes that touch nothing it lists
+
+    def as_list(v):
+        return v if isinstance(v, list) else [v]
+
+    branches = push.get("branches")
+    if branches is None:
+        ignore = push.get("branches-ignore")
+        if ignore is not None:
+            return not any(branch_matches(p, branch) for p in as_list(ignore))
+        return not push.get("tags")  # a tags-only push filter runs on no branch
+    covered = False
+    for p in as_list(branches):  # later patterns win; `!` negates
+        if p.startswith("!"):
+            covered = covered and not branch_matches(p[1:], branch)
+        elif branch_matches(p, branch):
+            covered = True
+    return covered
+
+
 def gh_json(args, want_404=False):
     """Parsed JSON, or None on any failure; with want_404, the string "404" for Not Found."""
     if not shutil.which("gh"):
@@ -219,6 +273,7 @@ def check(repo_dir, repo, branch, spec, offline):
         for jid, job in (wf.get("jobs") or {}).items():
             for n in job_names(jid, job):
                 by_name.setdefault(n, []).append(fname)
+    on_push, off_push = [], []
     for ctx in sorted(setup["required"] or []):
         base = re.sub(r"\s*\(.*\)$", "", ctx).strip()
         files = by_name.get(ctx) or by_name.get(base)
@@ -233,6 +288,16 @@ def check(repo_dir, repo, branch, spec, offline):
             add(FAIL, "required-checks", f"'{ctx}' ({names}) has no pull_request trigger, so it never reports on PRs")
         elif setup["queue"] and not any("merge_group" in t for t in trigs):
             add(FAIL, "required-checks", f"'{ctx}' ({names}) has no merge_group trigger, so queued PRs hang")
+        elif setup["queue"] is False:
+            (on_push if any(push_covers(t, default) for t in trigs) else off_push).append(ctx)
+
+    # Without a queue, main is re-checked only by required checks that also run on pushes to it.
+    if off_push and not on_push:
+        add(FAIL, "required-checks", f"no required check runs on pushes to {default} ({', '.join(off_push)}); with no merge "
+            f"queue, a PR tested against an older {default} is never checked against the combined code")
+    elif off_push:
+        add(INFO, "required-checks", f"not run on pushes to {default}: {', '.join(off_push)}; fine for a check that "
+            "only judges a PR's own diff")
 
     # Runners.
     for fname, (wf, _) in workflows.items():

@@ -52,6 +52,22 @@ def triggers(wf):
     return {}
 
 
+def push_covers(trig, branch):
+    """True when a workflow's triggers run it on pushes to `branch`."""
+    if "push" not in trig:
+        return False
+    push = trig.get("push") or {}
+    if not isinstance(push, dict):
+        return True
+    branches = push.get("branches")
+    if branches is None:
+        ignore = push.get("branches-ignore")
+        if ignore is not None:
+            return branch not in (ignore if isinstance(ignore, list) else [ignore])
+        return not push.get("tags")  # a tags-only push filter runs on no branch
+    return any(b == branch or b in ("*", "**") for b in (branches if isinstance(branches, list) else [branches]))
+
+
 def gh_json(args, want_404=False):
     """Parsed JSON, or None on any failure; with want_404, the string "404" for Not Found."""
     if not shutil.which("gh"):
@@ -219,6 +235,7 @@ def check(repo_dir, repo, branch, spec, offline):
         for jid, job in (wf.get("jobs") or {}).items():
             for n in job_names(jid, job):
                 by_name.setdefault(n, []).append(fname)
+    on_push, off_push = [], []
     for ctx in sorted(setup["required"] or []):
         base = re.sub(r"\s*\(.*\)$", "", ctx).strip()
         files = by_name.get(ctx) or by_name.get(base)
@@ -233,6 +250,16 @@ def check(repo_dir, repo, branch, spec, offline):
             add(FAIL, "required-checks", f"'{ctx}' ({names}) has no pull_request trigger, so it never reports on PRs")
         elif setup["queue"] and not any("merge_group" in t for t in trigs):
             add(FAIL, "required-checks", f"'{ctx}' ({names}) has no merge_group trigger, so queued PRs hang")
+        elif setup["queue"] is False:
+            (on_push if any(push_covers(t, default) for t in trigs) else off_push).append(ctx)
+
+    # Without a queue, main is re-checked only by required checks that also run on pushes to it.
+    if off_push and not on_push:
+        add(FAIL, "required-checks", f"no required check runs on pushes to {default} ({', '.join(off_push)}); with no merge "
+            f"queue, a PR tested against an older {default} is never checked against the combined code")
+    elif off_push:
+        add(INFO, "required-checks", f"{', '.join(off_push)} does not run on pushes to {default}; fine for a check that "
+            "only judges a PR's own diff")
 
     # Runners.
     for fname, (wf, _) in workflows.items():

@@ -2,10 +2,14 @@ name: checks
 
 on:
   pull_request:
+  # Without a merge queue, main is re-checked after each merge (core rules, "Merge setup").
+  push:
+    branches: [main]
 
 concurrency:
   group: checks-${{ github.ref }}
-  cancel-in-progress: true
+  # Only PR runs cancel superseded ones; a cancelled push run would leave that commit of main untested.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -27,6 +31,11 @@ jobs:
       - name: Python compiles
         run: python3 -c "import glob, py_compile; [py_compile.compile(f, cfile='/tmp/c.pyc', doraise=True) for f in glob.glob('scripts/*.py')]"
       - name: Whitespace
-        run: git diff --check origin/${{ github.base_ref }}...HEAD
+        run: |
+          if [ "${{ github.event_name }}" = pull_request ]; then
+            git diff --check "origin/${{ github.base_ref }}...HEAD"
+          else
+            git diff --check "${{ github.event.before }}" HEAD
+          fi
       - name: Plugin validates
         run: npx -y @anthropic-ai/claude-code plugin validate .

@@ -301,7 +301,7 @@ def check(repo_dir, repo, branch, spec, offline):
                 for k, kjob in jobs.items():
                     cond = str(kjob.get("if", ""))
                     if behind(k) and not re.search(r"always\(\)|!\s*cancelled\(\)|failure\(\)", cond):
-                        add(FAIL, "push-skip", f"{fname}:{k} runs behind {g} but its `if:` has no `!cancelled()` or `always()`, "
+                        add(FAIL, "push-skip", f"{fname}:{k} runs behind {g} but its `if:` has none of `!cancelled()`, `always()` or `failure()`, "
                             "so it is skipped on every PR and queue run")
 
     # Flake hunt.

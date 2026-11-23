@@ -104,7 +104,7 @@ Screens: check routes with headless Playwright only; never use the desktop brows
 Shared files (edit only in a slice the hub assigns you; otherwise message the hub): <list>. If the hub tells you another lane holds some of your area's files for an assigned slice, leave them alone until that slice merges.
 Protected paths and decisions that need the user: <list>. When you reach one, record it in the slice, send the hub one short message (what, why, where the screenshots are), and take other runnable work. Wherever Bosun says to ask, stop for or report to the user, send it to the hub instead. Do not ask the user directly.
 Spec: write your slice's brief as its own subsection under the current-slice section; when the hub sends you a decision, write it into the spec on your current slice's branch, in the user's words as quoted; on a merge conflict in the spec, keep both sides. Records-only changes never get a PR of their own; they ride on your next slice, and on your last slice, send any left over to the hub.
-Done: your area and assigned slices are done, you reach the cap, or the run policy's stop list stops you. Then remove your stack with the command's teardown and report to the hub: why you stopped, each slice, PR, verify verdicts, follow-ups, and everything waiting on the user.
+Done: your area and assigned slices are done, you reach the cap, or the run policy's stop list stops you. Then remove your stack with the command's teardown and, once your last PR has merged or closed or cannot merge on its own, report to the hub: why you stopped, each slice, PR, verify verdicts, follow-ups, and everything waiting on the user.
 ```
 
 While lanes run, the hub plans and does not build:

@@ -29,7 +29,8 @@ def load_yaml(path):
     except ImportError:
         pass
     if not shutil.which("ruby"):
-        raise SystemExit("needs PyYAML or ruby to parse YAML")
+        print("needs PyYAML or ruby to parse YAML", file=sys.stderr)
+        sys.exit(2)
     out = subprocess.run(
         ["ruby", "-ryaml", "-rjson", "-e", "puts JSON.generate(YAML.safe_load(STDIN.read, aliases: true))"],
         input=text, capture_output=True, text=True, check=True,
@@ -39,7 +40,8 @@ def load_yaml(path):
 
 def triggers(wf):
     """Return {event: config} from a workflow's `on:` (YAML 1.1 reads `on` as True)."""
-    on = wf.get("on", wf.get(True))
+    # PyYAML gives the key True; Ruby's YAML gives true, which JSON turns into "true".
+    on = wf.get("on", wf.get(True, wf.get("true")))
     if isinstance(on, str):
         return {on: None}
     if isinstance(on, list):
@@ -49,11 +51,14 @@ def triggers(wf):
     return {}
 
 
-def gh_json(args):
+def gh_json(args, want_404=False):
+    """Parsed JSON, or None on any failure; with want_404, the string "404" for Not Found."""
     if not shutil.which("gh"):
         return None
     r = subprocess.run(["gh", "api", *args], capture_output=True, text=True)
     if r.returncode != 0:
+        if want_404 and ("HTTP 404" in r.stderr or "Not Found" in r.stderr or "not protected" in r.stderr):
+            return "404"
         return None
     try:
         return json.loads(r.stdout)
@@ -77,13 +82,15 @@ def merge_setup(repo, branch):
         branch = branch or meta.get("default_branch")
     info["branch"] = branch or "main"
     required, strict = set(), False
-    prot = gh_json([f"repos/{repo}/branches/{info['branch']}/protection"])
-    if prot and prot.get("required_status_checks"):
+    prot = gh_json([f"repos/{repo}/branches/{info['branch']}/protection"], want_404=True)
+    readable = prot is not None  # "404" means no classic protection, not unknown
+    if isinstance(prot, dict) and prot.get("required_status_checks"):
         rsc = prot["required_status_checks"]
         required |= set(rsc.get("contexts") or [])
         required |= {c.get("context") for c in rsc.get("checks") or [] if c.get("context")}
         strict = strict or bool(rsc.get("strict"))
     rules = gh_json([f"repos/{repo}/rules/branches/{info['branch']}"])
+    readable = readable and rules is not None
     queue = False
     for rule in rules or []:
         if rule.get("type") == "required_status_checks":
@@ -96,7 +103,7 @@ def merge_setup(repo, branch):
                  f'query=query{{repository(owner:"{owner}",name:"{name}"){{mergeQueue(branch:"{info["branch"]}"){{id}}}}}}'])
     if q is not None:
         queue = queue or bool(((q.get("data") or {}).get("repository") or {}).get("mergeQueue"))
-    if meta is not None:
+    if meta is not None and readable and q is not None:
         info.update(required=required, strict=strict, queue=queue)
     return info
 
@@ -115,18 +122,26 @@ def max_number(text):
     return max(nums) if nums else None
 
 
+def tracked_files(repo_dir):
+    r = subprocess.run(["git", "-C", str(repo_dir), "ls-files"], capture_output=True, text=True)
+    return sorted(r.stdout.splitlines())
+
+
 def retry_settings(repo_dir):
     """(file, key, max value) for Playwright `retries` and Vitest/Jest `retry` settings."""
     found = []
     pats = [("playwright.config.*", r"^\s*retries\s*:\s*([^,\n]+)"),
             ("vitest.config.*", r"^\s*retry\s*:\s*([^,\n]+)"),
             ("vitest.workspace.*", r"^\s*retry\s*:\s*([^,\n]+)"),
-            ("jest.config.*", r"retryTimes\(\s*(\d+)")]
-    tracked = subprocess.run(["git", "-C", str(repo_dir), "ls-files"], capture_output=True, text=True).stdout.splitlines()
+            ("jest*.*", r"retryTimes\(\s*(\d+)"),
+            ("*setup*.*", r"retryTimes\(\s*(\d+)"),
+            (".github/workflows/*", r"--retr(?:ies|y)[= ](\d+)"),
+            ("package.json", r"--retr(?:ies|y)[= ](\d+)")]
+    tracked = tracked_files(repo_dir)
     for glob, pat in pats:
         for rel in tracked:
             f = repo_dir / rel
-            if not f.match(glob) or "node_modules" in f.parts:
+            if not f.match(glob) or "node_modules" in f.parts or not f.is_file():
                 continue
             for m in re.finditer(pat, f.read_text(encoding="utf-8", errors="ignore"), re.M):
                 v = max_number(m.group(1))
@@ -141,13 +156,18 @@ def check(repo_dir, repo, branch, spec, offline):
     def add(level, check_id, msg):
         findings.append({"level": level, "check": check_id, "detail": msg})
 
-    wf_dir = repo_dir / ".github" / "workflows"
     workflows = {}
-    for f in sorted(list(wf_dir.glob("*.yml")) + list(wf_dir.glob("*.yaml"))):
+    for rel in tracked_files(repo_dir):
+        f = repo_dir / rel
+        if f.parent != repo_dir / ".github" / "workflows" or f.suffix not in (".yml", ".yaml") or not f.exists():
+            continue
         try:
-            wf = load_yaml(f) or {}
+            wf = load_yaml(f)
         except Exception as e:  # noqa: BLE001 - report any parse failure as a finding
             add(FAIL, "workflow-parse", f"{f.name}: does not parse ({e.__class__.__name__})")
+            continue
+        if not isinstance(wf, dict):
+            add(FAIL, "workflow-parse", f"{f.name}: top level is not a mapping")
             continue
         workflows[f.name] = (wf, f.read_text(encoding="utf-8"))
     if not workflows:
@@ -169,7 +189,10 @@ def check(repo_dir, repo, branch, spec, offline):
         if setup["strict"] and not setup["queue"]:
             add(FAIL, "merge-setup", "branches must be up to date but there is no merge queue: every merge leaves open PRs behind")
         if not setup["queue"]:
-            add(WARN, "merge-setup", "no merge queue (recommended where GitHub offers one)")
+            if setup["owner_type"] == "User":
+                add(INFO, "merge-setup", "no merge queue (a personal repository cannot have one)")
+            else:
+                add(WARN, "merge-setup", "no merge queue (recommended where GitHub offers one)")
 
     # Required checks map to jobs whose workflow runs on PRs (and in the queue).
     by_name = {}
@@ -183,12 +206,14 @@ def check(repo_dir, repo, branch, spec, offline):
         if not files:
             add(WARN, "required-checks", f"'{ctx}' maps to no workflow job (an app's check, or a renamed job)")
             continue
-        for fname in sorted(set(files)):
-            trig = triggers(workflows[fname][0])
-            if "pull_request" not in trig and "pull_request_target" not in trig:
-                add(FAIL, "required-checks", f"'{ctx}' ({fname}) has no pull_request trigger, so it never reports on PRs")
-            if setup["queue"] and "merge_group" not in trig:
-                add(FAIL, "required-checks", f"'{ctx}' ({fname}) has no merge_group trigger, so queued PRs hang")
+        # A job name can repeat across workflows (CI and a nightly run); one that reports is enough.
+        trigs = [triggers(workflows[f][0]) for f in sorted(set(files))]
+        names = ", ".join(sorted(set(files)))
+        pr_ok = [t for t in trigs if "pull_request" in t or "pull_request_target" in t]
+        if not pr_ok:
+            add(FAIL, "required-checks", f"'{ctx}' ({names}) has no pull_request trigger, so it never reports on PRs")
+        elif setup["queue"] and not any("merge_group" in t for t in pr_ok):
+            add(FAIL, "required-checks", f"'{ctx}' ({names}) has no merge_group trigger, so queued PRs hang")
 
     # Runners.
     for fname, (wf, _) in workflows.items():
@@ -199,10 +224,12 @@ def check(repo_dir, repo, branch, spec, offline):
             label = json.dumps(ro) if not isinstance(ro, str) else ro
             if ro is None or "blacksmith" in label:
                 continue
-            if setup["owner_type"] == "User":
+            if setup["owner_type"] == "Organization":
+                add(WARN, "runners", f"{fname}:{jid} on {label}, not a Blacksmith runner")
+            elif setup["owner_type"] == "User":
                 add(INFO, "runners", f"{fname}:{jid} on {label} (personal repository: Blacksmith not available)")
             else:
-                add(WARN, "runners", f"{fname}:{jid} on {label}, not a Blacksmith runner")
+                add(INFO, "runners", f"{fname}:{jid} on {label} (owner unknown: Blacksmith needs an organization repository)")
 
     # Retries.
     retries = retry_settings(repo_dir)
@@ -211,6 +238,9 @@ def check(repo_dir, repo, branch, spec, offline):
             add(FAIL, "retries", f"{f}: '{line}' allows {v} retries (the standard is at most one)")
     if not retries:
         add(INFO, "retries", "no Playwright/Vitest/Jest retry setting found")
+    elif any(v > 1 for _, _, v in retries):
+        add(INFO, "retries", "lower retries once the flake hunt shows the flakes they absorb are fixed or quarantined; "
+            "until then the FAIL stays, justified in the spec")
 
     # Change-based selection on PR workflows.
     sel = re.compile(r"paths-filter|changed-files|--changed|--only-changed|affected|\bscope\b|git diff[^\n]*(base|origin)", re.I)
@@ -260,12 +290,16 @@ def check(repo_dir, repo, branch, spec, offline):
                     add(FAIL, "push-skip", f"{fname}:{g} looks up queue runs without `actions: read`, so every lookup is refused")
                 if not job.get("continue-on-error"):
                     add(FAIL, "push-skip", f"{fname}:{g} lacks job-level continue-on-error; a failed lookup turns the push run red")
-                # Without always() or a cancelled() check, GitHub adds an implicit success()
-                # over the whole needs chain, so the job skips whenever the gate is skipped.
+                # Without always() or !cancelled(), GitHub adds an implicit success() over the
+                # whole needs chain, so a job anywhere behind the gate skips whenever it does.
+                def behind(k, seen=()):
+                    return any(n == g or (n in jobs and n not in seen and behind(n, seen + (k,)))
+                               for n in needs(jobs[k]))
+
                 for k, kjob in jobs.items():
                     cond = str(kjob.get("if", ""))
-                    if g in needs(kjob) and not re.search(r"always\(\)|cancelled\(\)", cond):
-                        add(FAIL, "push-skip", f"{fname}:{k} needs {g} but its `if:` has no `!cancelled()` or `always()`, "
+                    if behind(k) and not re.search(r"always\(\)|!\s*cancelled\(\)", cond):
+                        add(FAIL, "push-skip", f"{fname}:{k} runs behind {g} but its `if:` has no `!cancelled()` or `always()`, "
                             "so it is skipped on every PR and queue run")
 
     # Flake hunt.

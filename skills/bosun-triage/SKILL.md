@@ -33,7 +33,7 @@ Every conclusion cites evidence: a commit, a file and line, or a command and its
 4. **Waiting on the user.** List open human-checks oldest first, each with the exact step the user must take; conditions marked done but not verified, for `/bosun-verify`; and deferrals whose revisit trigger has now happened.
 5. **Spec health.** Report the spec's length and whether live content (outcome, decisions, current slice, open done-conditions, human-checks, follow-ups, undecided and out-of-scope items, lessons) comes before finished work. Never condense, summarize, or reword the spec's text. Propose a reorder only as a pure move: live content first, and every finished slice under one history heading at the bottom. Do not propose a reorder when the spec cross-references its own numbered sections (for example "§4 Y"), since moving sections breaks those references. If finished work already lives in a separate history file, keep that arrangement.
 6. **Archive.** When finished work keeps the spec past one sitting, propose moving it, verbatim, to an archive file next to the spec (`SPEC-archive.md` beside `SPEC.md`, or the project's existing history file): the briefs of merged slices, and slice-log entries from before the latest milestone. Decisions, lessons, open items and anything a live item cross-references by number stay. Where the moved text was, one pointer line names the archive. A merged slice's brief still sitting in the current-slice section is a status correction: it moves under history first.
-7. **Recurring verify failures.** Read the blocking-finding kinds across the whole slice log, archived entries included, and the FAIL findings in recent verify reports. A kind seen in two or more slices gets a line in the spec's "Recurring verify failures" lesson, with one short example; a kind no blocking finding has shown in the last two milestones leaves it. Keep the entry to ten lines, merging near-duplicates, and create it empty if the spec lacks it.
+7. **Recurring verify failures.** Read the blocking-finding kinds across the whole slice log, archived entries included, and the FAIL findings in recent verify reports. A kind seen in two or more slices gets a line in the spec's "Recurring verify failures" lesson, with one short example; a kind no blocking finding has shown in the last two milestones leaves it. Keep the entry to ten lines, merging near-duplicates, and create it empty if the spec lacks it. For each line it adds, name a candidate check (a lint rule, hook, test or CI check) that would catch that kind of defect, as core's "Corrections become checks" says, as a draft done-condition for the user.
 
 ## Report
 
@@ -45,7 +45,7 @@ Deliver, in this order:
 4. **Still valid**, by tag, and the draft slices built from them.
 5. **Missed items** and **waiting on the user**.
 6. **Spec health**, with the proposed reorder as a list of section moves, or the reason none is proposed, and the proposed archive moves.
-7. **Recurring verify failures:** the lesson's lines to add, keep and drop, each with the slices that showed it.
+7. **Recurring verify failures:** the lesson's lines to add, keep and drop, each with the slices that showed it, and for each added line its candidate check as a draft done-condition.
 8. **Leftover stacks and servers**, as that section says, for the user or the owning session to act on.
 
 End by asking the user which parts to apply. Do not change the spec before they answer, except as "Milestone end" below says.

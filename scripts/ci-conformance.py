@@ -53,9 +53,29 @@ def triggers(wf):
 
 
 def branch_matches(pattern, branch):
-    """GitHub filter-pattern match: `*` stops at `/`, `**` does not, `?` is one character."""
-    rx = re.escape(pattern).replace(r"\*\*", "\0").replace(r"\*", "[^/]*").replace("\0", ".*").replace(r"\?", ".")
-    return re.fullmatch(rx, branch) is not None
+    """GitHub filter-pattern match: `*` stops at `/`, `**` does not, `?` is zero or one and `+` one or more
+    of the preceding character, and `[...]` is a character set."""
+    rx, i = "", 0
+    while i < len(pattern):
+        ch = pattern[i]
+        if pattern.startswith("**", i):
+            rx, i = rx + ".*", i + 2
+            continue
+        if ch == "*":
+            rx += "[^/]*"
+        elif ch in "?+":
+            rx += ch
+        elif ch == "[" and "]" in pattern[i + 1:]:
+            end = pattern.index("]", i + 1)
+            rx, i = rx + pattern[i:end + 1], end + 1
+            continue
+        else:
+            rx += re.escape(ch)
+        i += 1
+    try:
+        return re.fullmatch(rx, branch) is not None
+    except re.error:
+        return pattern == branch
 
 
 def push_covers(trig, branch):

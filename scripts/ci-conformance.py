@@ -133,10 +133,12 @@ def retry_settings(repo_dir):
     pats = [("playwright.config.*", r"^\s*retries\s*:\s*([^,\n]+)"),
             ("vitest.config.*", r"^\s*retry\s*:\s*([^,\n]+)"),
             ("vitest.workspace.*", r"^\s*retry\s*:\s*([^,\n]+)"),
+            ("vite.config.*", r"^\s*retry\s*:\s*([^,\n]+)"),
             ("jest*.*", r"retryTimes\(\s*(\d+)"),
             ("*setup*.*", r"retryTimes\(\s*(\d+)"),
-            (".github/workflows/*", r"--retr(?:ies|y)[= ](\d+)"),
-            ("package.json", r"--retr(?:ies|y)[= ](\d+)")]
+            # Only test runners' flags: curl and other tools also take --retry.
+            (".github/workflows/*", r"(?:playwright|vitest|jest)\b[^\n]*?--retr(?:ies|y)[= ](\d+)"),
+            ("package.json", r"(?:playwright|vitest|jest)\b[^\n\"]*?--retr(?:ies|y)[= ](\d+)")]
     tracked = tracked_files(repo_dir)
     for glob, pat in pats:
         for rel in tracked:
@@ -212,7 +214,7 @@ def check(repo_dir, repo, branch, spec, offline):
         pr_ok = [t for t in trigs if "pull_request" in t or "pull_request_target" in t]
         if not pr_ok:
             add(FAIL, "required-checks", f"'{ctx}' ({names}) has no pull_request trigger, so it never reports on PRs")
-        elif setup["queue"] and not any("merge_group" in t for t in pr_ok):
+        elif setup["queue"] and not any("merge_group" in t for t in trigs):
             add(FAIL, "required-checks", f"'{ctx}' ({names}) has no merge_group trigger, so queued PRs hang")
 
     # Runners.
@@ -298,7 +300,7 @@ def check(repo_dir, repo, branch, spec, offline):
 
                 for k, kjob in jobs.items():
                     cond = str(kjob.get("if", ""))
-                    if behind(k) and not re.search(r"always\(\)|!\s*cancelled\(\)", cond):
+                    if behind(k) and not re.search(r"always\(\)|!\s*cancelled\(\)|failure\(\)", cond):
                         add(FAIL, "push-skip", f"{fname}:{k} runs behind {g} but its `if:` has no `!cancelled()` or `always()`, "
                             "so it is skipped on every PR and queue run")
 

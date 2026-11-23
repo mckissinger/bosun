@@ -7,8 +7,9 @@ on:
     branches: [main]
 
 concurrency:
-  group: checks-${{ github.ref }}
-  # Only PR runs cancel superseded ones; a cancelled push run would leave that commit of main untested.
+  # PR runs share a group per PR and cancel superseded ones. Each push run gets its own group:
+  # in a shared group GitHub replaces a pending run with a newer one, which would leave that commit of main untested.
+  group: ${{ github.event_name == 'pull_request' && format('checks-{0}', github.ref) || format('checks-push-{0}', github.run_id) }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:

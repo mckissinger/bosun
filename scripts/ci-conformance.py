@@ -52,20 +52,38 @@ def triggers(wf):
     return {}
 
 
+def branch_matches(pattern, branch):
+    """GitHub filter-pattern match: `*` stops at `/`, `**` does not, `?` is one character."""
+    rx = re.escape(pattern).replace(r"\*\*", "\0").replace(r"\*", "[^/]*").replace("\0", ".*").replace(r"\?", ".")
+    return re.fullmatch(rx, branch) is not None
+
+
 def push_covers(trig, branch):
-    """True when a workflow's triggers run it on pushes to `branch`."""
+    """True when a workflow's triggers run it on every push to `branch`."""
     if "push" not in trig:
         return False
     push = trig.get("push") or {}
     if not isinstance(push, dict):
         return True
+    if push.get("paths") or push.get("paths-ignore"):
+        return False  # a path filter skips pushes that touch nothing it lists
+
+    def as_list(v):
+        return v if isinstance(v, list) else [v]
+
     branches = push.get("branches")
     if branches is None:
         ignore = push.get("branches-ignore")
         if ignore is not None:
-            return branch not in (ignore if isinstance(ignore, list) else [ignore])
+            return not any(branch_matches(p, branch) for p in as_list(ignore))
         return not push.get("tags")  # a tags-only push filter runs on no branch
-    return any(b == branch or b in ("*", "**") for b in (branches if isinstance(branches, list) else [branches]))
+    covered = False
+    for p in as_list(branches):  # later patterns win; `!` negates
+        if p.startswith("!"):
+            covered = covered and not branch_matches(p[1:], branch)
+        elif branch_matches(p, branch):
+            covered = True
+    return covered
 
 
 def gh_json(args, want_404=False):
@@ -258,7 +276,7 @@ def check(repo_dir, repo, branch, spec, offline):
         add(FAIL, "required-checks", f"no required check runs on pushes to {default} ({', '.join(off_push)}); with no merge "
             f"queue, a PR tested against an older {default} is never checked against the combined code")
     elif off_push:
-        add(INFO, "required-checks", f"{', '.join(off_push)} does not run on pushes to {default}; fine for a check that "
+        add(INFO, "required-checks", f"not run on pushes to {default}: {', '.join(off_push)}; fine for a check that "
             "only judges a PR's own diff")
 
     # Runners.

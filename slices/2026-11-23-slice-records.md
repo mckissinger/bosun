@@ -38,9 +38,12 @@ Branch: slice-records, from main (208dad6).
 
 - R4 fixture (scratchpad `fx`, merge setup stubbed to an organization repo with a queue): a PR-only `changes` job (`if: github.event_name != 'push' && ...`) read by `e2e` gave no push-skip FAIL and showed the "no repeat-run skip" WARN; `retries: 1 // see #1234` gave no finding; `jest.setup.ts` `retryTimes(2` reported once; `pytest --reruns 3` in a workflow reported; an unquoted `FREEZE_DATE: 2026-01-01` parsed under `/usr/bin/python3 -I` (Ruby).
 - R4 non-admin: a checkout pointing at cli/cli (not an admin) reports "repository settings unknown", not "no protection".
+- Fix round 1: a commented-out `// jest.retryTimes(4)` and `# run: pytest --reruns 3` give no finding while the live lines are still read (fixture `fx2`: 0 FAIL).
 - R7 regression: rv-rez 1 FAIL 1 WARN, crelaunch 1 FAIL 3 WARN, bosun 1 FAIL 2 WARN, the same under PyYAML and Ruby as before this slice.
 
 ## Verify
+
+- 1st (53271be, fingerprint 42764c5), bosun-verifier claude-opus-5-5 / high: FAIL. R2 unmet: bosun-verify still wrote the next brief into the spec; bosun-ci still wrote deferred candidates into the spec's follow-ups; triage's active-slice check stopped on any lane's open record. Follow-ups, fixed in the same round: "only statuses and lessons" left no room for decisions, drafts and blocked steps; commented-out retry lines were read; statuses for a brief's own done-conditions had no home; the implemented per-slice-records deferral still open; pointer dates; README records-ride-along copy; verifier agents and triage spec-health still named the spec section.
 
 ## Follow-ups
 

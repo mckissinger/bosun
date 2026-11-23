@@ -601,7 +601,7 @@ Branch: ci-conformance, from main (f846155).
 
 ## Current slice
 
-Slice records live in [slices/](slices/), one file per slice (core rules, "Slice records"). The current slices are the records an open branch or PR adds; briefs from before 2026-11-23 are under history below.
+Slice records live in [slices/](slices/), one file per slice (core rules, "Slice records"). The current slices are the records an open branch or PR adds; briefs of slices before slice-records (2026-11-23) are under history below.
 
 ## Launch and operate (drafts)
 
@@ -655,14 +655,13 @@ Open follow-ups are this list together with the Follow-ups section of each recor
 - hygiene-1, 2026-11-15, deferral: the seven projects' root `.gitignore` lines from 2026-10-19 still use the `bosun-*.md` glob that hides user-written agents; Bosun's own nested ignore now lists only the generated names. Change each when its next slice touches it.
 - hygiene-1, 2026-11-15, drift: `skills/bosun-brief/SKILL.md` hub bullet assigns "a red default branch's fix to one lane" excluding only report-only workflows; core "Watching" also reports a flake candidate or an environment failure instead. Add both.
 - hygiene-1, 2026-11-15, drift: `skills/bosun-brief/SKILL.md` "Until blocked" says a red report-only workflow "is reported instead" but leaves out core's "its findings become follow-ups".
-- throughput-rules, 2026-11-23, deferral: per-slice record files (lane lesson 3, 2026-11-17). Every slice writes its log, decisions and evidence into one spec section, so each merge left every other open PR conflicting; one PR merged main three times, each time only for SPEC.md. Proposal: each slice writes its brief and log to its own file next to the spec, and the spec links to it with one status line per slice. That changes the layout `bosun-brief`, `bosun-verify`, `bosun-triage` and `bosun-checkpoint` read, so it is the next Bosun slice, before Phase 3 of the 2026-11-23 throughput plan raises lanes per project.
 - throughput-rules, 2026-11-23, deferral: Bosun's part of Phase 2 of the throughput plan. After the dev box pilot (an AX102, see the 2026-11-23 "Dev box" decision) on rv-rez lanes gives numbers against the 2026-11-23 baseline, a slice documents remote lanes: how a hub starts and drives lanes on the remote box, stacks there, and the "At most three sessions" cap together with the planning-hub third-lane deferral.
 - throughput-rules, 2026-11-23, deferral: environment notes from the 2026-11-17 lane run, for the machine clean-up and the dev box setup. Docker ran out of network address space from abandoned stacks (`docker network prune` fixed it). Xcode build caches, Docker images and package caches filled the disk to 20 GB free. CI hit "address already in use" when starting the Supabase stack three times in about 75 minutes on different runners, more often since the stack started in two parallel jobs; take it to that project's `bosun-ci`.
 - planning-hub, 2026-10-30, deferral: a third lane (hub plus three), or a `Lanes: max N` spec line. Michael deferred it "after we've continued to use this and explored it"; revisit after a real hub-plus-two-lanes run shows both lanes staying busy without waiting on him or on shared files.
 
 ## Slice log
 
-Slices from 2026-11-23 on log in their own records under [slices/](slices/) (the `Log:` line); the entries below are older.
+Slices from slice-records (2026-11-23) on log in their own records under [slices/](slices/) (the `Log:` line); the entries below are older.
 
 - 2026-11-23, ci-conformance, opus (implemented by lead), first verify FAIL (kinds: a parser fallback reading keys differently; a check failing on any match instead of any passing match; a dependency chain checked one level deep; a slice-end rule contradicting a held exception; a README copy missing clauses), second PASS WITH FOLLOW-UPS (heuristic false FAILs and passes; a rule needing a change another section keeps out), third PASS WITH FOLLOW-UPS (six script bugs recorded); all bosun-verifier on claude-opus-5-5 / high; K1–K6 verified; route-or-screen done-conditions: 0 of 0.
 - 2026-11-23, throughput-rules, opus (implemented by lead), first verify PASS WITH FOLLOW-UPS (kinds: a README copy of a core rule missing its new clauses; a new rule's action list missing a case another section handles; an idle hub left without a wake), second PASS WITH FOLLOW-UPS (a lane report condition narrower than the hub's archive condition), third PASS WITH FOLLOW-UPS (two bugs recorded); all bosun-verifier on claude-opus-5-5 / high; T1–T9 verified; route-or-screen done-conditions: 0 of 0.

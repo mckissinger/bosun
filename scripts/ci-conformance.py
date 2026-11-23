@@ -155,7 +155,11 @@ def retry_settings(repo_dir):
             f = repo_dir / rel
             if not f.match(glob) or "node_modules" in f.parts or not f.is_file():
                 continue
-            for m in re.finditer(pat, f.read_text(encoding="utf-8", errors="ignore"), re.M):
+            text = f.read_text(encoding="utf-8", errors="ignore")
+            for m in re.finditer(pat, text, re.M):
+                line = text[text.rfind("\n", 0, m.start()) + 1:m.start()].lstrip()
+                if line.startswith(("//", "#", "*", "/*")):
+                    continue  # the match sits on a commented-out line
                 value = re.split(r"\s//|\s#|/\*", " " + m.group(1))[0]  # drop a trailing comment
                 v = max_number(value)
                 item = (str(f.relative_to(repo_dir)), m.group(0).strip(), v)

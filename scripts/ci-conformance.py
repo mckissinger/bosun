@@ -400,15 +400,18 @@ def check(repo_dir, repo, branch, spec, offline):
     # Queue ejection notice: a PR the queue removes keeps green checks, so a workflow says so on the PR.
     if setup["queue"]:
         def on_dequeued(wf):
-            pr = triggers(wf).get("pull_request")
-            types = pr.get("types") if isinstance(pr, dict) else None
-            return "dequeued" in ([types] if isinstance(types, str) else list(types or []))
+            for event in ("pull_request_target", "pull_request"):
+                pr = triggers(wf).get(event)
+                types = pr.get("types") if isinstance(pr, dict) else None
+                if "dequeued" in ([types] if isinstance(types, str) else list(types or [])):
+                    return True
+            return False
 
         notice = [n for n, (wf, _) in workflows.items() if on_dequeued(wf)]
         if notice:
             add(INFO, "queue-ejection", f"queue removals noticed by {', '.join(sorted(notice))}")
         else:
-            add(WARN, "queue-ejection", "no workflow on pull_request `dequeued`; a PR the queue removes shows green "
+            add(WARN, "queue-ejection", "no workflow on `dequeued`; a PR the queue removes shows green "
                 "checks and nothing says it is stuck (template: templates/queue-ejected.yml)")
 
     # Flake hunt.

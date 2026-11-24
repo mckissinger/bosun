@@ -1,0 +1,85 @@
+# Bosun template (skills/bosun-ci, "Queue ejection notice"). Copy to .github/workflows/queue-ejected.yml.
+# When the merge queue removes a PR for any reason but merging, it labels the PR `queue-ejected` and
+# comments with the reason and the queue run's failed jobs, so the removal is visible on the PR even
+# though the PR's own checks stay green. Re-entering the queue removes the label. It gates nothing.
+name: queue-ejected
+
+on:
+  pull_request:
+    types: [dequeued, enqueued]
+
+permissions: {}
+
+concurrency:
+  group: queue-ejected-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  notice:
+    # Forks get a read-only token, so they cannot be labelled.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    # Use the project's small runner label (a 2 vCPU Blacksmith runner in an organization repository).
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      issues: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+      ACTION: ${{ github.event.action }}
+      PAYLOAD_REASON: ${{ github.event.reason }}
+      LABEL: queue-ejected
+    steps:
+      - name: Label and comment
+        run: |
+          set -euo pipefail
+          if [ "$ACTION" = enqueued ]; then
+            gh api -X DELETE "repos/$GH_REPO/issues/$PR/labels/$LABEL" >/dev/null 2>&1 || true
+            exit 0
+          fi
+          if [ "$(gh api "repos/$GH_REPO/pulls/$PR" --jq .merged)" = true ]; then
+            exit 0
+          fi
+
+          # The timeline's reason has known values (failed_checks, merge_conflict, checks_timed_out, ...);
+          # the payload's is documented only as a string, so it is the fallback.
+          # shellcheck disable=SC2016 # $o, $n and $p are GraphQL variables
+          reason=$(gh api graphql -F p="$PR" -f o="${GH_REPO%/*}" -f n="${GH_REPO#*/}" -f query='
+            query($o: String!, $n: String!, $p: Int!) { repository(owner: $o, name: $n) { pullRequest(number: $p) {
+              timelineItems(last: 1, itemTypes: [REMOVED_FROM_MERGE_QUEUE_EVENT]) {
+                nodes { ... on RemovedFromMergeQueueEvent { reason } } } } } }' \
+            --jq '.data.repository.pullRequest.timelineItems.nodes[0].reason // ""' || true)
+          reason=${reason:-$PAYLOAD_REASON}
+          case "$(printf '%s' "$reason" | tr '[:upper:]' '[:lower:]')" in merged) exit 0 ;; esac
+
+          # Queue runs have head branch gh-readonly-queue/<base>/pr-<n>-<sha>. Take every workflow's run for
+          # this PR's latest queue entry; the queue removes a PR on its first required failure, so a run may
+          # still be in progress, and its failed jobs are listed whatever its state.
+          # shellcheck disable=SC2016 # $r and $sha are jq variables
+          runs=$(gh api "repos/$GH_REPO/actions/runs?event=merge_group&per_page=100" --jq '
+            [.workflow_runs[] | select(.head_branch | contains("/pr-" + env.PR + "-"))] as $r
+            | ($r | max_by(.created_at) | .head_sha) as $sha
+            | $r[] | select(.head_sha == $sha) | .id' || true)
+          failed=""
+          for id in $runs; do
+            jobs=$(gh api "repos/$GH_REPO/actions/runs/$id/jobs?per_page=100" --jq '
+              .jobs[] | select(.conclusion == "failure" or .conclusion == "timed_out")
+              | "- [\(.name)](\(.html_url))"' || true)
+            if [ -n "$jobs" ]; then failed+="$jobs"$'\n'; fi
+          done
+          if [ -z "$failed" ]; then
+            failed="- none found (the queue run may still be running, or the removal was not a check failure): https://github.com/$GH_REPO/actions?query=event%3Amerge_group"
+          fi
+
+          gh api "repos/$GH_REPO/labels" -f name="$LABEL" -f color=d93f0b \
+            -f description="Removed from the merge queue; needs a fix or a re-queue" >/dev/null 2>&1 || true
+          gh api "repos/$GH_REPO/issues/$PR/labels" -f "labels[]=$LABEL" >/dev/null
+          body=$(printf '%s\n\n%s\n%s\n\n%s\n' \
+            "The merge queue removed this PR (reason: \`${reason:-unknown}\`). Its own checks can still be green: the queue tested it on top of newer code, and may have run suites this PR's run skipped." \
+            "Failed jobs in its latest queue run:" \
+            "${failed%$'\n'}" \
+            "After failed checks, read the failed run before re-queueing: a real failure only fails again, and a flake is re-queued once. A merge conflict needs the default branch merged in; any other reason is re-queued once.")
+          gh api "repos/$GH_REPO/issues/$PR/comments" -f body="$body" >/dev/null

@@ -328,7 +328,18 @@ def check(repo_dir, repo, branch, spec, offline):
 
     # Change-based selection on PR workflows.
     sel = re.compile(r"paths-filter|changed-files|--changed|--only-changed|affected|\bscope\b|git diff[^\n]*(base|origin)", re.I)
-    pr_wfs = [n for n, (wf, _) in workflows.items() if "pull_request" in triggers(wf)]
+    def on_pr_changes(wf):
+        # A workflow on pull_request runs on code changes unless its `types` leave out all of the default
+        # three (a label or queue notice such as queue-ejected.yml has nothing to select or supersede).
+        if "pull_request" not in triggers(wf):
+            return False
+        pr = triggers(wf).get("pull_request")
+        types = pr.get("types") if isinstance(pr, dict) else None
+        if not types:
+            return True
+        return bool({"opened", "synchronize", "reopened"} & set([types] if isinstance(types, str) else types))
+
+    pr_wfs = [n for n, (wf, _) in workflows.items() if on_pr_changes(wf)]
     for fname in pr_wfs:
         wf, text = workflows[fname]
         pr = triggers(wf).get("pull_request") or {}
@@ -385,6 +396,20 @@ def check(repo_dir, repo, branch, spec, offline):
                     if behind(k) and not re.search(r"always\(\)|!\s*cancelled\(\)|failure\(\)", cond):
                         add(FAIL, "push-skip", f"{fname}:{k} runs behind {g} but its `if:` has none of `!cancelled()`, `always()` or `failure()`, "
                             "so it is skipped on every PR and queue run")
+
+    # Queue ejection notice: a PR the queue removes keeps green checks, so a workflow says so on the PR.
+    if setup["queue"]:
+        def on_dequeued(wf):
+            pr = triggers(wf).get("pull_request")
+            types = pr.get("types") if isinstance(pr, dict) else None
+            return "dequeued" in ([types] if isinstance(types, str) else list(types or []))
+
+        notice = [n for n, (wf, _) in workflows.items() if on_dequeued(wf)]
+        if notice:
+            add(INFO, "queue-ejection", f"queue removals noticed by {', '.join(sorted(notice))}")
+        else:
+            add(WARN, "queue-ejection", "no workflow on pull_request `dequeued`; a PR the queue removes shows green "
+                "checks and nothing says it is stuck (template: templates/queue-ejected.yml)")
 
     # Flake hunt.
     hunt = [n for n, (wf, text) in workflows.items()

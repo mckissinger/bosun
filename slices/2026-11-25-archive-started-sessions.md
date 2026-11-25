@@ -54,3 +54,9 @@ Run 1 (2026-11-25, bosun-verifier claude-opus-5-5/high, HEAD ac0e36e, fingerprin
 - F4: the lane copies in Lane end and the brief gave only "PRs merged or closed". Fixed: both now name the full done test.
 - F5: a host with no archive tool was not handled. Fixed: finished sessions are listed for the user.
 - Nit: "Lane end, below" became "above".
+
+Run 2 (2026-11-25, bosun-verifier claude-opus-5-5/medium delta, HEAD 56c0b7f, fingerprint 047ecd59): PASS WITH FOLLOW-UPS. F1, F2, F3 and F5 resolved; F4 partly.
+- F4: the Lane end and brief copies still lacked "not running", "or reported" and the no-archive-tool fallback. Fixed.
+- F6: the README said a session with running sessions of its own is reported, while core makes it wait. Fixed.
+- F7: the worktree test missed untracked files and commits made after a merged PR. Fixed by matching triage's "Git cleanup" test (branch tip is a merged or open PR's head). A delta check followed.
+- F8: no stated way to learn a gone child's sessions, and nobody lists them when the gone starter was the top session. Recorded as a follow-up.

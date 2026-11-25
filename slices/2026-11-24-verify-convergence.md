@@ -90,4 +90,20 @@ Branch: verify-convergence, from main (3f0c3ff).
 
 ## Verify
 
+- 1st (9883406, fingerprint 50ff5e8), bosun-verifier claude-opus-5-5 / high: FAIL. Findings:
+  - Blocking: the self-check ran before the commit, but the fingerprint includes HEAD, so the check skip could never fire.
+  - Blocking: the self-check's suite trigger contradicted "Tests and CI".
+  - README dropped clauses.
+  - Finding numbers could collide across runs.
+  - Two run types were undefined: a rerun after a check could not run, and a later PR fix.
+  - The skip wording was ambiguous.
+  - "Before committing" was stale.
+  - A release-blocking pre-existing defect had no priority.
+  - Nit: a missing "reachable".
+
+  All fixed in 625dcd9.
+- 2nd (625dcd9, fingerprint d011fe9), delta re-check, bosun-verifier claude-opus-5-5 / medium: PASS WITH FOLLOW-UPS. Nine of the ten ledger findings were resolved, and finding 7 was left with one stale copy.
+  - New bug 11: a later PR fix diffed against the last verified commit would include a merge from the default branch. Fixed, so the diff is against the merge commit when one came in since, and sent to a delta re-check.
+  - Drift 12 and 13 and the rest of finding 7 (the core "each open finding" wording, README's delta clauses, bosun-verify's skip wording) and the nit (the rerun prompt now names the check) were fixed by the lead with no verify run, as V2 says.
+
 ## Follow-ups

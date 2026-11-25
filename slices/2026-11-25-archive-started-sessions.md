@@ -67,6 +67,4 @@ Log: 2026-11-25, archive-started-sessions, first verify FAIL (a started session 
 
 ## Follow-ups
 
-- archive-started-sessions, 2026-11-25, bug: a session that made no commits and opened no PR (a plan, design or read-only session) is always reported, never archived. Its branch tip is the base commit, which is no PR's head. Allow a branch whose tip is already on the default branch. Next slice.
-- archive-started-sessions, 2026-11-25, bug: a worktree on a detached HEAD with local commits passes the worktree test. Add "or is on a detached HEAD with commits not on any branch". Next slice.
 - archive-started-sessions, 2026-11-25, deferral: no stated way for a starter to learn a gone session's own sessions, and nobody lists them when the gone starter was the top session (F8).

@@ -177,7 +177,7 @@ Sessions a session starts. A session that starts other sessions with the host's 
 
 Before archiving, the starting session reads that session's last report and the state of its PRs, and confirms the stack it held is gone, reporting rather than stopping one still running. It reports to the user, instead of archiving, a session whose worktree:
 - has uncommitted changes or untracked files;
-- is on a branch whose tip is not the head commit of a merged or open PR, such as commits made after its PR merged;
+- holds commits nothing else keeps: its HEAD, on a branch or detached, is neither already on `origin/<default branch>` after a `git fetch` (as with a session that made no commits) nor the head commit of a merged or open PR. Commits made after its last PR merged are such commits;
 - holds ignored files other than dependency and build output, such as a `.env` file or local data.
 
 `bosun-triage` uses a similar test before it removes a worktree ("Git cleanup").

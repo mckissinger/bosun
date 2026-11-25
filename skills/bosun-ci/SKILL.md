@@ -171,7 +171,7 @@ Set this up when the user asks, one repository at a time. Triage's recurring-fai
 - **What it does:**
   - It reads the slice records since its last run, or the last four weeks, and groups their FAIL findings by kind.
   - For each kind seen in two or more slices, it proposes a check, saying whether one already exists, what it costs and what CI time it adds. It lists checks more than two months old for review (`bosun-triage` steps 7 and 8).
-  - It commits only the spec's "Recurring verify failures" lesson and draft done-conditions, in one records PR titled "Weekly checks triage <date> (records only)". It adds to an earlier one still open rather than opening another.
+  - It commits only the spec's "Recurring verify failures" lesson and draft done-conditions, in one records PR titled "Weekly checks triage <date> (records only)". It adds to an earlier one still open rather than opening another, when merging the default branch into it is clean, and otherwise comments there and pushes nothing.
   - It arms auto-merge only under `Decisions: take recommendations`.
   - A week with nothing new writes nothing.
   - It never edits code, tests or configuration, promotes a draft, or removes a check.

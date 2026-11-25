@@ -79,5 +79,5 @@ Assumptions:
 Decisions: ask (Bosun's spec has no `Decisions:` line).
 Effort assumed: the session's level.
 Verifier effort: high (no override at any scope).
-Checks: as C8.
+Checks: as C8. Pre-verify gate: C8's commands (Bosun has no test suite; its gate is these static checks).
 Branch: findings-to-checks

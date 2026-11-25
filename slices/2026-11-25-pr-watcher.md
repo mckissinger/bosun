@@ -18,26 +18,22 @@ Outcome: A PR that is stuck after its owning session went quiet gets handled wit
 Size: about 150 changed lines, all prompt text and docs, under the cap.
 
 Done-conditions:
-W1. `todo` `templates/pr-watcher.md` is the saved prompt for a Claude Code cloud scheduled task.
-- **Triggers:** a GitHub `pull_request` `labeled` trigger filtered to the `queue-ejected` label, plus an hourly schedule as a sweep.
-- **Classes it handles** (open, non-draft PRs on the default branch):
-  - (a) removed from the queue (latest `RemovedFromMergeQueueEvent` not `merged`, actor `github-merge-queue`) and not back in;
-  - (b) green, not queued, auto-merge off, after auto-merge had been armed by the repository owner's account and was last turned off by the queue or a push, not by a person;
-  - (c) red required check on the PR's own head;
-  - (d) conflicting.
-- **It leaves a PR alone when:**
-  - its title or labels say do not arm, or it carries `hold`;
-  - it comes from a fork or another author;
-  - it had a push, comment or review in the last 30 minutes, since its own session may be on it;
-  - the watcher already acted on it for the same reason.
-- **Allowed actions:**
-  - re-queue once for `invalid_merge_commit`, `branch_protection_failure` or `checks_timed_out`;
-  - re-queue once for `failed_checks` only when every failed job also failed on another queue entry or on the default branch in the last 24 hours, which makes it a flake candidate;
-  - re-arm (b);
-  - for (a) `merge_conflict` or (d), merge the default branch in and push only when the merge has no conflicts;
-  - otherwise comment a diagnosis (reason, failed jobs with links, what it checked) and add `needs-owner`.
-- **It never:** changes code beyond that clean merge, merges a PR directly, pushes to the default branch, arms a PR that was never armed, or re-queues twice for one reason.
-- **Reporting:** each run comments its actions on the PRs it touched and appends a summary to one standing issue.
+W1. `todo` `templates/pr-watcher.md` is the saved prompt for a Claude Code cloud scheduled task. Reworded after the first verify.
+- **Triggers:** a GitHub `pull_request` `labeled` trigger filtered to `queue-ejected`, plus an hourly sweep.
+- **Candidates:** open, non-draft PRs from the owner's account and this repository, targeting the default branch.
+  - Excluded: "do not arm" titles or labels, `hold`, and `needs-owner`.
+  - Excluded: any sign of the PR's own session in the last 30 minutes. The notice's and the watcher's own comments don't count as signs.
+- **Classes, taken in order:** (a) removed from the queue; (d) conflicting; (c) red; (b) armed but stuck unqueued for 30 minutes.
+- **Earlier attempts** are counted from the timeline's queue entries on the current head.
+- **Actions:**
+  - re-queue on the first attempt for `invalid_merge_commit` or `branch_protection_failure`;
+  - for `failed_checks` or `checks_timed_out`, re-queue once only when every failing test also failed in the last day somewhere this PR couldn't reach, naming the tests;
+  - merge the default branch into the PR's own branch and push, when the merge is clean;
+  - toggle auto-merge once for (b);
+  - otherwise, including a second removal, hand off with `needs-owner` and a diagnosis.
+- **Never:** change code, merge directly, push to the default branch, arm a PR the queue didn't disarm, approve deployments, submit reviews, rerun workflows, or touch other labels.
+- **Reporting:** a standing-issue comment only when the run acted or skipped a candidate.
+
 W2. `todo` `skills/bosun-ci/SKILL.md` gains "PR watcher (opt-in)", set up per repository when the user asks:
 - create the scheduled task from the template (`/schedule` or claude.ai/code/routines);
 - confirm in its first run that the cloud session can read and act on PRs with `gh` or the GitHub connector, and record where it runs;
@@ -73,6 +69,24 @@ Branch: pr-watcher, from main (a5cae57).
 
 ## Evidence
 
+- W5 self-check after the commit at 1e550f7 (fingerprint 7447e59): `bash -n`, JSON, `py_compile`, `claude plugin validate .`, `git diff --check` and the project-name grep all pass.
+
 ## Verify
 
+- 1st (1e550f7, fingerprint 7447e59), bosun-verifier claude-opus-5-5 / high: FAIL. Findings:
+  1. Blocking: class (b) overlapped (a), so a `failed_checks` removal could be re-armed, which meant re-queued, with no flake test, and could loop with the notice.
+  2. Blocking: `checks_timed_out` was re-queued blindly, against core "Queue removal". The rule now follows core.
+  3. The once-only limit ignored sessions' re-queues, and second removals were skipped.
+  4. The notice's own comment made the label trigger skip the PR it fired for.
+  5. (b) lacked the data to tell a person's disarm apart.
+  6. The flake test counted queue runs that contained the PR.
+  7. The "never" list missed approvals, reviews and reruns.
+  8. Copies missed clauses.
+  9. Deferral: the 30-minute window can't see a session's unpushed work.
+  10. The standing issue would get noise.
+
+  Plus two nits. Fixed in the next commit: (b) became "armed but stuck"; the classes are ordered; attempts are counted from the timeline. The verifier couldn't fetch the scheduled-tasks docs; the lead read them (code.claude.com/docs/en/routines, 2026-11-25).
+
 ## Follow-ups
+
+- pr-watcher, 2026-11-25, deferral: the watcher's 30-minute quiet window can't see a session's local, unpushed work. If a session's push is rejected because the watcher merged the default branch into its PR, the session must pull first. Add that to "Following a PR" if it happens in practice.

@@ -145,12 +145,15 @@ Set this up when the user asks, one repository at a time, after the queue ejecti
 
 - **Create it** with `/schedule` or at claude.ai/code/routines, on the repository. Its prompt is `<plugin root>/templates/pr-watcher.md`, with the repository, default branch, the owner's GitHub login and a standing issue number filled in. Its triggers are a GitHub `pull_request` `labeled` trigger filtered to the `queue-ejected` label, plus an hourly schedule as the sweep. Creating it changes persistent configuration on the user's account, so it waits for the user's go, like any standing rule.
 - **What it does:**
-  - It re-queues once for reasons that aren't the PR's fault, and for a failed check whose failed jobs also failed elsewhere in the last day (a flake candidate).
-  - It re-arms a PR the queue or a push disarmed.
-  - It merges the default branch in when that merge is clean.
-  - Otherwise it labels the PR `needs-owner` with a diagnosis, which the core rules' "Watching open PRs" makes any session's work.
-  - It never changes code, merges a PR directly, or arms a PR that was never armed or says "do not arm".
-  - It leaves alone any PR with activity in the last 30 minutes.
+  - It acts only on open, non-draft PRs from the owner's account and this repository (no forks), without a `hold`, `needs-owner` or "do not arm" marker, and with no sign of their own session in the last 30 minutes.
+  - It classifies each in order: removed from the queue, conflicting, red, then armed but stuck. It counts earlier queue attempts from the PR's timeline, so a session's re-queue counts too.
+  - For `invalid_merge_commit` or `branch_protection_failure`, it re-queues if this is the first attempt on the PR's current head.
+  - For `failed_checks` or `checks_timed_out` (core rules, "Queue removal"), it re-queues once only when every failing test also failed in the last day somewhere this PR could not have reached, and it names those tests.
+  - It merges the default branch into the PR's own branch when that merge is clean.
+  - It toggles auto-merge once on an armed PR that stays unqueued.
+  - Anything else, including a second removal, it labels `needs-owner` with a diagnosis, which the core rules' "Watching open PRs" makes the owning session's, or the hub's.
+  - It never changes code, merges a PR directly, pushes to the default branch, arms a PR the queue didn't disarm, approves deployments, submits reviews, or reruns workflows.
+  - It comments on the standing issue only when it acted or skipped a candidate.
 - **Confirm in its first run** that the cloud session can read and act on the repository's PRs with `gh` or the GitHub connector, and that its comments land. Record where it runs, its triggers and its standing issue where the project keeps its CI notes.
 - **Limits:**
   - Scheduled tasks are in research preview.

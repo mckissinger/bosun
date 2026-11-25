@@ -1,7 +1,7 @@
 {
   "name": "bosun",
   "displayName": "Bosun",
-  "version": "0.32.0",
+  "version": "0.33.0",
   "description": "Spec-anchored workflow for autonomous coding runs in Claude Code: brief, run, verify, checkpoint. Runs on Opus 5.5 in every role, with independently selectable verifier effort. Built from Anthropic's Fable 5.1 and Opus 5.5 docs and its Claude Code guidance.",
   "author": {
     "name": "Michael Kissinger",

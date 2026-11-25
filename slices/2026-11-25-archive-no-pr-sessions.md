@@ -33,3 +33,11 @@ Decisions: ask (Bosun's spec has no `Decisions:` line).
 Verifier effort: high (no override at any scope).
 Checks: as N4. Pre-verify gate: N4's commands.
 Branch: archive-no-pr-sessions
+
+## Verify runs
+
+Run 1 (2026-11-25, bosun-verifier claude-opus-5-5/high, HEAD 3934cce, fingerprint ec048bf7): PASS WITH FOLLOW-UPS. N1–N4 met.
+- 1: "already on the default branch" named no ref, and a stale local `main` would report no-commit sessions again. Fixed: `origin/<default branch>` after a `git fetch`.
+- 2: the brief and README copies were looser than the rule ("no PR", "holds"). Fixed: both now say "a HEAD that is neither on the default branch nor a merged or open PR's head commit".
+- 3: a detached HEAD at an unmerged branch tip passed. Fixed: one test now covers HEAD on a branch or detached.
+- Nit: the bullet is split into a test sentence and a note.

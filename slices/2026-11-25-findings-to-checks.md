@@ -81,3 +81,15 @@ Effort assumed: the session's level.
 Verifier effort: high (no override at any scope).
 Checks: as C8. Pre-verify gate: C8's commands (Bosun has no test suite; its gate is these static checks).
 Branch: findings-to-checks
+
+## Verify runs
+
+Run 1 (2026-11-25, bosun-verifier claude-opus-5-5/high, HEAD b9e559d, fingerprint 1d8ca083): FAIL.
+- F1 (blocking): `/bosun-verify` step 0 stopped for good when a repository has no gate-type checks, or when verifying without a spec or brief. Fixed: `Pre-verify gate: none`, and with no spec or brief the gate is the repository's own checks, possibly none.
+- F2: the weekly window was the shorter of "since last run" and four weeks, and the commit message it keys on was never set. Fixed: it now takes whichever reaches further back, the two-month read is used only for dropping quiet kinds, and the commit message is set.
+- F3: checks due with no spec change could force an empty commit; the template merged the default branch into an open PR every week; and it never said how to find the earlier PR. Fixed: due checks go to the standing issue in such a week; the merge happens only when that PR conflicts; the earlier PR is found by its `checks-triage/` branch prefix.
+- F4: step 8 re-listed kept checks at every triage. Fixed: a check is listed once, when it turns two months old.
+- F5: a check added while fixing a FAIL could be flagged as an extra test. Fixed: an exception in core's "Commit tests only…" and in both verifier agents, and the verify prompt names such checks.
+- F6: the README copy dropped clauses (disabled check, evidence and exemption, date). Fixed.
+- Nit: the bosun-ci audit deliverables didn't name the defect checks. Fixed.
+- Pre-existing: the verifier's loaded definition predated the regenerated one (agents load at session start). This is not a slice defect.

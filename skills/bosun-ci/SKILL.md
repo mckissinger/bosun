@@ -169,9 +169,9 @@ Set this up when the user asks, one repository at a time. Triage's recurring-fai
 
 - **Create it** with `/schedule` or at claude.ai/code/routines, on the repository, with a weekly schedule. Its prompt is `<plugin root>/templates/weekly-checks-triage.md`, with these filled in: the repository, default branch, spec path, slice records folder and a standing issue number. Creating it changes persistent configuration on the user's account, so it waits for the user's go, like any standing rule.
 - **What it does:**
-  - It reads the slice records since its last run, or the last four weeks, and groups their FAIL findings by kind.
-  - For each kind seen in two or more slices, it proposes a check, saying whether one already exists, what it costs and what CI time it adds. It lists checks more than two months old for review (`bosun-triage` steps 7 and 8).
-  - It commits only the spec's "Recurring verify failures" lesson and draft done-conditions, in one records PR titled "Weekly checks triage <date> (records only)". It adds to an earlier one still open rather than opening another, when merging the default branch into it is clean, and otherwise comments there and pushes nothing.
+  - It reads the slice records since its last run or the last four weeks, whichever reaches further back, and groups their FAIL findings by kind.
+  - For each kind seen in two or more slices, it proposes a check, saying whether one already exists, what it costs and what CI time it adds. It lists checks that turned two months old that week for review, in the PR body or, in a week with no spec change, on the standing issue (`bosun-triage` steps 7 and 8).
+  - It commits only the spec's "Recurring verify failures" lesson and draft done-conditions, in one records PR titled "Weekly checks triage <date> (records only)". It adds to an earlier one still open (a `checks-triage/` branch) rather than opening another, merging the default branch in only when that PR conflicts and the merge is clean, and otherwise comments there and pushes nothing.
   - It arms auto-merge only under `Decisions: take recommendations`.
   - A week with nothing new writes nothing.
   - It never edits code, tests or configuration, promotes a draft, or removes a check.
@@ -213,8 +213,9 @@ Deliver:
 
 1. Main bottleneck and evidence.
 2. Ranked recommendations for an audit, or the implemented change and coverage justification for an improvement.
-3. Before/after elapsed time, runner minutes, and reliability observations where available; label each result measured, estimated, or unmeasured.
-4. Validation evidence, limitations, and deferred work. In implementation mode, record durable findings in the existing spec and the slice's record; keep measurement-dependent conditions pending until evidence exists.
+3. For an audit, the defect checks to suggest ("Defect checks to suggest") that fit the stack.
+4. Before/after elapsed time, runner minutes, and reliability observations where available; label each result measured, estimated, or unmeasured.
+5. Validation evidence, limitations, and deferred work. In implementation mode, record durable findings in the existing spec and the slice's record; keep measurement-dependent conditions pending until evidence exists.
 
 ## References
 

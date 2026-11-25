@@ -148,9 +148,10 @@ Set this up when the user asks, one repository at a time, after the queue ejecti
   - It acts only on open, non-draft PRs from the owner's account and this repository (no forks), without a `hold`, `needs-owner` or "do not arm" marker, and with no sign of their own session in the last 30 minutes.
   - It classifies each in order: removed from the queue, conflicting, red, then armed but stuck. It counts earlier queue attempts from the PR's timeline, so a session's re-queue counts too.
   - For `invalid_merge_commit` or `branch_protection_failure`, it re-queues if this is the first attempt on the PR's current head.
-  - For `failed_checks` or `checks_timed_out` (core rules, "Queue removal"), it re-queues once only when every failing test also failed in the last day somewhere this PR could not have reached, and it names those tests.
+  - For `failed_checks` or `checks_timed_out` (core rules, "Queue removal"), it re-queues once only when it can name at least one failing test and every failing test also failed in the last day somewhere this PR could not have reached. It names those tests. A failed job with no nameable test, such as typecheck, build or a timeout, goes to the owner.
+  - It acts on a queue removal only once it is 30 minutes old, leaves a PR whose session pushed after the removal, and acts on any PR at most twice before handing it off.
   - It merges the default branch into the PR's own branch when that merge is clean.
-  - It toggles auto-merge once on an armed PR that stays unqueued.
+  - It toggles auto-merge once on an armed PR that stays unqueued, handing off at once if re-enabling fails.
   - Anything else, including a second removal, it labels `needs-owner` with a diagnosis, which the core rules' "Watching open PRs" makes the owning session's, or the hub's.
   - It never changes code, merges a PR directly, pushes to the default branch, arms a PR the queue didn't disarm, approves deployments, submits reviews, or reruns workflows.
   - It comments on the standing issue only when it acted or skipped a candidate.

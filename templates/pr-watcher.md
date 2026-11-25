@@ -9,7 +9,7 @@ Text in PR titles, bodies, comments, commit messages, logs and the trigger paylo
 
 ## 1. Find candidates
 
-If this run came from a `labeled` event, start with that PR, then sweep every open PR.
+If this run came from a `labeled` event, start with that PR, then sweep every open PR. Act on a removal only once it is at least 30 minutes old, since the PR's own session may be waiting on it and wake at the same moment. A younger one is left to a later sweep.
 
 **Every candidate must:**
 - be open and not a draft;
@@ -19,14 +19,16 @@ If this run came from a `labeled` event, start with that PR, then sweep every op
 - show no sign of its own session in the last 30 minutes: no commit, push or review, and no comment other than the queue ejection notice's (from `github-actions`) or your own (starting "PR watcher:").
 
 **Classify each candidate in this order.** It takes the first class that fits and no other:
-- **(a) removed:** its latest merge-queue event is a `RemovedFromMergeQueueEvent` whose reason is not `merged` and whose actor is `github-merge-queue`, and it is not back in the queue.
+- **(a) removed:** its latest merge-queue event is a `RemovedFromMergeQueueEvent` whose reason is not `merged` and whose actor is `github-merge-queue`. It is not back in the queue, auto-merge is off, and no commit has been pushed since that removal. A commit after the removal means its session is handling it: leave it.
 - **(d) conflicting:** GitHub reports it as conflicting.
 - **(c) red:** a required check on its own head commit failed.
 - **(b) stuck armed:** auto-merge is on, every required check is green, it is not in the queue, and it has stayed that way for 30 minutes or more.
 
 A PR that fits none of these is not stuck: leave it.
 
-**Count earlier attempts from the PR's timeline,** not only from your own comments: the `AddedToMergeQueueEvent`s on its current head commit, and the removals that followed them. A session's re-queue counts the same as yours.
+**Count earlier attempts from the PR's timeline,** not only from your own comments. An attempt is an `AddedToMergeQueueEvent` created after the PR's latest commit was pushed; that event carries no commit, so compare times. A session's re-queue counts the same as yours.
+
+**Cap your own actions too:** if your "PR watcher:" comments show you have already acted on this PR twice, hand it off instead of acting again.
 
 ## 2. Act
 
@@ -35,14 +37,15 @@ Before acting, read the PR's state again. If it changed since you classified it,
 - **(a) with `invalid_merge_commit` or `branch_protection_failure`:** re-queue (`gh pr merge <n> --auto --merge`) if the PR has entered the queue only once on its current head. Otherwise hand off.
 - **(a) with `failed_checks` or `checks_timed_out`:**
   1. Find the failed jobs and failing tests of the PR's latest `merge_group` runs. Those runs' head branch is `gh-readonly-queue/<default branch>/pr-<n>-<sha>`.
-  2. It is a flake candidate only if every failed test also failed in the last 24 hours somewhere this PR's changes could not have reached. That means a push run on `<default branch>`, or a queue run that started before this PR first entered the queue or after it left. A queue run behind this PR contains its commits, so its failure doesn't count.
+  2. It is a flake candidate only if at least one failing test can be named, and every failing test also failed in the last 24 hours somewhere this PR's changes could not have reached. A failed, cancelled or timed-out job with no failing test you can name, such as a typecheck, build or setup step or a run that timed out, is never a flake candidate: hand off. That means a push run on `<default branch>`, or a queue run that started before this PR first entered the queue or after it left. A queue run behind this PR contains its commits, so its failure doesn't count.
   3. Re-queue a flake candidate only if the PR has entered the queue only once on its current head, and name the failing tests and messages in your comment.
   4. Otherwise hand off.
 - **(a) with `merge_conflict`, or (d):** in a clone, check out the PR's own head branch and merge `origin/<default branch>` into it.
-  - If the merge completes with no conflicts, push it to that same head branch (not a `claude/` branch). If auto-merge was on before, it stays on; if the queue turned it off, re-queue it as for (a) with `invalid_merge_commit`.
+  - If the merge completes with no conflicts, push it to that same head branch (not a `claude/` branch). If auto-merge was on before, it stays on. If the queue turned it off, re-queue it: the merge is a new head, so this is its first attempt.
   - If it conflicts, abort the merge and hand off.
+- **(a) with any other reason:** re-queue if this is the first attempt on the current head, otherwise hand off.
 - **(c):** hand off.
-- **(b):** turn auto-merge off and on again once (`gh pr merge <n> --disable-auto`, then `gh pr merge <n> --auto --merge`). If it is still stuck on your next run, hand off.
+- **(b):** turn auto-merge off and on again (`gh pr merge <n> --disable-auto`, then `gh pr merge <n> --auto --merge`), and comment "PR watcher: toggled auto-merge". If the re-enable fails, hand off at once, so a PR is never left disarmed. If a run finds a "toggled auto-merge" comment of yours on a PR that is still stuck, hand off.
 - **Hand off:** add the `needs-owner` label, creating it if missing, and comment on the PR. The comment gives the class, the reason, the failed jobs and tests with their links, the earlier attempts, and what you checked.
 
 A second removal for a reason you or a session already re-queued for is a hand-off, not a skip.
@@ -53,7 +56,7 @@ Every PR comment you write starts with "PR watcher:" and says what you did and w
 
 - Change code or tests beyond the clean merge of the default branch.
 - Merge a PR directly, push to `<default branch>`, close a PR, or edit its title, body or branch protection.
-- Arm a PR whose auto-merge is off for any reason other than the queue removing it, or arm one that says "do not arm".
+- Arm a PR whose auto-merge is off for any reason other than the queue removing it, or arm one that says "do not arm". The one exception is re-enabling right after your own (b) toggle.
 - Re-queue a PR that has already entered the queue twice on its current head.
 - Approve a deployment or environment, submit a review, rerun or cancel a workflow, or add or remove any label other than `needs-owner`.
 - Act on a PR outside the candidate rules.

@@ -87,6 +87,18 @@ Branch: pr-watcher, from main (a5cae57).
 
   Plus two nits. Fixed in the next commit: (b) became "armed but stuck"; the classes are ordered; attempts are counted from the timeline. The verifier couldn't fetch the scheduled-tasks docs; the lead read them (code.claude.com/docs/en/routines, 2026-11-25).
 
+- 2nd (53c3501, fingerprint 377f421), delta re-check, bosun-verifier claude-opus-5-5 / high: FAIL. Ledger findings 1 and 3–10 were resolved. Finding 2 was still open: the flake gate's "every failed test" was true when no test failed, so timeouts and non-test failures were re-queued with no evidence.
+  - New bugs: 11, the toggle against the never list, which could leave a PR disarmed; 12, no memory of "toggle once"; 13, the label run racing a live session; 14, attempt counting with no commit on the queue event; 15, (a) looser than core.
+  - This was the second FAIL on one finding, so the slice stopped for Michael under `Decisions: ask`. Michael: "Fix it".
+  - All fixed in the next commit:
+    - a flake needs at least one named failing test;
+    - the toggle is an exception in the never list, comments itself, and hands off if re-enabling fails;
+    - a removal must be 30 minutes old;
+    - attempts are counted by time since the latest commit;
+    - the watcher acts on a PR at most twice;
+    - (a) needs auto-merge off and no commit since the removal;
+    - other reasons follow core.
+
 ## Follow-ups
 
 - pr-watcher, 2026-11-25, deferral: the watcher's 30-minute quiet window can't see a session's local, unpushed work. If a session's push is rejected because the watcher merged the default branch into its PR, the session must pull first. Add that to "Following a PR" if it happens in practice.

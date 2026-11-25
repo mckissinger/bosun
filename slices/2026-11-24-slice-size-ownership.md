@@ -66,6 +66,23 @@ Branch: slice-size-ownership, from main (87195d0).
 
 ## Evidence
 
+- S6 self-check, after the commit at 1595988, on fingerprint c9e8a06:
+  - `bash -n`, the three JSON files and `py_compile` pass.
+  - `claude plugin validate .` passes.
+  - `git diff --check` and the project-name grep are clean.
+
 ## Verify
+
+- 1st (1595988, fingerprint c9e8a06), bosun-verifier claude-opus-5-5 / high: FAIL. Findings:
+  1. Blocking: declarations contradicted the assigned-slice rules for hygiene, CI and red-branch work, and for shared files.
+  2. The shared-contract slice was tied to the setup slice's condition.
+  3. The assigned-slice lists didn't name shared-contract slices.
+  4. The records-branch copies disagreed, and records in a single session or outside a run were unclear.
+  5. A pushed entry would restart an open records PR.
+  6. There was no exception for a change whose parts can't stand alone.
+  7. README dropped clauses.
+  8. "Stops building" didn't mention the shared-contract slice.
+
+  All are fixed in the next commit.
 
 ## Follow-ups

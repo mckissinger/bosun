@@ -173,7 +173,7 @@ Set this up when the user asks, one repository at a time. Triage's recurring-fai
   - For each kind seen in two or more slices, it proposes a check, saying whether one already exists, what it costs and what CI time it adds. It lists checks that turned two months old that week for review, in the PR body or, in a week with no spec change, on the standing issue (`bosun-triage` steps 7 and 8).
   - It commits only the spec's "Recurring verify failures" lesson and draft done-conditions, in one records PR titled "Weekly checks triage <date> (records only)". It adds to an earlier one still open (a `checks-triage/` branch) rather than opening another, merging the default branch in only when that PR conflicts and the merge is clean, and otherwise comments there and pushes nothing.
   - It arms auto-merge only under `Decisions: take recommendations`.
-  - A week with nothing new writes nothing.
+  - A week with no spec change makes no commit, and comments on the standing issue only when a check turned due or it had to stop early.
   - It never edits code, tests or configuration, promotes a draft, or removes a check.
 - **Confirm in its first run** that the cloud session can clone, push a branch and open a PR. Record where it runs and its standing issue where the project keeps its CI notes.
 - **Limits:** the same as the PR watcher's. Scheduled tasks are in research preview, runs count toward the user's usage, and the current limits are at code.claude.com/docs/en/routines.

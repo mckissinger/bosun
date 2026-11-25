@@ -9,7 +9,7 @@ Decisions: Michael asked why verification takes so long and runs so many rounds 
 Outcome: Verify rounds after the first check only what the fix changed, and a passing slice no longer pays a full verify round for each follow-up. Rounds per slice fall from about 2–2.5 toward Anthropic's published 1.3, while the fresh verifier, the three-run cap and the security review stay.
 
 Done-conditions:
-V1. `todo` `rules/core.md` "Finishing" defines the delta re-check:
+V1. `todo` (after the first verify: a findings ledger across runs, new findings numbered after it, a rerun because a check could not run repeats that run, and a later PR fix starts with a delta re-check) `rules/core.md` "Finishing" defines the delta re-check:
 - Every verify run after a slice's first is a delta re-check.
 - The lead commits the slice's work before each verify run, so the fix diff is `git diff <commit the previous run checked>`.
 - The re-check gets the previous run's numbered findings, that diff, and the checks rerun for the fix.
@@ -29,11 +29,11 @@ V3. `todo` Pre-existing defects, in `rules/core.md` "What blocks" and both verif
 - It becomes a `bug` follow-up, and a release-blocking one is named to the user in the report.
 V4. `todo` Both verifier agents name the pattern when a finding is one instance of a repeated mistake, and list every instance in the slice's diff, found by searching.
 V5. `todo` The self-check before the first verify:
-- `rules/core.md` "Tests and CI" or "Finishing" requires the lead, after the last edit and before the first verify, to run the brief's checks: typecheck, lint, build, and the tests the change could affect.
-- It also requires the full unit and database suites when the change touches shared code, configuration, dependencies, the schema or migrations, or the test setup.
-- It also requires the repository's consistency tests, meaning tests that require every new route, action or record to be listed somewhere.
-- The lead reports each result with exit code on the working-tree fingerprint.
-- Both verifier agents' step 3 says: a check the prompt reports passing on a fingerprint matching the working tree is not rerun, and the verifier says so. Any other check it is asked to run, it runs. It runs the existing tests for the changed files and for the flows the done-conditions name.
+- `rules/core.md` "Finishing" requires the lead, after the last edit, to commit the slice's work and then run the brief's checks on that commit: typecheck, lint, build, and the tests the change could affect.
+- It also requires the full unit suite when "Tests and CI" calls for it, the full database suite when the change touches the schema, migrations or database functions, and the repository's consistency tests.
+- The lead reports each result on the fingerprint taken after the commit.
+- Both verifier agents' step 3 says: a whole-repository check or full suite the prompt reports passing on a matching fingerprint is not rerun, and the verifier says so. It runs every other check it is asked to run, and always runs the existing tests for the changed files and for the flows the done-conditions name.
+- Changed after the first verify: commit before the checks, because the fingerprint includes HEAD; and the database-suite trigger, so the self-check agrees with "Tests and CI".
 V6. `todo` `skills/bosun-verify/SKILL.md` effort and prompt:
 - A delta re-check runs at `medium`, or at the resolved effort when that is lower.
 - It keeps the resolved effort when the slice touches money, authentication or permissions, migrations, or security-sensitive code.

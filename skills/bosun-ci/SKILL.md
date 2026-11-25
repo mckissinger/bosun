@@ -11,7 +11,7 @@ Shorten time to trustworthy CI results while preserving coverage. V1 supports Gi
 
 - **Audit CI**, review, or recommendations: read-only investigation and a ranked report. Do not edit the spec or workflows, launch runs, or invoke the implementation flow. A spec is useful context but not required for an audit.
 - **Speed up CI**, optimize, or fix an identified CI bottleneck: investigate, then implement a focused improvement through `/bosun-brief` and verify through `/bosun-verify`. Honor existing authorization; do not insert another approval step when implementation is already requested. The brief's model, spec, and run-policy rules still apply.
-- **Turn on a merge queue**, **set up migrations**, **set up the flake-fix loop**, or **set up the weekly CI report**: when the user asks by name, follow that section below, through `/bosun-brief` and `/bosun-verify` for its code.
+- **Turn on a merge queue**, **set up migrations**, **set up the flake-fix loop**, **set up the PR watcher**, or **set up the weekly CI report**: when the user asks by name, follow that section below, through `/bosun-brief` and `/bosun-verify` for its code.
 - If the request does not establish whether to edit, default to audit. Keep deployment changes and repository protection changes, including turning on a merge queue and the migrations flow below, outside a CI performance request unless separately requested. A move to Blacksmith runners is always a recommendation under "Runner standard"; implement it only when the user asked for the migration.
 
 ## Establish the baseline
@@ -138,6 +138,26 @@ Set this up when the user asks, one repository at a time, once its nightly flake
 - **No cause found.** The loop opens a quarantine PR instead, as its own brief and verify, whose done-conditions are the entry's fields and the quarantine check passing (the fix slice's "uses none of these" does not apply to it): the test's tag and an entry with its owner, reason, the hunt's rate, the date added and an expiry at most 14 days out, as "Flake quarantine" describes. Setting up the loop is the user's approval for these entries (core rules, "Tests and CI"), not for renewing them. When one of its entries has three days or fewer left, the loop takes that test again ahead of new ones; if it still finds no cause, it names the test to the user on the standing issue with the entry's expiry, renewal is the user's, and the loop does not take that test again until the user says so.
 - **Repeat offenders.** A test the loop fixed that the hunt reports again within 14 days goes to the user, named on the standing issue with both PRs, and the loop does not take it again until the user says so.
 - **Report.** Each run comments on the standing issue with the tests it took, their PRs, the quarantine entries it opened and the tests it skipped and why. Its PRs pass the same required checks and merge the same way as any other.
+
+## PR watcher (opt-in)
+
+Set this up when the user asks, one repository at a time, after the queue ejection notice is in place, because its `queue-ejected` label is one trigger. Rules can only make a session handle its PRs while that session runs, so a PR whose session has gone quiet can sit stuck for hours: removed from the queue, green but unqueued, red, or conflicting. The watcher is a Claude Code cloud scheduled task (formerly a routine) that handles those PRs within about an hour, with no session watching.
+
+- **Create it** with `/schedule` or at claude.ai/code/routines, on the repository. Its prompt is `<plugin root>/templates/pr-watcher.md`, with the repository, default branch, the owner's GitHub login and a standing issue number filled in. Its triggers are a GitHub `pull_request` `labeled` trigger filtered to the `queue-ejected` label, plus an hourly schedule as the sweep. Creating it changes persistent configuration on the user's account, so it waits for the user's go, like any standing rule.
+- **What it does:**
+  - It re-queues once for reasons that aren't the PR's fault, and for a failed check whose failed jobs also failed elsewhere in the last day (a flake candidate).
+  - It re-arms a PR the queue or a push disarmed.
+  - It merges the default branch in when that merge is clean.
+  - Otherwise it labels the PR `needs-owner` with a diagnosis, which the core rules' "Watching open PRs" makes any session's work.
+  - It never changes code, merges a PR directly, or arms a PR that was never armed or says "do not arm".
+  - It leaves alone any PR with activity in the last 30 minutes.
+- **Confirm in its first run** that the cloud session can read and act on the repository's PRs with `gh` or the GitHub connector, and that its comments land. Record where it runs, its triggers and its standing issue where the project keeps its CI notes.
+- **Limits:**
+  - Scheduled tasks are in research preview.
+  - Runs count toward the user's subscription usage.
+  - Each account gets 100 scheduled runs an hour.
+  - GitHub events beyond the per-task and per-account hourly caps are dropped, which is why the hourly sweep backs the label trigger.
+  - Read the current limits at code.claude.com/docs/en/routines before setting it up.
 
 ## Weekly CI report (opt-in)
 

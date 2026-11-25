@@ -50,7 +50,7 @@ Design approval: <me | critique, and its source: the spec line, or the default; 
 Design: <include only when a done-condition adds or changes a screen: the design skill to load, the locked-rules file, and for each screen its approved board (file, page and board name) and any departures already approved; "no board yet" for a screen to mock up first>
 Effort assumed: <the session's level; you cannot change it>
 Verifier effort: <this slice's override, project default, or high; independent of the lead's effort>
-Checks: <exact commands and any setup they need; end-to-end checks name the targeted specs, not the full suite, and say whether a required CI check runs the full end-to-end suite; list the pre-verify gate's commands (core rules, "Self-check") when the spec has no `Pre-verify gate:` line>
+Checks: <exact commands and any setup they need; end-to-end checks name the targeted specs, not the full suite, and say whether a required CI check runs the full end-to-end suite; list the pre-verify gate's commands (core rules, "Self-check"), or `none` when the repository has none of those checks, when the spec has no `Pre-verify gate:` line>
 Branch: <name>
 ```
 

@@ -93,3 +93,11 @@ Run 1 (2026-11-25, bosun-verifier claude-opus-5-5/high, HEAD b9e559d, fingerprin
 - F6: the README copy dropped clauses (disabled check, evidence and exemption, date). Fixed.
 - Nit: the bosun-ci audit deliverables didn't name the defect checks. Fixed.
 - Pre-existing: the verifier's loaded definition predated the regenerated one (agents load at session start). This is not a slice defect.
+
+Run 2 (2026-11-25, bosun-verifier claude-opus-5-5/medium delta, HEAD 5714a8f, fingerprint 3c4c57e8): PASS WITH FOLLOW-UPS. Findings 1–6 and the nit are resolved.
+- 7: the weekly due-check window was a fixed seven days, so a skipped or stopped week lost its due checks. Fixed: the window now runs from this task's last commit or issue comment.
+- 8: "Otherwise" attached to the wrong condition in the template's no-change branch. Fixed: a no-change week makes no commit and stops either way.
+- 9: step 0 had overlapping rules for a spec'd repository with no checks. Fixed: "none of these checks" applies only with no spec or brief, and the brief's Checks line now asks for `none`.
+- 10: the template's open-PR steps pushed before the conflict check. Fixed: check out, merge on conflict or stop, commit, guard, push.
+- Nit (bosun-ci Deliver item 3 repeated itself): fixed.
+- Behavior changed in 7, 9 and 10, so a third delta check runs.

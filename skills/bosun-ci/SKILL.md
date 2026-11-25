@@ -213,7 +213,7 @@ Deliver:
 
 1. Main bottleneck and evidence.
 2. Ranked recommendations for an audit, or the implemented change and coverage justification for an improvement.
-3. For an audit, the defect checks to suggest ("Defect checks to suggest") that fit the stack.
+3. For an audit, the checks from "Defect checks to suggest" that fit the stack.
 4. Before/after elapsed time, runner minutes, and reliability observations where available; label each result measured, estimated, or unmeasured.
 5. Validation evidence, limitations, and deferred work. In implementation mode, record durable findings in the existing spec and the slice's record; keep measurement-dependent conditions pending until evidence exists.
 

@@ -28,7 +28,7 @@ List the kinds no check can express, such as wording drift or product judgment, 
 
 ## 3. Checks due for review
 
-Search the repository for checks that carry a comment naming the finding kind and date they came from. List each one that turned two months old since the last weekly triage commit or standing-issue comment of this task (whichever is later), or in the last four weeks if there is neither, with its file, kind and date, for the user to keep or retire. Never remove one. These go in the PR body, never in the spec.
+Search the repository for checks that carry a comment naming the finding kind and date they came from. List each one that turned two months old since this task's last weekly triage commit or its last standing-issue comment (whichever is later), or in the last four weeks if there is neither, with its file, kind and date, for the user to keep or retire. Never remove one. These go in the PR body, never in the spec.
 
 ## 4. Write
 

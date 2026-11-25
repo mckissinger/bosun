@@ -163,6 +163,28 @@ Set this up when the user asks, one repository at a time, after the queue ejecti
   - GitHub events beyond the per-task and per-account hourly caps are dropped, which is why the hourly sweep backs the label trigger.
   - Read the current limits at code.claude.com/docs/en/routines before setting it up.
 
+## Weekly checks triage (opt-in)
+
+Set this up when the user asks, one repository at a time. Triage's recurring-failures step runs only at milestone ends, and in practice it rarely produced anything. This task runs it every week as a Claude Code cloud scheduled task, so repeated kinds of verify finding turn into proposed checks without waiting on a hub (core rules, "Corrections become checks").
+
+- **Create it** with `/schedule` or at claude.ai/code/routines, on the repository, with a weekly schedule. Its prompt is `<plugin root>/templates/weekly-checks-triage.md`, with these filled in: the repository, default branch, spec path, slice records folder and a standing issue number. Creating it changes persistent configuration on the user's account, so it waits for the user's go, like any standing rule.
+- **What it does:**
+  - It reads the slice records since its last run or the last four weeks, whichever reaches further back, and groups their FAIL findings by kind.
+  - For each kind seen in two or more slices, it proposes a check, saying whether one already exists, what it costs and what CI time it adds. It lists checks that turned two months old that week for review, in the PR body or, in a week with no spec change, on the standing issue (`bosun-triage` steps 7 and 8).
+  - It commits only the spec's "Recurring verify failures" lesson and draft done-conditions, in one records PR titled "Weekly checks triage <date> (records only)". It adds to an earlier one still open (a `checks-triage/` branch) rather than opening another, merging the default branch in only when that PR conflicts and the merge is clean, and otherwise comments there and pushes nothing.
+  - It arms auto-merge only under `Decisions: take recommendations`.
+  - A week with no spec change makes no commit, and comments on the standing issue only when a check turned due or it had to stop early.
+  - It never edits code, tests or configuration, promotes a draft, or removes a check.
+- **Confirm in its first run** that the cloud session can clone, push a branch and open a PR. Record where it runs and its standing issue where the project keeps its CI notes.
+- **Limits:** the same as the PR watcher's. Scheduled tasks are in research preview, runs count toward the user's usage, and the current limits are at code.claude.com/docs/en/routines.
+
+## Defect checks to suggest
+
+An audit also looks at the project's tests and lint setup and suggests each of these that fits the stack and that the spec does not record as declined. Each one goes in the report as a candidate with its CI time, never as a change made without a slice:
+- **A second unit-test run in a far time zone** (for example `TZ=Pacific/Kiritimati`), limited to tests of files that parse, format or compare dates, when the project handles dates or schedules.
+- **A lint rule against regular expressions that can backtrack catastrophically** (for JavaScript, `eslint-plugin-regexp`'s super-linear rules), when the project matches user-supplied text.
+- **Failing-first tests for bug fixes** as a lead step (core rules, "Corrections become checks"), never as a CI gate, since a test for behavior that already worked rightly passes on the old code.
+
 ## Weekly CI report (opt-in)
 
 Set this up when the user asks. A scheduled routine, weekly, runs this skill's audit read-only and posts the result to one standing issue. It gates nothing, and its findings become follow-ups and fixes through ordinary slices. For each workflow and job, it reports the PR median on the last attempt (and p90 when the week has enough runs to support it), their change over the previous week and over four weeks, runner minutes, and the nightly hunt's flake count over the week, against the spec's `CI budget:`. It also posts the week's runs and pushes per merged PR, the catch-up share, merge-path latency (median, and p95 when supported), cache usage against the limit (from the provider where GitHub's API reads empty), repeat push runs, and flake-hunt coverage, as the baseline measures them. It names any median over the budget and any job that grew by half or more over two weeks, and includes the conformance check's result. Confirm in one run that the routine has the `gh` access the audit needs. The lead reads the latest report at each milestone end, alongside the `/bosun-ci` audit, and its findings become follow-ups there.
@@ -191,8 +213,9 @@ Deliver:
 
 1. Main bottleneck and evidence.
 2. Ranked recommendations for an audit, or the implemented change and coverage justification for an improvement.
-3. Before/after elapsed time, runner minutes, and reliability observations where available; label each result measured, estimated, or unmeasured.
-4. Validation evidence, limitations, and deferred work. In implementation mode, record durable findings in the existing spec and the slice's record; keep measurement-dependent conditions pending until evidence exists.
+3. For an audit, the checks from "Defect checks to suggest" that fit the stack.
+4. Before/after elapsed time, runner minutes, and reliability observations where available; label each result measured, estimated, or unmeasured.
+5. Validation evidence, limitations, and deferred work. In implementation mode, record durable findings in the existing spec and the slice's record; keep measurement-dependent conditions pending until evidence exists.
 
 ## References
 

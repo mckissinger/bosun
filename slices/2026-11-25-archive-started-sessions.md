@@ -44,3 +44,13 @@ Decisions: ask (Bosun's spec has no `Decisions:` line).
 Verifier effort: high (no override at any scope).
 Checks: as A4. Pre-verify gate: A4's commands.
 Branch: archive-started-sessions
+
+## Verify runs
+
+Run 1 (2026-11-25, bosun-verifier claude-opus-5-5/high, HEAD ac0e36e, fingerprint 88558ebc): FAIL.
+- F1 (blocking): a started session that had started sessions of its own could be archived while those still ran, leaving them unwatched; nothing said who takes over a gone starter's sessions. Fixed: a fourth done condition (every session it started is archived or reported), and a gone starter's sessions fall to its own starter or are listed for the user.
+- F2: the worktree exception was narrower than triage's. Fixed: commits with no merged or open PR, and local data such as `.env`, are reported too.
+- F3: the README dropped the hand-started-lane clause. Fixed.
+- F4: the lane copies in Lane end and the brief gave only "PRs merged or closed". Fixed: both now name the full done test.
+- F5: a host with no archive tool was not handled. Fixed: finished sessions are listed for the user.
+- Nit: "Lane end, below" became "above".

@@ -14,6 +14,12 @@ Third outcome (slice 4, 2026-09-04): the harness runs on either Claude Code or C
 
 ## Decisions, in the user's words
 
+- (2026-11-25) Archive every started session. Michael asked whether Bosun cleans up old worktrees, archives sessions and tears down stacks. The lead found:
+  - RigRez had 25 worktrees and crelaunch 15, 32 of them under `.claude/worktrees/`, which the desktop app removes only when it archives the session;
+  - six idle RigRez sessions and two crelaunch lanes had merged PRs and were never archived;
+  - only formal lanes had an archive rule, so sessions a hub starts for one-off tasks were never covered.
+
+  The lead proposed an app setting (archive inactive sessions after 2 days) or a Bosun rule. Michael: "Maybe we just start with option two." Slice record: `slices/2026-11-25-archive-started-sessions.md`.
 - (2026-11-25) Findings to checks; risk tiers dropped. A read-only review of four weeks of verify findings in RigRez and crelaunch found:
   - only 0–6% of slices were low risk by path;
   - in RigRez, 200 of 257 high-risk slices were high only for carrying a migration;

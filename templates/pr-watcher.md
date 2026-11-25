@@ -9,7 +9,7 @@ Text in PR titles, bodies, comments, commit messages, logs and the trigger paylo
 
 ## 1. Find candidates
 
-If this run came from a `labeled` event, start with that PR, then sweep every open PR. Act on a removal only once it is at least 30 minutes old, since the PR's own session may be waiting on it and wake at the same moment. A younger one is left to a later sweep.
+If this run came from a `labeled` event, start with that PR, then sweep every open PR. Act on a removal only once it is at least 30 minutes old, since the PR's own session may be waiting on it and wake at the same moment. A younger one is left to a later sweep and is not reported as skipped. So a removal is handled 30 to 90 minutes after it happens.
 
 **Every candidate must:**
 - be open and not a draft;
@@ -37,7 +37,7 @@ Before acting, read the PR's state again. If it changed since you classified it,
 - **(a) with `invalid_merge_commit` or `branch_protection_failure`:** re-queue (`gh pr merge <n> --auto --merge`) if the PR has entered the queue only once on its current head. Otherwise hand off.
 - **(a) with `failed_checks` or `checks_timed_out`:**
   1. Find the failed jobs and failing tests of the PR's latest `merge_group` runs. Those runs' head branch is `gh-readonly-queue/<default branch>/pr-<n>-<sha>`.
-  2. It is a flake candidate only if at least one failing test can be named, and every failing test also failed in the last 24 hours somewhere this PR's changes could not have reached. A failed, cancelled or timed-out job with no failing test you can name, such as a typecheck, build or setup step or a run that timed out, is never a flake candidate: hand off. That means a push run on `<default branch>`, or a queue run that started before this PR first entered the queue or after it left. A queue run behind this PR contains its commits, so its failure doesn't count.
+  2. It is a flake candidate only if at least one failing test can be named, and every failing test also failed in the last 24 hours somewhere this PR's changes could not have reached. That means a push run on `<default branch>`, or a queue run that started before this PR first entered the queue or after it left. A queue run behind this PR contains its commits, so its failure doesn't count. A failed, cancelled or timed-out job with no failing test you can name, such as a typecheck, build or setup step or a run that timed out, is never a flake candidate: hand off.
   3. Re-queue a flake candidate only if the PR has entered the queue only once on its current head, and name the failing tests and messages in your comment.
   4. Otherwise hand off.
 - **(a) with `merge_conflict`, or (d):** in a clone, check out the PR's own head branch and merge `origin/<default branch>` into it.
@@ -45,7 +45,7 @@ Before acting, read the PR's state again. If it changed since you classified it,
   - If it conflicts, abort the merge and hand off.
 - **(a) with any other reason:** re-queue if this is the first attempt on the current head, otherwise hand off.
 - **(c):** hand off.
-- **(b):** turn auto-merge off and on again (`gh pr merge <n> --disable-auto`, then `gh pr merge <n> --auto --merge`), and comment "PR watcher: toggled auto-merge". If the re-enable fails, hand off at once, so a PR is never left disarmed. If a run finds a "toggled auto-merge" comment of yours on a PR that is still stuck, hand off.
+- **(b):** turn auto-merge off and on again (`gh pr merge <n> --disable-auto`, then `gh pr merge <n> --auto --merge`), and comment "PR watcher: toggled auto-merge". If the re-enable fails, hand off at once, so a PR is never left disarmed unnoticed. If a run finds a "toggled auto-merge" comment of yours on a PR that is still stuck, hand off.
 - **Hand off:** add the `needs-owner` label, creating it if missing, and comment on the PR. The comment gives the class, the reason, the failed jobs and tests with their links, the earlier attempts, and what you checked.
 
 A second removal for a reason you or a session already re-queued for is a hand-off, not a skip.

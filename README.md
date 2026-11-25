@@ -57,7 +57,7 @@ launch session at the right effort
 | `bosun-scout` agent | `agents/bosun-scout.md` | Read-only background investigator, medium effort |
 | `bosun-verifier` agent | `agents/bosun-verifier.md` | Read-only Opus 5.5 verifier, selectable effort (default high), with Playwright for done-conditions that name a route or screen |
 | `bosun-verifier-mobile` agent | `agents/bosun-verifier-mobile.md` | Read-only Opus 5.5 verifier, selectable effort (default high), with a simulator MCP server for done-conditions that name a native iOS screen |
-| PR watcher | `templates/pr-watcher.md` | Saved prompt for a cloud scheduled task that handles stuck PRs: re-queues, re-arms, clean merges, or a `needs-owner` hand-off |
+| PR watcher | `templates/pr-watcher.md` | Saved prompt for a cloud scheduled task that handles stuck PRs: re-queues, an auto-merge toggle, clean merges, or a `needs-owner` hand-off |
 | Queue ejection notice | `templates/queue-ejected.yml` | Workflow a queue repository copies: labels a PR the merge queue removed and comments with the reason and the failed jobs |
 | SessionStart hook | `scripts/session-start.sh` | Loads the rules if needed, points at the spec with its provider mode line (when present) and run policy, prints any checkpoint; on compaction, tells the model to re-read the spec |
 

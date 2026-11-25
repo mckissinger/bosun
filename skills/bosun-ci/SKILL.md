@@ -141,13 +141,13 @@ Set this up when the user asks, one repository at a time, once its nightly flake
 
 ## PR watcher (opt-in)
 
-Set this up when the user asks, one repository at a time, after the queue ejection notice is in place, because its `queue-ejected` label is one trigger. Rules can only make a session handle its PRs while that session runs, so a PR whose session has gone quiet can sit stuck for hours: removed from the queue, green but unqueued, red, or conflicting. The watcher is a Claude Code cloud scheduled task (formerly a routine) that handles those PRs within about an hour, with no session watching.
+Set this up when the user asks, one repository at a time, after the queue ejection notice is in place, because its `queue-ejected` label is one trigger. Rules can only make a session handle its PRs while that session runs, so a PR whose session has gone quiet can sit stuck for hours: removed from the queue, green but unqueued, red, or conflicting. The watcher is a Claude Code cloud scheduled task (formerly a routine) that handles those PRs within about 90 minutes, with no session watching.
 
 - **Create it** with `/schedule` or at claude.ai/code/routines, on the repository. Its prompt is `<plugin root>/templates/pr-watcher.md`, with the repository, default branch, the owner's GitHub login and a standing issue number filled in. Its triggers are a GitHub `pull_request` `labeled` trigger filtered to the `queue-ejected` label, plus an hourly schedule as the sweep. Creating it changes persistent configuration on the user's account, so it waits for the user's go, like any standing rule.
 - **What it does:**
   - It acts only on open, non-draft PRs from the owner's account and this repository (no forks), without a `hold`, `needs-owner` or "do not arm" marker, and with no sign of their own session in the last 30 minutes.
   - It classifies each in order: removed from the queue, conflicting, red, then armed but stuck. It counts earlier queue attempts from the PR's timeline, so a session's re-queue counts too.
-  - For `invalid_merge_commit` or `branch_protection_failure`, it re-queues if this is the first attempt on the PR's current head.
+  - For `invalid_merge_commit`, `branch_protection_failure` or any reason it doesn't name, it re-queues if this is the first attempt on the PR's current head (core rules, "Queue removal").
   - For `failed_checks` or `checks_timed_out` (core rules, "Queue removal"), it re-queues once only when it can name at least one failing test and every failing test also failed in the last day somewhere this PR could not have reached. It names those tests. A failed job with no nameable test, such as typecheck, build or a timeout, goes to the owner.
   - It acts on a queue removal only once it is 30 minutes old, leaves a PR whose session pushed after the removal, and acts on any PR at most twice before handing it off.
   - It merges the default branch into the PR's own branch when that merge is clean.

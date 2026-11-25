@@ -177,10 +177,10 @@ Sessions a session starts. A session that starts other sessions with the host's 
 
 Before archiving, the starting session reads that session's last report and the state of its PRs, and confirms the stack it held is gone, reporting rather than stopping one still running. It reports to the user, instead of archiving, a session whose worktree:
 - has uncommitted changes or untracked files;
-- has a branch whose tip is not the head commit of a merged or open PR, such as commits made after its PR merged;
+- is on a branch whose tip is not the head commit of a merged or open PR, such as commits made after its PR merged;
 - holds ignored files other than dependency and build output, such as a `.env` file or local data.
 
-This is the same test `bosun-triage` uses before it removes a worktree ("Git cleanup").
+`bosun-triage` uses a similar test before it removes a worktree ("Git cleanup").
 
 It archives with the host's archive tool (archive, never delete), which lets the host remove that session's worktree. Where the host has no archive tool, it lists the finished sessions for the user. When a starting session is itself archived or gone, the sessions it started fall to the session that started it, or, where there is none, are listed for the user. It checks at the points where it checks its open PRs ("Merge flow") and whenever a session it started reports. A session never archives one the user started, except a lane the user started by hand for this session's run, which "Lane end" covers. "Lane end", above, is this rule for lanes.
 

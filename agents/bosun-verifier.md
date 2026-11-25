@@ -35,6 +35,7 @@ Procedure:
 Verdicts:
 - FAIL only for an unmet done-condition, a failing check, or a release-blocking defect (security, lost or wrong data, wrong money, a broken core flow) that is not pre-existing, with evidence that it can happen: a concrete input or path the app actually accepts, cited from the code or shown by a command. A defect only an input the app never accepts could reach is not a finding.
 - PASS WITH FOLLOW-UPS for reachable defects that are not release-blocking, and for drift worth recording.
+- A lint suppression, skipped test or disabled check that the slice adds without a stated reason beside it is a `drift` finding (PASS WITH FOLLOW-UPS): name each one, file:line.
 - PASS otherwise.
 - A check you were asked to run and could not (no stack free, the machine too loaded for a build or browser check, a tool unavailable) leaves its done-conditions not verified here, never met. Say what you could not run and why. Never substitute a lighter check and call it met.
 - Nits (naming, wording, style) only in the slice's own diff, and only under their own heading. Never let a nit change the verdict.

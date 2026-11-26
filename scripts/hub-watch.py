@@ -14,8 +14,10 @@ time any of these happens after it starts:
 
 With nothing to report it exits after --max-minutes with a heartbeat line, so
 the hub looks again. --status prints the current state and exits at once.
-A new watcher for the same repo stops the one before it, so a hub never has
-two running; the stopped one prints that it was replaced and exits 0.
+With --hub, a new hub watcher for the same repo stops the previous hub
+watcher, so a hub never has two running; the stopped one prints that it was
+replaced and exits 0. Watchers without --hub (a session's own wait) are
+never stopped by another watcher.
 
 Uses only `gh` and the lane's transcript folder under ~/.claude/projects.
 No GNU `timeout` is needed, so it runs on macOS as it is.
@@ -84,6 +86,8 @@ def describe(n, s):
     flags.append("auto-merge on" if s["auto"] else "auto-merge off")
     if s["conflict"]:
         flags.append("conflicting")
+    if s["behind"]:
+        flags.append("behind its base")
     return "PR #%d: %s" % (n, ", ".join(flags))
 
 
@@ -118,11 +122,11 @@ def with_retries(repo, n, tries=3):
 
 
 def replace_previous(repo):
-    pidfile = os.path.join(tempfile.gettempdir(), "bosun-hub-watch-%s.pid" % re.sub(r"[^A-Za-z0-9]", "-", repo))
+    pidfile = os.path.join(tempfile.gettempdir(), "bosun-hub-watch-hub-%s.pid" % re.sub(r"[^A-Za-z0-9]", "-", repo))
     try:
         old = int(open(pidfile).read().strip())
         cmd = subprocess.run(["ps", "-p", str(old), "-o", "command="], capture_output=True, text=True).stdout
-        if old != os.getpid() and "hub-watch.py" in cmd:
+        if old != os.getpid() and "hub-watch.py" in cmd and "--hub" in cmd:
             os.kill(old, 15)
             print("stopped the previous watcher (pid %d)" % old)
     except (OSError, ValueError):
@@ -140,6 +144,7 @@ def main():
     ap.add_argument("--interval", type=float, default=90, help="seconds between looks")
     ap.add_argument("--max-minutes", type=float, default=120)
     ap.add_argument("--status", action="store_true", help="print the current state and exit")
+    ap.add_argument("--hub", action="store_true", help="this is the hub's watcher: stop the previous hub watcher for this repo")
     a = ap.parse_args()
     if "/" not in a.repo:
         ap.error("--repo must be owner/name")
@@ -161,6 +166,8 @@ def main():
     for n in a.pr:
         print(describe(n, base[n]))
     done = ["PR #%d already %s" % (n, base[n]["state"].lower()) for n in a.pr if base[n]["state"] != "OPEN"]
+    done += ["PR #%d is green with auto-merge on but behind its base; update it" % n for n in a.pr
+             if stalled(base[n]) and base[n]["auto"]]
     active = set()
     for name, wt in lanes:
         q = quiet_minutes(wt)
@@ -172,7 +179,8 @@ def main():
     if done:
         print("\n".join(done))
         return 0
-    replace_previous(a.repo)
+    if a.hub:
+        replace_previous(a.repo)
     signal.signal(signal.SIGTERM, lambda *_: (print("replaced by a newer watcher; nothing to do"), sys.exit(0)))
     sys.stdout.flush()
 
@@ -193,7 +201,7 @@ def main():
                     return 1
                 continue
             found = changes(n, base[n], new)
-            if found and stalled(new) and new["state"] == "OPEN" and not (new["red"] and not base[n]["red"]):
+            if found and stalled(new):
                 time.sleep(15)  # a merging PR leaves the queue a moment before it merges
                 try:
                     new = pr_state(a.repo, n)

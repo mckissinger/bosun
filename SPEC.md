@@ -14,6 +14,12 @@ Third outcome (slice 4, 2026-09-04): the harness runs on either Claude Code or C
 
 ## Decisions, in the user's words
 
+- (2026-11-25) Lanes never idle unwatched. Michael showed a RigRez hub explaining why every lane had gone idle ("This seems to happen occasionally in projects... How can we figure out how to improve this function of our process and workflow?"). Asked whether lanes have auto-compaction on, so their context shouldn't fill: "Let's measure first." The lead measured 14 days of RigRez transcripts (169 hub-started sessions, 52 of them compacted):
+  - 87 gaps of 30 minutes or more (262 hours) waited on a decision, 84 (175 hours) on a merge, and 12 (38 hours) followed a session stopping because its context felt heavy, which no Bosun rule asks for;
+  - in 33 merge gaps the PR merged during the gap and the session sat on for 41 hours in all (median 23 minutes, worst 12 hours);
+  - lanes could not wait: auto mode refused their PR monitor, the host tells sessions not to poll CI, and some background waits used GNU `timeout`, which macOS lacks.
+
+  The lead proposed: no session stops for context; one hub watcher, covered by the user's yes to lanes, that wakes the hub on PR and lane changes; a wait that needs no `timeout`; and re-measuring in two weeks with a saved script. Michael: "Yes, build them". Slice record: `slices/2026-11-25-lane-idle.md`.
 - (2026-11-25) Archive every started session. Michael asked whether Bosun cleans up old worktrees, archives sessions and tears down stacks. The lead found:
   - RigRez had 25 worktrees and crelaunch 15, 32 of them under `.claude/worktrees/`, which the desktop app removes only when it archives the session;
   - six idle RigRez sessions and two crelaunch lanes had merged PRs and were never archived;

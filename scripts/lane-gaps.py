@@ -4,7 +4,9 @@ hub started) sat idle, and why, from their Claude Code transcripts.
 
   python3 lane-gaps.py --project ~/rv-rez [--days 14] [--repo owner/name] [--gap-minutes 30]
 
-It reads ~/.claude/projects folders for the project and its worktrees, keeps
+It reads the ~/.claude/projects folders for each --project path and for
+worktrees inside it (such as .claude/worktrees); pass --project again for
+worktrees kept elsewhere. It keeps
 transcripts whose first message says another session started them, and finds
 gaps of --gap-minutes or more between entries. Each gap is put in a bucket by
 the session's last message before it (a rough text match, so read the
@@ -47,12 +49,14 @@ def text(msg):
     return " ".join(b.get("text", "") for b in c or [] if isinstance(b, dict) and b.get("type") == "text")
 
 
-def sessions(project, days):
+def sessions(projects, days):
     root = os.path.expanduser("~/.claude/projects")
-    prefix = re.sub(r"[^A-Za-z0-9]", "-", os.path.abspath(os.path.expanduser(project)))
+    prefixes = [re.sub(r"[^A-Za-z0-9]", "-", os.path.abspath(os.path.expanduser(p))) for p in projects]
     cutoff = time.time() - days * 86400
     for d in os.listdir(root):
-        if d != prefix and not d.startswith(prefix + "-"):
+        # the checkout itself, or a hidden folder inside it (/. becomes --); a
+        # sibling project such as <name>-marketing does not match
+        if not any(d == p or d.startswith(p + "--") for p in prefixes):
             continue
         for f in glob.glob(os.path.join(root, d, "*.jsonl")):
             if os.path.getmtime(f) < cutoff:
@@ -83,7 +87,7 @@ def sessions(project, days):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--project", required=True, help="the project's main checkout")
+    ap.add_argument("--project", required=True, action="append", help="the project's main checkout (repeatable)")
     ap.add_argument("--days", type=float, default=14)
     ap.add_argument("--gap-minutes", type=float, default=30)
     ap.add_argument("--repo", help="owner/name, to measure idle time after merges")

@@ -4,28 +4,35 @@
 Run it in the background. It exits, printing one line per event, the first
 time any of these happens after it starts:
 
-  - a watched PR merges or closes;
+  - a watched PR merges or closes (or already has when it starts);
   - a watched PR's checks turn red, or it starts to conflict;
-  - a watched PR leaves the merge queue unmerged, or its auto-merge turns off;
+  - a watched PR stops merging: it is open, not in the merge queue and its
+    auto-merge is off (a queue removal, or green but not merging), or it is
+    green with auto-merge on but behind a base that requires up-to-date
+    branches; each is confirmed by a second look before it is reported;
   - a watched lane's transcript goes quiet for --stale-minutes.
 
 With nothing to report it exits after --max-minutes with a heartbeat line, so
 the hub looks again. --status prints the current state and exits at once.
+A new watcher for the same repo stops the one before it, so a hub never has
+two running; the stopped one prints that it was replaced and exits 0.
 
 Uses only `gh` and the lane's transcript folder under ~/.claude/projects.
 No GNU `timeout` is needed, so it runs on macOS as it is.
 """
 import argparse
 import glob
+import tempfile
 import json
 import os
 import re
+import signal
 import subprocess
 import sys
 import time
 
 QUERY = """query($o:String!,$r:String!,$n:Int!){repository(owner:$o,name:$r){pullRequest(number:$n){
-state isInMergeQueue mergeable autoMergeRequest{enabledAt}
+state isInMergeQueue mergeable mergeStateStatus autoMergeRequest{enabledAt}
 commits(last:1){nodes{commit{statusCheckRollup{state}}}}}}}"""
 
 
@@ -47,7 +54,16 @@ def pr_state(repo, number):
         "conflict": pr["mergeable"] == "CONFLICTING",
         "red": rollup in ("FAILURE", "ERROR"),
         "checks": rollup or "NONE",
+        "behind": pr["mergeStateStatus"] == "BEHIND",
     }
+
+
+def stalled(s):
+    if s["state"] != "OPEN" or s["red"] or s["conflict"]:
+        return False
+    if not s["queued"] and not s["auto"]:
+        return True
+    return s["auto"] and s["behind"] and s["checks"] == "SUCCESS"
 
 
 def transcript_dir(worktree):
@@ -82,11 +98,37 @@ def changes(n, old, new):
         events.append("PR #%d checks turned red" % n)
     if new["conflict"] and not old["conflict"]:
         events.append("PR #%d now conflicts with its base" % n)
-    if old["queued"] and not new["queued"]:
-        events.append("PR #%d left the merge queue without merging (read its timeline for the reason)" % n)
-    if old["auto"] and not new["auto"]:
-        events.append("PR #%d auto-merge turned off" % n)
+    if stalled(new) and not stalled(old):
+        if new["auto"]:
+            events.append("PR #%d is green with auto-merge on but behind its base; update it" % n)
+        else:
+            events.append("PR #%d stopped merging: open, not queued, auto-merge off (read its timeline for a queue removal)" % n)
     return events
+
+
+def with_retries(repo, n, tries=3):
+    for i in range(tries):
+        try:
+            return pr_state(repo, n)
+        except Exception as e:  # noqa: BLE001
+            last = e
+            if i < tries - 1:
+                time.sleep(5)
+    raise RuntimeError("gh failed %d times in a row for PR #%d: %s" % (tries, n, last))
+
+
+def replace_previous(repo):
+    pidfile = os.path.join(tempfile.gettempdir(), "bosun-hub-watch-%s.pid" % re.sub(r"[^A-Za-z0-9]", "-", repo))
+    try:
+        old = int(open(pidfile).read().strip())
+        cmd = subprocess.run(["ps", "-p", str(old), "-o", "command="], capture_output=True, text=True).stdout
+        if old != os.getpid() and "hub-watch.py" in cmd:
+            os.kill(old, 15)
+            print("stopped the previous watcher (pid %d)" % old)
+    except (OSError, ValueError):
+        pass
+    with open(pidfile, "w") as f:
+        f.write(str(os.getpid()))
 
 
 def main():
@@ -108,14 +150,17 @@ def main():
         lanes.append(tuple(item.split("=", 1)))
     if not a.pr and not lanes:
         ap.error("give at least one --pr or --lane")
+    if a.interval < 15 or a.stale_minutes <= 0 or a.max_minutes <= 0:
+        ap.error("--interval must be at least 15 seconds, and --stale-minutes and --max-minutes above 0")
 
     try:
-        base = {n: pr_state(a.repo, n) for n in a.pr}
+        base = {n: with_retries(a.repo, n) for n in a.pr}
     except Exception as e:  # noqa: BLE001 - report and stop
         print("error: %s" % e)
         return 1
     for n in a.pr:
         print(describe(n, base[n]))
+    done = ["PR #%d already %s" % (n, base[n]["state"].lower()) for n in a.pr if base[n]["state"] != "OPEN"]
     active = set()
     for name, wt in lanes:
         q = quiet_minutes(wt)
@@ -124,9 +169,14 @@ def main():
             active.add(name)
     if a.status:
         return 0
+    if done:
+        print("\n".join(done))
+        return 0
+    replace_previous(a.repo)
+    signal.signal(signal.SIGTERM, lambda *_: (print("replaced by a newer watcher; nothing to do"), sys.exit(0)))
     sys.stdout.flush()
 
-    start, failures = time.time(), 0
+    start, failures = time.time(), {n: 0 for n in a.pr}
     while True:
         time.sleep(a.interval)
         events = []
@@ -135,14 +185,22 @@ def main():
                 continue
             try:
                 new = pr_state(a.repo, n)
-                failures = 0
+                failures[n] = 0
             except Exception as e:  # noqa: BLE001
-                failures += 1
-                if failures >= 3:
-                    print("error: gh failed three times in a row: %s" % e)
+                failures[n] += 1
+                if failures[n] >= 3:
+                    print("error: gh failed three times in a row for PR #%d: %s" % (n, e))
                     return 1
                 continue
-            events += changes(n, base[n], new)
+            found = changes(n, base[n], new)
+            if found and stalled(new) and new["state"] == "OPEN" and not (new["red"] and not base[n]["red"]):
+                time.sleep(15)  # a merging PR leaves the queue a moment before it merges
+                try:
+                    new = pr_state(a.repo, n)
+                except Exception:  # noqa: BLE001
+                    pass
+                found = changes(n, base[n], new)
+            events += found
             base[n] = new
         for name, wt in lanes:
             q = quiet_minutes(wt)
@@ -157,7 +215,7 @@ def main():
             print("\n".join(events))
             return 0
         if (time.time() - start) / 60 >= a.max_minutes:
-            print("heartbeat: no change in %d min; run --status and look again" % a.max_minutes)
+            print("heartbeat: no change in %g min; run --status and look again" % a.max_minutes)
             return 0
 
 
